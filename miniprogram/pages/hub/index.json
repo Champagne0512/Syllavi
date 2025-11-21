@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "custom-navbar": "/components/custom-navbar/index",
+    "schedule-card": "/components/schedule-card/index",
+    "floating-action-button": "/components/floating-action-button/index"
+  }
+}

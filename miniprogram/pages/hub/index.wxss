@@ -1,0 +1,114 @@
+.hub-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.view-switch {
+  margin-top: 24rpx;
+  border-radius: 64rpx;
+  display: flex;
+  gap: 12rpx;
+  padding: 12rpx;
+}
+
+.chip {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  border-radius: 52rpx;
+  font-size: 26rpx;
+  color: rgba(28, 28, 30, 0.4);
+}
+
+.chip-active {
+  background: #1C1C1E;
+  color: #fff;
+}
+
+.schedule-shell {
+  margin: 32rpx 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.timeline {
+  position: absolute;
+  left: 12rpx;
+  width: 4rpx;
+  height: 40rpx;
+  background: #FF5C00;
+  border-radius: 999rpx;
+  transition: top 1s ease;
+}
+
+.skeleton-card {
+  height: 180rpx;
+  border-radius: 28rpx;
+}
+
+.card {
+  margin-bottom: 32rpx;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.event {
+  display: flex;
+  gap: 24rpx;
+  padding: 16rpx 0;
+  align-items: center;
+}
+
+.dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 999rpx;
+}
+
+.heat-track {
+  display: flex;
+  justify-content: space-between;
+}
+
+.heat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.heat-bar {
+  width: 18rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(180deg, #1148C4, #FF5C00);
+}
+
+.room {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1px solid rgba(28, 28, 30, 0.08);
+}
+
+.room:last-child {
+  border-bottom: none;
+}
+
+.room-name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 12rpx 24rpx;
+  border-radius: 999rpx;
+  border: 1px solid rgba(17, 72, 196, 0.3);
+}

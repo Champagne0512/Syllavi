@@ -1,0 +1,101 @@
+.tasks-page {
+  min-height: 100vh;
+}
+
+.tab-switch {
+  margin: 32rpx;
+  border-radius: 999rpx;
+  display: flex;
+  overflow: hidden;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 24rpx 0;
+  color: rgba(28, 28, 30, 0.5);
+}
+
+.tab.active {
+  background: rgba(28, 28, 30, 0.08);
+  color: #1C1C1E;
+  font-weight: 600;
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.task-info .title {
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.progress-shell {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.donut {
+  --size: 120rpx;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 999rpx;
+  background: conic-gradient(var(--accent), calc(var(--progress) * 360deg), rgba(28, 28, 30, 0.1) 0deg);
+  position: relative;
+}
+
+.donut::after {
+  content: '';
+  position: absolute;
+  inset: 18rpx;
+  background: #fff;
+  border-radius: 999rpx;
+}
+
+.pct {
+  font-size: 36rpx;
+}
+
+.ghost-btn {
+  border-radius: 999rpx;
+  border: 1px solid rgba(28, 28, 30, 0.2);
+  background: transparent;
+  color: #1C1C1E;
+}
+
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+}
+
+.widget-card {
+  border-radius: 32rpx;
+  padding: 24rpx;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(28, 28, 30, 0.08);
+}
+
+.widget-card.large {
+  grid-column: span 2;
+  background: linear-gradient(120deg, #9BB5CE, #1C1C1E);
+  color: #fff;
+}
+
+.linear-bar {
+  margin-top: 24rpx;
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.linear-fill {
+  width: 60%;
+  height: 100%;
+  border-radius: 999rpx;
+  background: #fff;
+}

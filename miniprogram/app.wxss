@@ -1,0 +1,61 @@
+@import "./styles/typography.wxss";
+
+:root {
+  --paper: #F7F7F5;
+  --ink: #1C1C1E;
+  --mist-blue: #9BB5CE;
+  --dusty-pink: #C9A5A0;
+  --olive: #A3B18A;
+  --accent: #FF5C00;
+  --klein: #1148C4;
+  --card-border: rgba(18, 18, 18, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+}
+
+page {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DINAlternate-Bold', 'JetBrainsMono', 'NotoSansSC', sans-serif;
+}
+
+.zen-scroll {
+  padding: 0 32rpx 160rpx;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #fff;
+  border-radius: 32rpx;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 24rpx 48rpx rgba(20, 20, 20, 0.04);
+  padding: 32rpx;
+}
+
+.muted {
+  color: rgba(28, 28, 30, 0.5);
+}
+
+.mono {
+  font-family: 'JetBrainsMono', monospace;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24rpx);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.08);
+}
+
+.pulse-skeleton {
+  background: linear-gradient(90deg, #f0f0ef 25%, #fafafa 50%, #f0f0ef 75%);
+  background-size: 400% 100%;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: -135% 50%;
+  }
+}

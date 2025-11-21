@@ -1,0 +1,9 @@
+@font-face {
+  font-family: 'DINAlternate-Bold';
+  src: url('https://fonts.gstatic.com/s/dinalternate/v15/primary.woff2');
+}
+
+@font-face {
+  font-family: 'JetBrainsMono';
+  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v14/primary.woff2');
+}

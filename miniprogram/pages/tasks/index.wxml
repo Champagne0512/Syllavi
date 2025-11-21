@@ -1,0 +1,58 @@
+<view class="tasks-page">
+  <custom-navbar title="Syllaby" subtitle="待办 / 考试" />
+
+  <view class="tab-switch glass">
+    <view class="tab {{activeTab === 'homework' ? 'active' : ''}}"
+      data-tab="homework"
+      bindtap="switchTab">
+      Homework
+    </view>
+    <view class="tab {{activeTab === 'exam' ? 'active' : ''}}"
+      data-tab="exam"
+      bindtap="switchTab">
+      Exams
+    </view>
+  </view>
+
+  <scroll-view class="zen-scroll" scroll-y="true">
+    <block wx:for="{{tasks}}" wx:key="id">
+      <view wx:if="{{item.type === activeTab}}" class="task-card card">
+        <view class="task-info">
+          <text class="title">{{item.title}}</text>
+          <text class="muted">Due {{item.deadline}}</text>
+          <text class="mono badge">{{item.course}}</text>
+        </view>
+        <view class="progress-shell">
+          <view class="donut" style="--accent: {{item.accent}}; --progress: {{item.progress}};"></view>
+          <text class="mono pct">{{item.progressPct}}%</text>
+        </view>
+        <button class="ghost-btn" data-id="{{item.id}}" bindtap="markDone">
+          {{item.completed ? '已完成' : '标记完成'}}
+        </button>
+      </view>
+    </block>
+
+    <view class="widget card">
+      <view class="section-head">
+        <text>桌面小组件预览</text>
+        <text class="muted">2x2 & 4x2</text>
+      </view>
+      <view class="widget-grid">
+        <view class="widget-card">
+          <text class="muted">Next</text>
+          <text class="mono big">AI 工程 · 16:00</text>
+          <text class="muted small">Focus Flow ready</text>
+        </view>
+        <view class="widget-card large">
+          <view>
+            <text class="muted">Deadline</text>
+            <text class="mono big">设计报告 23:59</text>
+          </view>
+          <view class="linear-bar">
+            <view class="linear-fill"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

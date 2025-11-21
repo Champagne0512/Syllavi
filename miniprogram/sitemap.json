@@ -1,0 +1,9 @@
+{
+  "desc": "Syllaby sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

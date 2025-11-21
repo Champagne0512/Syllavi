@@ -1,0 +1,14 @@
+<view class="fab-wrapper">
+  <view class="actions {{expanded ? 'expanded' : ''}}">
+    <block wx:for="{{actions}}" wx:key="id">
+      <button class="action-btn" style="background: {{item.color}};"
+        data-page="{{item.page}}"
+        bindtap="handleAction">
+        {{item.label}}
+      </button>
+    </block>
+  </view>
+  <button class="fab {{expanded ? 'active' : ''}}" bindtap="toggle">
+    {{expanded ? '收起' : 'Flow'}}
+  </button>
+</view>

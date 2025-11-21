@@ -1,0 +1,13 @@
+<view class="tab-glass" style="padding-bottom: {{safeBottom}}px;">
+  <view class="tab-track">
+    <block wx:for="{{list}}" wx:key="pagePath">
+      <view class="tab-item {{selected === index ? 'active' : ''}}"
+        data-index="{{index}}"
+        data-path="{{item.pagePath}}"
+        bindtap="switchTab">
+        <view class="pill"></view>
+        <text class="label">{{item.text}}</text>
+      </view>
+    </block>
+  </view>
+</view>

@@ -1,0 +1,8 @@
+<view class="schedule-card {{focused ? 'focused' : ''}}"
+  style="background: linear-gradient(135deg, {{course.color}}, rgba(255,255,255,0.18));"
+  bindtap="handleTap"
+  bindlongpress="handleLongPress">
+  <view class="course-title">{{course.name}}</view>
+  <view class="mono time">{{course.time}}</view>
+  <view class="muted location">{{course.location}}</view>
+</view>

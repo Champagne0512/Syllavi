@@ -1,0 +1,38 @@
+<view class="ai-import-page">
+  <custom-navbar title="Syllaby" subtitle="AI 导入" />
+
+  <view class="hero">
+    <text class="mono">Screenshot to Schedule</text>
+    <text>上传考试安排截图，一键转化为课程数据。</text>
+  </view>
+
+  <view class="upload card" bindtap="chooseImage">
+    <view class="preview" wx:if="{{image}}">
+      <image src="{{image}}" mode="aspectFit" />
+      <view class="scan-line" wx:if="{{scanning}}"></view>
+    </view>
+    <view wx:else class="placeholder">
+      <text class="mono">＋ 上传截图</text>
+    </view>
+    <view class="progress" wx:if="{{scanning}}">
+      <view class="bar" style="width: {{progress}}%;"></view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{result}}">
+    <view class="section-head">
+      <text>AI 识别结果</text>
+      <text class="muted">长按加入课程</text>
+    </view>
+    <block wx:for="{{result}}" wx:key="title">
+      <view class="result-row">
+        <view class="chip {{item.type}}">{{item.type === 'exam' ? '考试' : '作业'}}</view>
+        <view class="info">
+          <text>{{item.title}}</text>
+          <text class="muted">{{item.time}} · {{item.place}}</text>
+        </view>
+        <button class="ghost mini">确认</button>
+      </view>
+    </block>
+  </view>
+</view>

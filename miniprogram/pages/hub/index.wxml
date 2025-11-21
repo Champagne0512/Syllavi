@@ -1,0 +1,80 @@
+<view class="hub-page">
+  <custom-navbar title="Syllaby" subtitle="智能日概览" />
+
+  <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
+    <view class="glass view-switch">
+      <block wx:for="{{['week','day','month']}}" wx:key="*this">
+        <view class="chip {{viewMode === item ? 'chip-active' : ''}}"
+          data-mode="{{item}}"
+          bindtap="switchView">
+          {{ item === 'week' ? '周视图' : item === 'day' ? '日视图' : '月视图' }}
+        </view>
+      </block>
+    </view>
+
+    <view class="schedule-shell">
+      <view class="timeline" style="{{timelineStyle}}"></view>
+      <block wx:if="{{skeleton}}">
+        <block wx:for="{{[1,2,3,4]}}" wx:key="*this">
+          <view class="pulse-skeleton skeleton-card"></view>
+        </block>
+      </block>
+      <block wx:else>
+        <block wx:for="{{schedule}}" wx:key="id">
+          <schedule-card course="{{item}}" focused="{{focusCourse && focusCourse.id === item.id}}"
+            bind:open="handleCourseOpen"
+            bind:pin="handleCoursePin" />
+        </block>
+      </block>
+    </view>
+
+    <view class="card day-events">
+      <view class="section-head">
+        <text>今日提要</text>
+        <text class="muted mono">Deadline Feed</text>
+      </view>
+      <block wx:for="{{dayEvents}}" wx:key="label">
+        <view class="event">
+          <view class="dot" style="background: {{item.tone}};"></view>
+          <view class="info">
+            <text>{{item.label}}</text>
+            <text class="muted">{{item.time}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="card month-heat" wx:if="{{viewMode === 'month'}}">
+      <view class="section-head">
+        <text>考试/作业热力</text>
+        <text class="muted">本月最忙的周</text>
+      </view>
+      <view class="heat-track">
+        <block wx:for="{{monthHeat}}" wx:key="index">
+          <view class="heat-pill">
+            <view class="heat-bar" style="height: {{item * 16 + 20}}rpx;"></view>
+            <text class="mono label">W{{index + 1}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="card empty-rooms">
+      <view class="section-head">
+        <text>自习去哪 · 空间众包</text>
+        <text class="muted mono">2h snapshot</text>
+      </view>
+      <block wx:for="{{emptyRooms}}" wx:key="building">
+        <view class="room">
+          <view>
+            <text class="room-name">{{item.building}}</text>
+            <text class="muted">{{item.tag}}</text>
+          </view>
+          <text class="mono badge">{{item.status}}</text>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+
+  <floating-action-button />
+</view>
