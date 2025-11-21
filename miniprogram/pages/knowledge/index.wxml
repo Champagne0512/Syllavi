@@ -2,6 +2,12 @@
   <custom-navbar title="Syllaby" subtitle="知识星图" />
 
   <scroll-view class="zen-scroll" scroll-y="true">
+    <view class="toolbar">
+      <button class="upload-btn" bindtap="uploadResource">
+        ＋ 上传资料
+      </button>
+    </view>
+
     <view class="folder-grid">
       <block wx:for="{{folders}}" wx:key="id">
         <view class="folder-card {{activeFolder === item.name ? 'active' : ''}}"
@@ -21,7 +27,10 @@
         <text class="muted mono">Supabase Storage</text>
       </view>
       <block wx:for="{{filteredFiles}}" wx:key="id">
-        <view class="file-row" data-name="{{item.name}}" bindtap="previewFile">
+        <view class="file-row"
+          data-id="{{item.id}}"
+          bindtap="previewFile"
+          bindlongpress="handleFileLongPress">
           <view class="file-icon">
             <text class="mono">{{item.type}}</text>
           </view>

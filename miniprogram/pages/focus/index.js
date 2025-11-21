@@ -1,3 +1,5 @@
+import { createFocusSession, fetchFocusStats } from '../../utils/supabase';
+
 const gradients = [
   ['#92B4EC', '#F7F7F5'],
   ['#F4C095', '#1C1C1E'],
@@ -53,18 +55,48 @@ Page({
       this.setData({ remaining: left, displayTime: formatTime(left) });
     }, 1000);
   },
-  finishSession() {
+  async finishSession() {
     clearInterval(this.timer);
     clearInterval(this.gradientTicker);
-    this.setData({
-      running: false,
-      summaryCard: {
-        focus: ((this.data.minutes * 60 - this.data.remaining) / 60).toFixed(1),
-        streak: Math.floor(Math.random() * 4) + 1
-      },
-      remaining: this.data.minutes * 60,
-      displayTime: formatTime(this.data.minutes * 60)
-    });
+    const usedSeconds = this.data.minutes * 60 - this.data.remaining;
+    const usedMinutes = Math.max(1, Math.round(usedSeconds / 60));
+
+    try {
+      const app = getApp();
+      const userId = app?.globalData?.supabase?.userId;
+      const endedAt = new Date();
+      const startedAt = new Date(endedAt.getTime() - usedMinutes * 60000);
+      await createFocusSession({
+        user_id: userId,
+        duration: usedMinutes,
+        started_at: startedAt.toISOString(),
+        ended_at: endedAt.toISOString(),
+        related_course_id: null,
+        completed: true
+      });
+      const stats = await fetchFocusStats(userId);
+      const streak = Array.isArray(stats) ? stats[0]?.streak_days || 1 : stats.streak_days || 1;
+      this.setData({
+        running: false,
+        summaryCard: {
+          focus: (usedMinutes / 60).toFixed(1),
+          streak
+        },
+        remaining: this.data.minutes * 60,
+        displayTime: formatTime(this.data.minutes * 60)
+      });
+    } catch (err) {
+      console.warn('record focus failed', err);
+      this.setData({
+        running: false,
+        summaryCard: {
+          focus: (usedMinutes / 60).toFixed(1),
+          streak: Math.floor(Math.random() * 4) + 1
+        },
+        remaining: this.data.minutes * 60,
+        displayTime: formatTime(this.data.minutes * 60)
+      });
+    }
     wx.vibrateShort({ type: 'medium' });
   },
   stopFocus() {

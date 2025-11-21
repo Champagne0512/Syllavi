@@ -1,0 +1,24 @@
+<view class="login-page">
+  <custom-navbar title="Syllaby" subtitle="Academic Zen" />
+
+  <view class="hero card">
+    <text class="brand">Syllaby</text>
+    <text class="tagline">Academic Zen · 学术禅意</text>
+    <text class="muted copy">
+      一键导入课程表 · 集中管理待办 · AI 划重点 · 番茄专注。
+    </text>
+  </view>
+
+  <view class="actions">
+    <button class="primary" open-type="getUserInfo" bindtap="handleLogin" loading="{{loading}}">
+      微信一键登录
+    </button>
+    <button class="ghost" bindtap="skipLogin">
+      先体验 Demo
+    </button>
+    <text class="muted legal">
+      登录即表示同意《用户协议》和《隐私政策》
+    </text>
+  </view>
+</view>
+

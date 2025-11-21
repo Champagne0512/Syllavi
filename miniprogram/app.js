@@ -12,9 +12,16 @@ const MORANDI = {
 
 App({
   onLaunch() {
+    const storedUserId =
+      wx.getStorageSync('user_id') ||
+      wx.getStorageSync('syllaby_user_id') ||
+      DEMO_USER_ID;
+    const accessToken = wx.getStorageSync('access_token') || null;
+
     this.globalData.supabase = {
       url: SUPABASE_URL,
-      userId: wx.getStorageSync('syllaby_user_id') || DEMO_USER_ID
+      userId: storedUserId,
+      accessToken
     };
   },
   globalData: {

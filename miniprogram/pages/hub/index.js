@@ -57,6 +57,14 @@ Page({
     timelineStyle: ''
   },
   onLoad() {
+    const token = wx.getStorageSync('access_token');
+    const userId =
+      wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id');
+    if (!token && !userId) {
+      // 首次进入且未登录，跳转到登录页
+      wx.reLaunch({ url: '/pages/login/index' });
+      return;
+    }
     this.bootstrap();
     this.timelineTicker = setInterval(() => {
       const now = new Date();

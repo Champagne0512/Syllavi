@@ -1,5 +1,13 @@
 import { MORANDI_COLORS } from '../../utils/colors';
-import { fetchResources } from '../../utils/supabase';
+import {
+  createResource,
+  deleteFromStorage,
+  deleteResource,
+  fetchResources,
+  summarizeFile,
+  uploadToStorage,
+  updateResource
+} from '../../utils/supabase';
 
 const MOCK_FOLDERS = [
   { id: 1, name: '高数', count: 12, tone: '#9BB5CE' },
@@ -58,7 +66,9 @@ Page({
             name: file.file_name,
             type: file.file_type,
             subject: file.subject || '未分类',
-            previewable: true
+            url: file.file_url,
+            size: file.file_size,
+            aiSummary: file.ai_summary || ''
           })),
           activeFolder,
           loading: false
@@ -92,10 +102,163 @@ Page({
     wx.vibrateShort({ type: 'light' });
   },
   previewFile(e) {
-    const { name } = e.currentTarget.dataset;
-    wx.showToast({
-      title: `预览 ${name}`,
-      icon: 'none'
+    const { id } = e.currentTarget.dataset;
+    const file = this.data.files.find((f) => f.id === id);
+    if (!file || !file.url) {
+      wx.showToast({ title: '暂无文件 URL', icon: 'none' });
+      return;
+    }
+    wx.showLoading({ title: '加载中...' });
+    wx.downloadFile({
+      url: file.url,
+      success: (res) => {
+        const { tempFilePath } = res;
+        wx.openDocument({
+          filePath: tempFilePath,
+          fileType: file.type,
+          showMenu: true,
+          success: () => {
+            wx.hideLoading();
+          },
+          fail: () => {
+            wx.hideLoading();
+            wx.showToast({ title: '无法预览', icon: 'none' });
+          }
+        });
+      },
+      fail: () => {
+        wx.hideLoading();
+        wx.showToast({ title: '下载失败', icon: 'none' });
+      }
+    });
+  },
+  async uploadResource() {
+    try {
+      const { tempFiles } = await wx.chooseMessageFile({
+        count: 1,
+        type: 'file',
+        extension: ['pdf', 'ppt', 'pptx', 'doc', 'docx', 'jpg', 'png']
+      });
+      if (!tempFiles || !tempFiles.length) return;
+      const file = tempFiles[0];
+      wx.showLoading({ title: '上传中...' });
+
+      const { publicUrl } = await uploadToStorage(
+        'resources',
+        file.path || file.tempFilePath,
+        file.name
+      );
+
+      const app = getApp();
+      const userId = app?.globalData?.supabase?.userId;
+
+      const [row] = await createResource({
+        user_id: userId,
+        file_name: file.name,
+        file_url: publicUrl,
+        file_type: this.getFileType(file.name),
+        file_size: file.size,
+        subject: this.data.activeFolder === '全部' ? '未分类' : this.data.activeFolder
+      });
+
+      wx.hideLoading();
+      wx.showToast({ title: '已上传', icon: 'success' });
+
+      this.setData(
+        {
+          files: [
+            {
+              id: row.id,
+              name: row.file_name,
+              type: row.file_type,
+              subject: row.subject || '未分类',
+              url: row.file_url,
+              size: row.file_size,
+              aiSummary: row.ai_summary || ''
+            },
+            ...this.data.files
+          ]
+        },
+        () => this.updateFilteredFiles()
+      );
+    } catch (err) {
+      console.warn('upload failed', err);
+      wx.hideLoading();
+      wx.showToast({ title: '上传失败', icon: 'none' });
+    }
+  },
+  getFileType(name = '') {
+    const lower = name.toLowerCase();
+    if (lower.endsWith('.pdf')) return 'pdf';
+    if (lower.endsWith('.pptx') || lower.endsWith('.ppt')) return 'pptx';
+    if (lower.endsWith('.docx') || lower.endsWith('.doc')) return 'docx';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'jpg';
+    if (lower.endsWith('.png')) return 'png';
+    return 'other';
+  },
+  handleFileLongPress(e) {
+    const { id } = e.currentTarget.dataset;
+    const file = this.data.files.find((f) => f.id === id);
+    if (!file) return;
+    wx.showActionSheet({
+      itemList: ['AI 划重点', '删除'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this.runSummary(file);
+        } else if (res.tapIndex === 1) {
+          this.removeFile(file);
+        }
+      }
+    });
+  },
+  async runSummary(file) {
+    if (!file.url) {
+      wx.showToast({ title: '缺少文件地址', icon: 'none' });
+      return;
+    }
+    wx.showLoading({ title: 'AI 划重点中...' });
+    try {
+      const summary = await summarizeFile(file.url, file.type);
+      await updateResource(file.id, { ai_summary: summary });
+      wx.hideLoading();
+      wx.showModal({
+        title: 'AI 划重点',
+        content: summary.slice(0, 800),
+        showCancel: false
+      });
+    } catch (err) {
+      console.warn('summary failed', err);
+      wx.hideLoading();
+      wx.showToast({ title: '生成失败', icon: 'none' });
+    }
+  },
+  async removeFile(file) {
+    wx.showModal({
+      title: '删除文件',
+      content: '删除后无法恢复，确认删除？',
+      success: async (res) => {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '删除中...' });
+        try {
+          // 删除记录
+          await deleteResource(file.id);
+          // 尝试删除存储对象
+          if (file.url) {
+            const parts = file.url.split('/resources/');
+            if (parts[1]) {
+              await deleteFromStorage('resources', parts[1]);
+            }
+          }
+          const files = this.data.files.filter((f) => f.id !== file.id);
+          this.setData({ files }, () => this.updateFilteredFiles());
+          wx.hideLoading();
+          wx.showToast({ title: '已删除', icon: 'success' });
+        } catch (err) {
+          console.warn('delete resource failed', err);
+          wx.hideLoading();
+          wx.showToast({ title: '删除失败', icon: 'none' });
+        }
+      }
     });
   }
 });

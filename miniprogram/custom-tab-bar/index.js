@@ -10,8 +10,8 @@ Component({
   },
   lifetimes: {
     attached() {
-      const systemInfo = wx.getSystemInfoSync();
-      this.setData({ safeBottom: systemInfo.safeAreaInsets?.bottom || 0 });
+      const windowInfo = wx.getWindowInfo();
+      this.setData({ safeBottom: windowInfo.safeArea?.bottom ? windowInfo.screenHeight - windowInfo.safeArea.bottom : 0 });
     }
   },
   methods: {

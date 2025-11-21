@@ -2,6 +2,20 @@
   min-height: 100vh;
 }
 
+.toolbar {
+  margin-top: 32rpx;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.upload-btn {
+  border-radius: 999rpx;
+  padding: 16rpx 32rpx;
+  font-size: 26rpx;
+  background: #1148C4;
+  color: #fff;
+}
+
 .folder-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -1,9 +1,2 @@
-@font-face {
-  font-family: 'DINAlternate-Bold';
-  src: url('https://fonts.gstatic.com/s/dinalternate/v15/primary.woff2');
-}
-
-@font-face {
-  font-family: 'JetBrainsMono';
-  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v14/primary.woff2');
-}
+/* 字体已移除，使用系统字体作为替代 */
+/* 如需使用自定义字体，请下载字体文件到本地 static 目录 */
