@@ -20,7 +20,7 @@
         <text>{{activeFolder}} · 文件</text>
         <text class="muted mono">Supabase Storage</text>
       </view>
-      <block wx:for="{{files}}" wx:key="id">
+      <block wx:for="{{filteredFiles}}" wx:key="id">
         <view class="file-row" data-name="{{item.name}}" bindtap="previewFile">
           <view class="file-icon">
             <text class="mono">{{item.type}}</text>

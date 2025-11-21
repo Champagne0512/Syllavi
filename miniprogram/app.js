@@ -1,4 +1,4 @@
-import { createSupabaseClient } from './utils/supabase';
+import { SUPABASE_URL, DEMO_USER_ID } from './utils/supabase';
 
 const MORANDI = {
   mistBlue: '#9BB5CE',
@@ -12,7 +12,10 @@ const MORANDI = {
 
 App({
   onLaunch() {
-    this.globalData.supabase = createSupabaseClient();
+    this.globalData.supabase = {
+      url: SUPABASE_URL,
+      userId: wx.getStorageSync('syllaby_user_id') || DEMO_USER_ID
+    };
   },
   globalData: {
     theme: {
