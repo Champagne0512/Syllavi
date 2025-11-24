@@ -14,6 +14,7 @@
   font-size: 26rpx;
   background: #1148C4;
   color: #fff;
+  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .folder-grid {

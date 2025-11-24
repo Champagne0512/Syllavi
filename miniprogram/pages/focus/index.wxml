@@ -1,4 +1,9 @@
 <view class="focus-page" style="background-image: linear-gradient(160deg, {{gradients[gradientIndex][0]}}, {{gradients[gradientIndex][1]}});">
+  <!-- 退出按钮 -->
+  <button class="exit-btn" bindtap="exitFocus" wx:if="{{!running}}">
+    ✕
+  </button>
+
   <view class="course-tag" wx:if="{{courseName}}">
     <text class="muted">当前课程</text>
     <text class="mono">{{courseName}}</text>

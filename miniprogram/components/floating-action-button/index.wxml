@@ -1,5 +1,6 @@
-<view class="fab-wrapper">
-  <view class="actions {{expanded ? 'expanded' : ''}}">
+<view class="fab-wrapper {{docked ? 'docked' : ''}}">
+  <!-- 功能按钮列表 -->
+  <view class="actions {{expanded ? 'expanded' : ''}}" wx:if="{{expanded && !docked}}">
     <block wx:for="{{actions}}" wx:key="id">
       <button class="action-btn" style="background: {{item.color}};"
         data-page="{{item.page}}"
@@ -8,7 +9,18 @@
       </button>
     </block>
   </view>
-  <button class="fab {{expanded ? 'active' : ''}}" bindtap="toggle">
-    {{expanded ? '收起' : 'Flow'}}
+  
+  <!-- 主按钮 -->
+  <button class="fab {{docked ? 'docked' : ''}}" bindtap="toggleExpanded">
+    <view wx:if="{{docked}}" class="collapse-icon">《</view>
+    <view wx:else>
+      <view class="main-text">{{expanded ? '收起' : 'Flow'}}</view>
+      <view class="sub-text" wx:if="{{!expanded}}">专注模式</view>
+    </view>
   </button>
+  
+  <!-- 吸附提示 -->
+  <view class="dock-hint" wx:if="{{!docked && !expanded}}" bindtap="toggleDocked">
+    》
+  </view>
 </view>

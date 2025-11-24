@@ -111,5 +111,9 @@ Page({
   adjustMinutes(e) {
     const minutes = e.detail.value;
     this.setData({ minutes, remaining: minutes * 60, displayTime: formatTime(minutes * 60) });
+  },
+  exitFocus() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateBack();
   }
 });

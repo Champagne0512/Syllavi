@@ -21,12 +21,14 @@
   text-align: center;
   padding: 24rpx 0;
   color: rgba(28, 28, 30, 0.5);
+  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .tab.active {
   background: rgba(28, 28, 30, 0.08);
   color: #1C1C1E;
   font-weight: 600;
+  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .task-card {

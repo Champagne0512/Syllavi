@@ -36,7 +36,7 @@
     }
   },
   "compileType": "miniprogram",
-  "libVersion": "3.5.3",
+  "libVersion": "3.11.3",
   "appid": "wx9c8498c8d0d93c39",
   "projectname": "syllaby",
   "simulatorType": "wechat",

@@ -12,10 +12,17 @@
   --glass-bg: rgba(255, 255, 255, 0.72);
 }
 
+@font-face {
+  font-family: 'Gotham';
+  src: url('../Gotham-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
 page {
   background: var(--paper);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 .zen-scroll {
@@ -36,7 +43,7 @@ page {
 }
 
 .mono {
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-family: 'Gotham', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .glass {

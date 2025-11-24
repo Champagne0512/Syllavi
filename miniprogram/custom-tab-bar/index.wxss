@@ -51,6 +51,6 @@
 }
 
 .label {
-  font-family: 'JetBrainsMono', monospace;
+  font-family: 'Gotham', 'JetBrainsMono', monospace;
   letter-spacing: 0.2em;
 }

@@ -20,12 +20,15 @@
   font-size: 32rpx;
   font-weight: 600;
   line-height: 1.2;
+  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .time {
   font-size: 26rpx;
+  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .location {
   font-size: 24rpx;
+  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
 }
