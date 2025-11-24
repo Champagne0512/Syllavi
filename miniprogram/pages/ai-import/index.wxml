@@ -41,12 +41,26 @@
     <view class="section-head">
       <text>AI 识别结果</text>
       <text class="muted">
-        {{mode === 'task' ? '逐条确认写入待办' : '当前仅展示，后续写入课程表'}}
+        {{mode === 'task' ? '可编辑后逐条或批量写入待办' : '可编辑后逐条或批量写入课程表'}}
       </text>
+    </view>
+    <view class="bulk-actions">
+      <button class="ghost mini"
+        wx:if="{{mode === 'task'}}"
+        bindtap="confirmAll">
+        全部写入待办
+      </button>
+      <button class="ghost mini"
+        wx:elif="{{mode === 'course'}}"
+        bindtap="confirmAll">
+        全部写入课程表
+      </button>
     </view>
     <block wx:for="{{result}}" wx:key="index">
       <view class="result-row">
-        <view wx:if="{{item.kind === 'task'}}" class="info-row">
+        <view wx:if="{{item.kind === 'task'}}" class="info-row"
+          data-index="{{index}}"
+          bindtap="editItem">
           <view class="chip {{item.type}}">
             {{item.type === 'exam' ? '考试' : '作业'}}
           </view>
@@ -55,7 +69,9 @@
             <text class="muted">{{item.deadline}}</text>
           </view>
         </view>
-        <view wx:elif="{{item.kind === 'course'}}" class="info-row">
+        <view wx:elif="{{item.kind === 'course'}}" class="info-row"
+          data-index="{{index}}"
+          bindtap="editItem">
           <view class="chip exam">课程</view>
           <view class="info">
             <text>{{item.name}}</text>

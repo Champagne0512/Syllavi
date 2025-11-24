@@ -111,5 +111,83 @@ Page({
   adjustMinutes(e) {
     const minutes = e.detail.value;
     this.setData({ minutes, remaining: minutes * 60, displayTime: formatTime(minutes * 60) });
+  },
+  saveCard() {
+    if (!this.data.summaryCard) {
+      wx.showToast({ title: '暂无专注记录', icon: 'none' });
+      return;
+    }
+    wx.showLoading({ title: '生成中...' });
+    const { focus, streak } = this.data.summaryCard;
+    const courseName = this.data.courseName || 'Focus Session';
+
+    const ctx = wx.createCanvasContext('focusCard', this);
+    const width = 600;
+    const height = 800;
+
+    // 背景
+    ctx.setFillStyle('#1C1C1E');
+    ctx.fillRect(0, 0, width, height);
+
+    // 标题
+    ctx.setFillStyle('#F7F7F5');
+    ctx.setFontSize(32);
+    ctx.setTextAlign('left');
+    ctx.fillText('Syllaby · Focus', 40, 80);
+
+    // 课程/主题
+    ctx.setFontSize(28);
+    ctx.setFillStyle('#9BB5CE');
+    ctx.fillText(courseName, 40, 140);
+
+    // 时长 & 连续天数
+    ctx.setFillStyle('#F7F7F5');
+    ctx.setFontSize(80);
+    ctx.fillText(`${focus}h`, 40, 260);
+    ctx.setFontSize(28);
+    ctx.setFillStyle('#C9A5A0');
+    ctx.fillText('专注时长', 40, 310);
+
+    ctx.setFillStyle('#F7F7F5');
+    ctx.setFontSize(80);
+    ctx.fillText(`${streak}`, 40, 430);
+    ctx.setFontSize(28);
+    ctx.setFillStyle('#C9A5A0');
+    ctx.fillText('连续专注天数', 40, 480);
+
+    // 底部文案
+    ctx.setFillStyle('#B0A1BA');
+    ctx.setFontSize(24);
+    ctx.fillText('Academic Zen · 学术禅意', 40, 560);
+
+    ctx.draw(false, () => {
+      wx.canvasToTempFilePath(
+        {
+          canvasId: 'focusCard',
+          width,
+          height,
+          destWidth: width,
+          destHeight: height,
+          success: (res) => {
+            wx.saveImageToPhotosAlbum({
+              filePath: res.tempFilePath,
+              success: () => {
+                wx.hideLoading();
+                wx.showToast({ title: '已保存到相册', icon: 'success' });
+              },
+              fail: () => {
+                wx.hideLoading();
+                wx.showToast({ title: '保存失败', icon: 'none' });
+              }
+            });
+          },
+          fail: () => {
+            wx.hideLoading();
+            wx.showToast({ title: '生成失败', icon: 'none' });
+          }
+        },
+        this
+      );
+    });
   }
 });

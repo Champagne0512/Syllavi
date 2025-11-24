@@ -88,7 +88,57 @@ export function refreshToken(refreshToken) {
   });
 }
 
+export function emailPasswordLogin(email, password) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      method: 'POST',
+      data: { email, password },
+      header: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+export function emailPasswordSignUp(email, password) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/auth/v1/signup`,
+      method: 'POST',
+      data: { email, password },
+      header: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
 // Domain data helpers
+
+// --- Course & schedule ---
 export function fetchWeekSchedule(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
@@ -98,6 +148,49 @@ export function fetchWeekSchedule(userId = DEMO_USER_ID) {
   return request('course_schedules', { query });
 }
 
+export function fetchCourses(userId = DEMO_USER_ID) {
+  const query = [
+    `user_id=eq.${userId}`,
+    'select=*',
+    'order=name.asc'
+  ].join('&');
+  return request('courses', { query });
+}
+
+export function createCourse(payload) {
+  return request('courses', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    data: payload
+  });
+}
+
+export function updateCourse(id, patch) {
+  return request('courses', {
+    method: 'PATCH',
+    query: `id=eq.${id}`,
+    headers: { Prefer: 'return=representation' },
+    data: patch
+  });
+}
+
+export function deleteCourse(id) {
+  return request('courses', {
+    method: 'DELETE',
+    query: `id=eq.${id}`
+  });
+}
+
+export function createCourseSchedules(payloadArray) {
+  // 支持批量创建排课，payloadArray 是对象数组
+  return request('course_schedules', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    data: payloadArray
+  });
+}
+
+// --- Tasks ---
 export function fetchTasks(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
@@ -168,6 +261,7 @@ export function deleteResource(id) {
   });
 }
 
+// --- Focus sessions ---
 export function createFocusSession(payload) {
   return request('focus_sessions', {
     method: 'POST',
@@ -194,6 +288,56 @@ export function fetchFocusStats(userId = DEMO_USER_ID) {
         reject(err);
       }
     });
+  });
+}
+
+export function fetchFocusSessions(userId = DEMO_USER_ID) {
+  const query = [
+    `user_id=eq.${userId}`,
+    'select=*',
+    'order=started_at.desc',
+    'limit=50'
+  ].join('&');
+  return request('focus_sessions', { query });
+}
+
+// --- Room reports (空教室众包, P2) ---
+export function fetchRoomReports() {
+  // 空教室信息对所有用户可见，这里不按用户过滤
+  const query = [
+    'select=id,building,room_name,floor,status,features,expires_at',
+    'order=expires_at.asc'
+  ].join('&');
+  return request('room_reports', { query });
+}
+
+export function createRoomReport(payload) {
+  return request('room_reports', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    data: payload
+  });
+}
+
+export function deleteRoomReport(id) {
+  return request('room_reports', {
+    method: 'DELETE',
+    query: `id=eq.${id}`
+  });
+}
+
+// --- User profile ---
+export function fetchProfile(userId = DEMO_USER_ID) {
+  const query = [`id=eq.${userId}`, 'select=*'].join('&');
+  return request('profiles', { query });
+}
+
+export function updateProfile(userId, patch) {
+  return request('profiles', {
+    method: 'PATCH',
+    query: `id=eq.${userId}`,
+    headers: { Prefer: 'return=representation' },
+    data: patch
   });
 }
 

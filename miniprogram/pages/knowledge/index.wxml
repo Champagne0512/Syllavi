@@ -13,7 +13,8 @@
         <view class="folder-card {{activeFolder === item.name ? 'active' : ''}}"
           style="--tone: {{item.tone}};"
           data-name="{{item.name}}"
-          bindtap="selectFolder">
+          bindtap="selectFolder"
+          bindlongpress="handleFolderLongPress">
           <view class="folder-clip"></view>
           <text class="name">{{item.name}}</text>
           <text class="muted">{{item.count}} files</text>

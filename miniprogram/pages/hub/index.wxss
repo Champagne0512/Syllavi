@@ -112,3 +112,12 @@
   border-radius: 999rpx;
   border: 1px solid rgba(17, 72, 196, 0.3);
 }
+
+.mini-btn {
+  padding: 8rpx 24rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  background: rgba(17, 72, 196, 0.06);
+  color: #1148C4;
+  border: 1px solid rgba(17, 72, 196, 0.3);
+}

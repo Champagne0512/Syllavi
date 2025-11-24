@@ -1,11 +1,12 @@
 {
   "pages": [
+    "pages/login/index",
     "pages/hub/index",
     "pages/tasks/index",
     "pages/knowledge/index",
     "pages/focus/index",
     "pages/ai-import/index",
-    "pages/login/index"
+    "pages/settings/index"
   ],
   "window": {
     "backgroundColor": "#F7F7F5",

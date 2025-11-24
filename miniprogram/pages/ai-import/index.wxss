@@ -122,3 +122,10 @@
   border: 1px solid rgba(28, 28, 30, 0.3);
   padding: 12rpx 24rpx;
 }
+
+.bulk-actions {
+  margin-top: 8rpx;
+  margin-bottom: 8rpx;
+  display: flex;
+  justify-content: flex-end;
+}
