@@ -333,3 +333,74 @@
   font-size: 22rpx;
   font-weight: 400;
 }
+
+/* 编辑弹层 */
+.edit-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-end;
+  z-index: 999;
+}
+
+.edit-sheet {
+  width: 100%;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 40rpx 32rpx 80rpx;
+  box-sizing: border-box;
+}
+
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 32rpx;
+}
+
+.sheet-field {
+  margin-bottom: 28rpx;
+}
+
+.sheet-field .label {
+  display: block;
+  font-size: 26rpx;
+  margin-bottom: 12rpx;
+  color: rgba(28, 28, 30, 0.7);
+}
+
+.sheet-field .input,
+.sheet-field .textarea {
+  width: 100%;
+  border-radius: 20rpx;
+  border: 1px solid rgba(28, 28, 30, 0.12);
+  padding: 20rpx 24rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  background: rgba(247, 247, 245, 0.6);
+}
+
+.sheet-field .textarea {
+  min-height: 140rpx;
+}
+
+.primary-btn,
+.ghost-btn {
+  width: 100%;
+  border-radius: 999rpx;
+  padding: 24rpx;
+  margin-top: 12rpx;
+  font-size: 30rpx;
+}
+
+.primary-btn {
+  background: #1148C4;
+  color: #fff;
+}
+
+.ghost-btn {
+  background: transparent;
+  border: 1px solid rgba(28, 28, 30, 0.2);
+  color: rgba(28, 28, 30, 0.8);
+}

@@ -163,4 +163,31 @@
       </view>
     </view>
   </scroll-view>
+
+  <view wx:if="{{editModalVisible}}" class="edit-mask" catchtouchmove="stopTouchMove">
+    <view class="edit-sheet">
+      <view class="sheet-head">
+        <text>编辑个人信息</text>
+        <text class="muted mono">Profile</text>
+      </view>
+      <view class="sheet-field">
+        <text class="label">昵称</text>
+        <input class="input" value="{{editForm.nickname}}" data-field="nickname" bindinput="onEditInput" placeholder="请输入昵称" />
+      </view>
+      <view class="sheet-field">
+        <text class="label">学校</text>
+        <input class="input" value="{{editForm.school_name}}" data-field="school_name" bindinput="onEditInput" placeholder="学校名称" />
+      </view>
+      <view class="sheet-field">
+        <text class="label">年级</text>
+        <input class="input" value="{{editForm.grade}}" data-field="grade" bindinput="onEditInput" placeholder="例如：大三" />
+      </view>
+      <view class="sheet-field">
+        <text class="label">个性签名</text>
+        <textarea class="textarea" value="{{editForm.bio}}" data-field="bio" bindinput="onEditInput" placeholder="写点自我介绍吧" maxlength="60"></textarea>
+      </view>
+      <button class="primary-btn" loading="{{savingProfile}}" bindtap="saveProfile">保存</button>
+      <button class="ghost-btn" disabled="{{savingProfile}}" bindtap="closeEditModal">取消</button>
+    </view>
+  </view>
 </view>

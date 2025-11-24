@@ -5,7 +5,8 @@ import {
   fetchCourses,
   fetchResources,
   fetchAchievements,
-  fetchLearningHeatmap
+  fetchLearningHeatmap,
+  updateProfile
 } from '../../utils/supabase';
 
 const DEFAULT_STATS = {
@@ -50,7 +51,15 @@ Page({
       { id: 'resources', name: '资源库', icon: '📁', path: '/pages/knowledge/index' },
       { id: 'focus', name: '专注记录', icon: '⏱️', path: '/pages/focus/index' },
       { id: 'settings', name: '设置', icon: '⚙️', path: '/pages/settings/index' }
-    ]
+    ],
+    editModalVisible: false,
+    savingProfile: false,
+    editForm: {
+      nickname: '',
+      school_name: '',
+      grade: '',
+      bio: ''
+    }
   },
 
   onLoad() {
@@ -95,6 +104,12 @@ Page({
           school_name: profile.school_name || '',
           grade: profile.grade || '',
           avatar_url: profile.avatar_url || userInfo?.avatarUrl || '',
+          bio: profile.bio || '让学习成为一种习惯'
+        },
+        editForm: {
+          nickname: profile.nickname || userInfo?.nickName || '同学',
+          school_name: profile.school_name || '',
+          grade: profile.grade || '',
           bio: profile.bio || '让学习成为一种习惯'
         }
       });
@@ -259,9 +274,65 @@ Page({
   },
 
   editProfile() {
-    wx.navigateTo({
-      url: '/pages/settings/index'
+    const { profile } = this.data;
+    this.setData({
+      editModalVisible: true,
+      editForm: {
+        nickname: profile.nickname || '同学',
+        school_name: profile.school_name || '',
+        grade: profile.grade || '',
+        bio: profile.bio || ''
+      }
     });
+  },
+
+  closeEditModal() {
+    if (this.data.savingProfile) return;
+    this.setData({ editModalVisible: false });
+  },
+
+  onEditInput(e) {
+    const { field } = e.currentTarget.dataset;
+    if (!field) return;
+    this.setData({ [`editForm.${field}`]: e.detail.value });
+  },
+
+  stopTouchMove() {
+    return true;
+  },
+
+  async saveProfile() {
+    if (this.data.savingProfile) return;
+    const app = getApp();
+    const userId = app?.globalData?.supabase?.userId;
+    if (!userId) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
+    }
+    const payload = {
+      nickname: (this.data.editForm.nickname || '').trim() || '同学',
+      school_name: (this.data.editForm.school_name || '').trim(),
+      grade: (this.data.editForm.grade || '').trim(),
+      bio: (this.data.editForm.bio || '').trim()
+    };
+    this.setData({ savingProfile: true });
+    wx.showLoading({ title: '保存中...' });
+    try {
+      await updateProfile(userId, payload);
+      const nextProfile = { ...this.data.profile, ...payload };
+      this.setData({
+        profile: nextProfile,
+        editModalVisible: false
+      });
+      wx.setStorageSync('profile', nextProfile);
+      wx.showToast({ title: '已更新', icon: 'success' });
+    } catch (err) {
+      console.warn('update profile failed', err);
+      wx.showToast({ title: '保存失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ savingProfile: false });
+    }
   },
 
   viewAchievement(e) {
