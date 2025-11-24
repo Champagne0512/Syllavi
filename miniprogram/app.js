@@ -1,4 +1,5 @@
 import { SUPABASE_URL, DEMO_USER_ID, refreshToken } from './utils/supabase';
+import { GOTHAM_FONT_SOURCE } from './static/fonts/gotham-base64';
 
 const MORANDI = {
   mistBlue: '#9BB5CE',
@@ -12,6 +13,7 @@ const MORANDI = {
 
 App({
   onLaunch() {
+    this.preloadGothamFont();
     const storedUserId =
       wx.getStorageSync('user_id') ||
       wx.getStorageSync('syllaby_user_id') ||
@@ -53,6 +55,19 @@ App({
     userProfile: null,
     scheduleCache: [],
     tasks: []
+  },
+  preloadGothamFont() {
+    if (!wx.loadFontFace) return;
+    wx.loadFontFace({
+      family: 'Gotham',
+      source: GOTHAM_FONT_SOURCE,
+      success: () => {
+        // font loaded
+      },
+      fail: (err) => {
+        console.warn('Failed to load Gotham font', err);
+      }
+    });
   },
   async refreshSession(refreshTok) {
     try {

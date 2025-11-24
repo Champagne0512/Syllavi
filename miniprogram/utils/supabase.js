@@ -123,6 +123,34 @@ export function emailPasswordSignUp(email, password) {
         'Content-Type': 'application/json'
       },
       success(res) {
+        if (res.statusCode === 404) {
+          signupViaAuth(email, password).then(resolve).catch(reject);
+          return;
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+function signupViaAuth(email, password) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/auth/v1/signup`,
+      method: 'POST',
+      data: { email, password },
+      header: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
         } else {

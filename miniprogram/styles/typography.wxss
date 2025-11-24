@@ -1,12 +1,3 @@
-/* 自定义字体 */
-@font-face {
-  font-family: 'Gotham';
-  src: url('/static/fonts/Gotham-Black.ttf') format('truetype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* 非中文英文字体 */
 .english-font {
   font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
