@@ -1,5 +1,10 @@
 <view class="hub-page">
-  <custom-navbar title="Syllaby" subtitle="智能日概览" />
+  <custom-navbar title="Syllaby" subtitle="智能日概览">
+    <view slot="right" class="profile-avatar" bindtap="goToProfile">
+      <image wx:if="{{profile.avatar_url}}" src="{{profile.avatar_url}}" class="avatar-img"></image>
+      <view wx:else class="avatar-placeholder">👤</view>
+    </view>
+  </custom-navbar>
 
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
     <view class="glass view-switch">

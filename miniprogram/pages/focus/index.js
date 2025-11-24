@@ -75,7 +75,7 @@ Page({
         completed: true
       });
       const stats = await fetchFocusStats(userId);
-      const streak = Array.isArray(stats) ? stats[0]?.streak_days || 1 : stats.streak_days || 1;
+      const streak = stats?.streak_days || 1;
       this.setData({
         running: false,
         summaryCard: {

@@ -278,8 +278,14 @@ export function fetchFocusStats(userId = DEMO_USER_ID) {
       data: { p_user_id: userId },
       header: buildHeaders(),
       success(res) {
+        if (res.statusCode === 404) {
+          // 函数未部署时返回空数据，避免前端整体失败
+          resolve(null);
+          return;
+        }
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(res.data);
+          const payload = Array.isArray(res.data) ? res.data[0] : res.data;
+          resolve(payload || null);
         } else {
           reject(res.data || res);
         }
@@ -436,6 +442,97 @@ export function parseImageWithAI(imageUrl, mode = 'task') {
       },
       success(res) {
         if (res.statusCode === 200 && res.data?.success) {
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+// --- Profile & Stats (for profile page) ---
+export function getUserStats(userId = DEMO_USER_ID) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/rest/v1/rpc/get_user_stats`,
+      method: 'POST',
+      data: { p_user_id: userId },
+      header: buildHeaders(),
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          // 返回第一个结果
+          resolve(Array.isArray(res.data) && res.data.length ? res.data[0] : null);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+export function fetchAchievements(userId = DEMO_USER_ID) {
+  const query = [
+    `user_id=eq.${userId}`,
+    'select=*',
+    'order=unlocked_at.desc'
+  ].join('&');
+  return request('achievements', { query });
+}
+
+export function checkAndUnlockAchievements(userId = DEMO_USER_ID) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/rest/v1/rpc/check_and_unlock_achievements`,
+      method: 'POST',
+      data: { p_user_id: userId },
+      header: buildHeaders(),
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+export function fetchLearningHeatmap(userId = DEMO_USER_ID, days = 30) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  const query = [
+    `user_id=eq.${userId}`,
+    `date=gte.${startDate.toISOString().split('T')[0]}`,
+    'select=date,focus_minutes,tasks_completed,level',
+    'order=date.asc'
+  ].join('&');
+  return request('learning_heatmap', { query });
+}
+
+export function updateLearningHeatmap(userId, date, focusMinutes, tasksCompleted) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/rest/v1/rpc/update_learning_heatmap`,
+      method: 'POST',
+      data: {
+        p_user_id: userId,
+        p_date: date,
+        p_focus_minutes: focusMinutes,
+        p_tasks_completed: tasksCompleted
+      },
+      header: buildHeaders(),
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
         } else {
           reject(res.data || res);

@@ -81,7 +81,6 @@
 
         <button
           class="wechat-btn"
-          open-type="getUserInfo"
           bindtap="handleWechatLogin"
           loading="{{wechatLoading}}"
         >

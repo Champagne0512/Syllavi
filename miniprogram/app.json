@@ -6,6 +6,7 @@
     "pages/knowledge/index",
     "pages/focus/index",
     "pages/ai-import/index",
+    "pages/profile/index",
     "pages/settings/index"
   ],
   "window": {
@@ -36,6 +37,12 @@
       {
         "pagePath": "pages/knowledge/index",
         "text": "资料",
+        "iconPath": "static/tab/placeholder.png",
+        "selectedIconPath": "static/tab/placeholder.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "主页",
         "iconPath": "static/tab/placeholder.png",
         "selectedIconPath": "static/tab/placeholder.png"
       }

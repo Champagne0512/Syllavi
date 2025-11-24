@@ -1,0 +1,166 @@
+<view class="profile-page">
+  <custom-navbar title="Syllaby" subtitle="个人主页" />
+
+  <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
+    <!-- 用户信息卡片 -->
+    <view class="card user-card">
+      <view class="user-header">
+        <view class="avatar-wrapper">
+          <image
+            class="avatar"
+            src="{{profile.avatar_url || '/static/default-avatar.png'}}"
+            mode="aspectFill"
+          />
+        </view>
+        <view class="user-info">
+          <view class="nickname">{{profile.nickname}}</view>
+          <view class="school-info muted">
+            <text wx:if="{{profile.school_name}}">{{profile.school_name}}</text>
+            <text wx:if="{{profile.school_name && profile.grade}}"> · </text>
+            <text wx:if="{{profile.grade}}">{{profile.grade}}</text>
+          </view>
+          <view class="bio muted" wx:if="{{profile.bio}}">{{profile.bio}}</view>
+        </view>
+        <view class="edit-btn" bindtap="editProfile">
+          <text>编辑</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 学习统计卡片 -->
+    <view class="card stats-card">
+      <view class="section-head">
+        <text>学习统计</text>
+        <text class="muted mono">Learning Stats</text>
+      </view>
+
+      <view class="stats-grid">
+        <view class="stat-item">
+          <view class="stat-value">{{stats.today_focus_minutes}}</view>
+          <view class="stat-label muted">今日专注(分钟)</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{stats.week_focus_minutes}}</view>
+          <view class="stat-label muted">本周专注(分钟)</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{stats.continuous_days}}</view>
+          <view class="stat-label muted">连续学习(天)</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{stats.total_sessions}}</view>
+          <view class="stat-label muted">专注次数</view>
+        </view>
+      </view>
+
+      <view class="divider"></view>
+
+      <view class="stats-row">
+        <view class="stats-row-item">
+          <text class="row-icon">📚</text>
+          <view class="row-info">
+            <text class="row-label muted">课程数</text>
+            <text class="row-value">{{stats.total_courses}}</text>
+          </view>
+        </view>
+        <view class="stats-row-item">
+          <text class="row-icon">✅</text>
+          <view class="row-info">
+            <text class="row-label muted">完成任务</text>
+            <text class="row-value">{{stats.completed_tasks}}/{{stats.total_tasks}}</text>
+          </view>
+        </view>
+        <view class="stats-row-item">
+          <text class="row-icon">📁</text>
+          <view class="row-info">
+            <text class="row-label muted">学习资源</text>
+            <text class="row-value">{{stats.total_resources}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="total-focus">
+        <view class="total-focus-label muted">累计专注时长</view>
+        <view class="total-focus-value">
+          <text class="focus-hours">{{stats.total_focus_minutes / 60}}</text>
+          <text class="focus-unit">小时</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 成就系统 -->
+    <view class="card achievements-card">
+      <view class="section-head">
+        <text>成就徽章</text>
+        <text class="muted mono">Achievements</text>
+      </view>
+
+      <view class="achievements-grid">
+        <block wx:for="{{achievements}}" wx:key="id">
+          <view
+            class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}"
+            data-achievement="{{item}}"
+            bindtap="viewAchievement"
+          >
+            <view class="achievement-icon">{{item.icon}}</view>
+            <view class="achievement-name">{{item.name}}</view>
+            <view class="achievement-desc muted">{{item.desc}}</view>
+            <view class="achievement-status" wx:if="{{!item.unlocked}}">🔒</view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 学习热力图 -->
+    <view class="card heatmap-card">
+      <view class="section-head">
+        <text>学习热力图</text>
+        <text class="muted mono">Last 30 Days</text>
+      </view>
+
+      <view class="heatmap-grid">
+        <block wx:for="{{heatmap}}" wx:key="date">
+          <view
+            class="heatmap-cell level-{{item.level}}"
+            data-date="{{item.date}}"
+            data-minutes="{{item.minutes}}"
+          >
+          </view>
+        </block>
+      </view>
+
+      <view class="heatmap-legend">
+        <text class="muted">少</text>
+        <view class="legend-cells">
+          <view class="legend-cell level-0"></view>
+          <view class="legend-cell level-1"></view>
+          <view class="legend-cell level-2"></view>
+          <view class="legend-cell level-3"></view>
+          <view class="legend-cell level-4"></view>
+        </view>
+        <text class="muted">多</text>
+      </view>
+    </view>
+
+    <!-- 快捷操作 -->
+    <view class="card actions-card">
+      <view class="section-head">
+        <text>快捷操作</text>
+        <text class="muted mono">Quick Actions</text>
+      </view>
+
+      <view class="actions-grid">
+        <block wx:for="{{quickActions}}" wx:key="id">
+          <view
+            class="action-item"
+            data-path="{{item.path}}"
+            bindtap="navigateToAction"
+          >
+            <view class="action-icon">{{item.icon}}</view>
+            <view class="action-name">{{item.name}}</view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </scroll-view>
+</view>

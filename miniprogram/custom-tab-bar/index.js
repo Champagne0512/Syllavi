@@ -4,7 +4,8 @@ Component({
     list: [
       { pagePath: '/pages/hub/index', text: '总览' },
       { pagePath: '/pages/tasks/index', text: '待办' },
-      { pagePath: '/pages/knowledge/index', text: '资料' }
+      { pagePath: '/pages/knowledge/index', text: '资料' },
+      { pagePath: '/pages/profile/index', text: '主页' }
     ],
     safeBottom: 0
   },

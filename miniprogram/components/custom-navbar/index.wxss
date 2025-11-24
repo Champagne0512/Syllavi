@@ -50,3 +50,8 @@
   border-radius: 999rpx;
   border: 1px solid rgba(17, 72, 196, 0.2);
 }
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+}

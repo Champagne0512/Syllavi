@@ -95,7 +95,11 @@ Page({
     monthHeat: [],
     focusCourse: null,
     emptyRooms: [],
-    timelineStyle: ''
+    timelineStyle: '',
+    profile: {
+      nickname: '同学',
+      avatar_url: ''
+    }
   },
   onLoad() {
     const token = wx.getStorageSync('access_token');
@@ -140,6 +144,7 @@ Page({
     await this.loadScheduleFromSupabase();
     this.loadTasksForToday();
     this.loadEmptyRooms();
+    this.loadProfile();
   },
   async loadScheduleFromSupabase() {
     this.setData({ skeleton: true });
@@ -356,6 +361,34 @@ Page({
           wx.showToast({ title: '标记失败', icon: 'none' });
         }
       }
+    });
+  },
+
+  async loadProfile() {
+    try {
+      const userInfo = wx.getStorageSync('userInfo');
+      const cachedProfile = wx.getStorageSync('profile');
+      
+      if (cachedProfile) {
+        this.setData({ profile: cachedProfile });
+      }
+
+      // 获取微信用户信息作为默认值
+      this.setData({
+        profile: {
+          nickname: userInfo?.nickName || '同学',
+          avatar_url: userInfo?.avatarUrl || ''
+        }
+      });
+    } catch (err) {
+      console.warn('load profile failed', err);
+    }
+  },
+
+  // 跳转到个人主页
+  goToProfile() {
+    wx.navigateTo({
+      url: '/pages/profile/index'
     });
   }
 });

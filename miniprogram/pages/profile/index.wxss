@@ -1,0 +1,335 @@
+.profile-page {
+  min-height: 100vh;
+}
+
+/* 用户信息卡片 */
+.user-card {
+  margin-bottom: 24rpx;
+}
+
+.user-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 24rpx;
+}
+
+.avatar-wrapper {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  background: linear-gradient(135deg, #9BB5CE, #C9A5A0);
+}
+
+.user-info {
+  flex: 1;
+  padding-top: 8rpx;
+}
+
+.nickname {
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+  color: #1C1C1E;
+}
+
+.school-info {
+  font-size: 26rpx;
+  margin-bottom: 12rpx;
+}
+
+.bio {
+  font-size: 24rpx;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.edit-btn {
+  flex-shrink: 0;
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  background: rgba(17, 72, 196, 0.08);
+  color: #1148C4;
+  font-size: 24rpx;
+  border: 1px solid rgba(17, 72, 196, 0.2);
+}
+
+/* 学习统计卡片 */
+.stats-card {
+  margin-bottom: 24rpx;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+  margin-top: 24rpx;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 24rpx;
+  background: rgba(17, 72, 196, 0.04);
+  border-radius: 20rpx;
+}
+
+.stat-value {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #1148C4;
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
+  font-size: 22rpx;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(28, 28, 30, 0.08);
+  margin: 32rpx 0;
+}
+
+.stats-row {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.stats-row-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 16rpx 20rpx;
+  background: rgba(155, 181, 206, 0.06);
+  border-radius: 16rpx;
+}
+
+.row-icon {
+  font-size: 40rpx;
+  flex-shrink: 0;
+}
+
+.row-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.row-label {
+  font-size: 26rpx;
+}
+
+.row-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1C1C1E;
+}
+
+.total-focus {
+  margin-top: 32rpx;
+  padding: 32rpx;
+  background: linear-gradient(135deg, #1148C4, #FF5C00);
+  border-radius: 24rpx;
+  text-align: center;
+}
+
+.total-focus-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 12rpx;
+}
+
+.total-focus-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.focus-hours {
+  font-size: 64rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.focus-unit {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 成就系统 */
+.achievements-card {
+  margin-bottom: 24rpx;
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+
+.achievement-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24rpx 16rpx;
+  background: rgba(163, 177, 138, 0.06);
+  border-radius: 20rpx;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.achievement-item.unlocked {
+  background: rgba(255, 92, 0, 0.08);
+  border: 2px solid rgba(255, 92, 0, 0.2);
+}
+
+.achievement-item.locked {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+}
+
+.achievement-icon {
+  font-size: 48rpx;
+  margin-bottom: 8rpx;
+}
+
+.achievement-name {
+  font-size: 22rpx;
+  font-weight: 600;
+  margin-bottom: 4rpx;
+  text-align: center;
+  color: #1C1C1E;
+}
+
+.achievement-desc {
+  font-size: 20rpx;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.achievement-status {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  font-size: 20rpx;
+}
+
+/* 学习热力图 */
+.heatmap-card {
+  margin-bottom: 24rpx;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8rpx;
+  margin-top: 24rpx;
+}
+
+.heatmap-cell {
+  width: 100%;
+  padding-bottom: 100%;
+  border-radius: 4rpx;
+  background: rgba(28, 28, 30, 0.04);
+  transition: all 0.2s ease;
+}
+
+.heatmap-cell.level-0 {
+  background: rgba(28, 28, 30, 0.04);
+}
+
+.heatmap-cell.level-1 {
+  background: rgba(155, 181, 206, 0.3);
+}
+
+.heatmap-cell.level-2 {
+  background: rgba(155, 181, 206, 0.5);
+}
+
+.heatmap-cell.level-3 {
+  background: rgba(17, 72, 196, 0.6);
+}
+
+.heatmap-cell.level-4 {
+  background: rgba(17, 72, 196, 0.85);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8rpx;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+}
+
+.legend-cells {
+  display: flex;
+  gap: 6rpx;
+}
+
+.legend-cell {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 4rpx;
+}
+
+/* 快捷操作 */
+.actions-card {
+  margin-bottom: 24rpx;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24rpx;
+  margin-top: 24rpx;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 24rpx 16rpx;
+  background: rgba(201, 165, 160, 0.06);
+  border-radius: 20rpx;
+  transition: all 0.3s ease;
+}
+
+.action-item:active {
+  transform: scale(0.95);
+  background: rgba(201, 165, 160, 0.12);
+}
+
+.action-icon {
+  font-size: 48rpx;
+}
+
+.action-name {
+  font-size: 22rpx;
+  text-align: center;
+  color: #1C1C1E;
+}
+
+/* 通用 section-head */
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.section-head .muted {
+  font-size: 22rpx;
+  font-weight: 400;
+}

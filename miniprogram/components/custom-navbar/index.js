@@ -12,7 +12,8 @@ Component({
   data: {
     dateLabel: '',
     weekdayLabel: '',
-    statusBarHeight: 44
+    statusBarHeight: 44,
+    hasRightSlot: false
   },
   lifetimes: {
     attached() {
