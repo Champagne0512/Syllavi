@@ -1,7 +1,7 @@
 /* 自定义字体 */
 @font-face {
   font-family: 'Gotham';
-  src: url('../Gotham-Black.ttf') format('truetype');
+  src: url('../static/fonts/Gotham-Black.ttf') format('truetype');
   font-weight: 900;
   font-style: normal;
 }

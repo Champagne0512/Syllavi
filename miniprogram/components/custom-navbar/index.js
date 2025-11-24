@@ -17,7 +17,7 @@ Component({
   },
   lifetimes: {
     attached() {
-      const windowInfo = wx.getWindowInfo();
+      const windowInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
       this.setData({ statusBarHeight: windowInfo.statusBarHeight || 44 });
       this.refreshDate();
     }

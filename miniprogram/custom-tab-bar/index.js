@@ -11,8 +11,11 @@ Component({
   },
   lifetimes: {
     attached() {
-      const windowInfo = wx.getWindowInfo();
-      this.setData({ safeBottom: windowInfo.safeArea?.bottom ? windowInfo.screenHeight - windowInfo.safeArea.bottom : 0 });
+      const windowInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+      const safeBottom = windowInfo.safeArea?.bottom
+        ? windowInfo.screenHeight - windowInfo.safeArea.bottom
+        : windowInfo.safeArea?.bottomInset || 0;
+      this.setData({ safeBottom });
     }
   },
   methods: {
