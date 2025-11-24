@@ -67,7 +67,7 @@ export function wechatLoginWithCode(code) {
 export function refreshToken(refreshToken) {
   return new Promise((resolve, reject) => {
     wx.request({
-      url: `${SUPABASE_URL}/functions/v1/refresh-token`,
+      url: `${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
       method: 'POST',
       data: { refresh_token: refreshToken },
       header: {
@@ -75,7 +75,7 @@ export function refreshToken(refreshToken) {
         'Content-Type': 'application/json'
       },
       success(res) {
-        if (res.statusCode === 200) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data);
         } else {
           reject(res.data || res);
