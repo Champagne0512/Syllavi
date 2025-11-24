@@ -15,8 +15,9 @@
 @font-face {
   font-family: 'Gotham';
   src: url('./static/fonts/Gotham-Black.ttf') format('truetype');
-  font-weight: 900;
+  font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 
 page {

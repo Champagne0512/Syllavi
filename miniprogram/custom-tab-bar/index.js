@@ -2,10 +2,10 @@ Component({
   data: {
     selected: 0,
     list: [
-      { pagePath: '/pages/hub/index', text: '总览' },
-      { pagePath: '/pages/tasks/index', text: '待办' },
-      { pagePath: '/pages/knowledge/index', text: '资料' },
-      { pagePath: '/pages/profile/index', text: '主页' }
+      { pagePath: 'pages/hub/index', text: '总览' },
+      { pagePath: 'pages/tasks/index', text: '待办' },
+      { pagePath: 'pages/knowledge/index', text: '资料' },
+      { pagePath: 'pages/profile/index', text: '主页' }
     ],
     safeBottom: 0
   },
@@ -23,7 +23,13 @@ Component({
       const { index, path } = e.currentTarget.dataset;
       this.setData({ selected: index });
       wx.vibrateShort({ type: 'light' });
-      wx.switchTab({ url: path });
+      const target = path?.startsWith('/') ? path : `/${path}`;
+      wx.switchTab({
+        url: target,
+        fail(err) {
+          console.error('switchTab failed', err);
+        }
+      });
     },
     setSelected(index) {
       this.setData({ selected: index });
