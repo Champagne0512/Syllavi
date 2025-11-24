@@ -75,17 +75,36 @@ Page({
         },
         () => this.updateFilteredFiles()
       );
+      wx.setStorageSync('resources_cache', {
+        folders,
+        files: this.data.files
+      });
     } catch (err) {
       console.warn('Supabase resources fallback', err);
-      this.setData(
-        {
-          folders: MOCK_FOLDERS,
-          files: MOCK_FILES,
-          activeFolder: MOCK_FOLDERS[0].name,
-          loading: false
-        },
-        () => this.updateFilteredFiles()
-      );
+      const cached = wx.getStorageSync('resources_cache');
+      if (cached && cached.files && cached.files.length) {
+        this.setData(
+          {
+            folders: cached.folders || MOCK_FOLDERS,
+            files: cached.files,
+            activeFolder:
+              (cached.folders && cached.folders[0] && cached.folders[0].name) ||
+              '全部',
+            loading: false
+          },
+          () => this.updateFilteredFiles()
+        );
+      } else {
+        this.setData(
+          {
+            folders: MOCK_FOLDERS,
+            files: MOCK_FILES,
+            activeFolder: MOCK_FOLDERS[0].name,
+            loading: false
+          },
+          () => this.updateFilteredFiles()
+        );
+      }
     }
   },
   updateFilteredFiles() {
@@ -95,6 +114,88 @@ Page({
         ? files
         : files.filter((file) => file.subject === activeFolder);
     this.setData({ filteredFiles: filtered });
+  },
+  handleFolderLongPress(e) {
+    const { name } = e.currentTarget.dataset;
+    if (!name) return;
+    // "全部" 为聚合视图，不提供长按操作
+    if (name === '全部') return;
+
+    const relatedFiles = this.data.files.filter((file) => file.subject === name);
+    if (!relatedFiles.length) return;
+
+    wx.showActionSheet({
+      itemList: ['重命名', '删除（移入“未分类”）'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          // 重命名
+          wx.showModal({
+            title: '重命名文件夹',
+            editable: true,
+            placeholderText: '输入新的科目名称',
+            success: async (modalRes) => {
+              const newName = (modalRes.content || '').trim();
+              if (!modalRes.confirm || !newName || newName === name) return;
+              wx.showLoading({ title: '重命名中...' });
+              try {
+                await Promise.all(
+                  relatedFiles.map((file) =>
+                    updateResource(file.id, { subject: newName })
+                  )
+                );
+                const files = this.data.files.map((file) =>
+                  file.subject === name
+                    ? { ...file, subject: newName }
+                    : file
+                );
+                this.setData(
+                  {
+                    files,
+                    activeFolder: newName
+                  },
+                  () => this.loadResources()
+                );
+              } catch (err) {
+                console.warn('rename folder failed', err);
+                wx.showToast({ title: '重命名失败', icon: 'none' });
+              } finally {
+                wx.hideLoading();
+              }
+            }
+          });
+        } else if (res.tapIndex === 1) {
+          // 删除：将文件移动到“未分类”
+          wx.showModal({
+            title: '删除文件夹',
+            content: '仅删除分类，不会删除文件，文件将移动到“未分类”。确认继续？',
+            success: async (modalRes) => {
+              if (!modalRes.confirm) return;
+              wx.showLoading({ title: '处理中...' });
+              try {
+                await Promise.all(
+                  relatedFiles.map((file) =>
+                    updateResource(file.id, { subject: '未分类' })
+                  )
+                );
+                const files = this.data.files.map((file) =>
+                  file.subject === name
+                    ? { ...file, subject: '未分类' }
+                    : file
+                );
+                this.setData({ files, activeFolder: '全部' }, () =>
+                  this.updateFilteredFiles()
+                );
+              } catch (err) {
+                console.warn('delete folder failed', err);
+                wx.showToast({ title: '操作失败', icon: 'none' });
+              } finally {
+                wx.hideLoading();
+              }
+            }
+          });
+        }
+      }
+    });
   },
   selectFolder(e) {
     const { name } = e.currentTarget.dataset;
@@ -216,10 +317,35 @@ Page({
       wx.showToast({ title: '缺少文件地址', icon: 'none' });
       return;
     }
+
+    // 若已存在摘要，优先展示缓存，并提供重新生成选项
+    if (file.aiSummary) {
+      wx.showModal({
+        title: 'AI 划重点',
+        content: file.aiSummary.slice(0, 800),
+        confirmText: '重新生成',
+        cancelText: '关闭',
+        success: (res) => {
+          if (res.confirm) {
+            this.generateSummary(file);
+          }
+        }
+      });
+      return;
+    }
+
+    this.generateSummary(file);
+  },
+  async generateSummary(file) {
     wx.showLoading({ title: 'AI 划重点中...' });
     try {
       const summary = await summarizeFile(file.url, file.type);
       await updateResource(file.id, { ai_summary: summary });
+      // 同步更新本地缓存
+      const files = this.data.files.map((f) =>
+        f.id === file.id ? { ...f, aiSummary: summary } : f
+      );
+      this.setData({ files }, () => this.updateFilteredFiles());
       wx.hideLoading();
       wx.showModal({
         title: 'AI 划重点',

@@ -16,7 +16,7 @@
     <button class="ghost" bindtap="stopFocus" disabled="{{!running}}">结束</button>
   </view>
 
-  <view class="slider-block">
+  <view class="slider-block" wx:if="{{!running}}">
     <text class="muted">时长 (分钟)</text>
     <slider min="15" max="90" step="5" value="{{minutes}}" bindchange="adjustMinutes" />
   </view>
@@ -33,6 +33,9 @@
         <text class="muted">Streak</text>
       </view>
     </view>
-    <button class="ghost">保存到相册</button>
+    <button class="ghost" bindtap="saveCard">保存到相册</button>
   </view>
+
+  <!-- 分享卡片绘制用 canvas，常驻但不占主视觉 -->
+  <canvas canvas-id="focusCard" class="focus-canvas"></canvas>
 </view>

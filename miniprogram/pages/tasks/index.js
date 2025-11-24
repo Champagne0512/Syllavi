@@ -40,6 +40,12 @@ const MOCK_TASKS = [
   }
 ];
 
+// 订阅消息模板 ID（需在小程序后台配置后替换为真实 ID）
+const TASK_SUBSCRIBE_TEMPLATE_IDS = [
+  // 'TEMPLATE_ID_DEADLINE_1',
+  // 'TEMPLATE_ID_DEADLINE_2'
+];
+
 function formatDeadline(deadline) {
   if (!deadline) return 'TBD';
   const date = new Date(deadline);
@@ -106,9 +112,15 @@ Page({
         };
       });
       this.setData({ tasks, loadingTasks: false });
+      // 缓存任务列表，离线时回退使用
+      wx.setStorageSync('tasks_cache', tasks);
     } catch (err) {
       console.warn('Supabase tasks fallback', err);
-      this.setData({ tasks: MOCK_TASKS, loadingTasks: false });
+      const cached = wx.getStorageSync('tasks_cache');
+      this.setData({
+        tasks: cached && cached.length ? cached : MOCK_TASKS,
+        loadingTasks: false
+      });
     }
   },
   switchTab(e) {
@@ -230,6 +242,17 @@ Page({
     this.setData({ saving: true });
     wx.showLoading({ title: '保存中...' });
     try {
+      // 首次创建任务时，尝试申请订阅消息权限
+      if (!editingTask && TASK_SUBSCRIBE_TEMPLATE_IDS.length) {
+        try {
+          wx.requestSubscribeMessage({
+            tmplIds: TASK_SUBSCRIBE_TEMPLATE_IDS
+          });
+        } catch (subscribeErr) {
+          console.warn('request subscribe failed', subscribeErr);
+        }
+      }
+
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
       const payload = {

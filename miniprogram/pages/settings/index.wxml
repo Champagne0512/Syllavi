@@ -1,0 +1,36 @@
+<view class="settings-page">
+  <custom-navbar title="Syllaby" subtitle="设置" />
+
+  <scroll-view class="zen-scroll" scroll-y="true">
+    <view class="card">
+      <view class="section-head">
+        <text>个人信息</text>
+        <text class="muted mono">Profile</text>
+      </view>
+      <view class="field">
+        <text class="label">昵称</text>
+        <input class="input" placeholder="默认：同学" value="{{form.nickname}}" data-field="nickname" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">学校</text>
+        <input class="input" placeholder="例如：北京大学" value="{{form.school_name}}" data-field="school_name" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">年级</text>
+        <input class="input" placeholder="例如：大三" value="{{form.grade}}" data-field="grade" bindinput="onInput" />
+      </view>
+      <button class="primary-btn" loading="{{saving}}" bindtap="saveProfile">
+        保存
+      </button>
+    </view>
+
+    <view class="card">
+      <view class="section-head">
+        <text>账号</text>
+        <text class="muted mono">Account</text>
+      </view>
+      <button class="danger-btn" bindtap="logout">退出登录</button>
+    </view>
+  </scroll-view>
+</view>
+

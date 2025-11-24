@@ -1,0 +1,36 @@
+.settings-page {
+  min-height: 100vh;
+}
+
+.field {
+  margin-top: 24rpx;
+}
+
+.label {
+  font-size: 26rpx;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.input {
+  width: 100%;
+  padding: 20rpx 24rpx;
+  border-radius: 24rpx;
+  border: 1px solid rgba(28, 28, 30, 0.12);
+  box-sizing: border-box;
+}
+
+.primary-btn {
+  margin-top: 32rpx;
+  border-radius: 999rpx;
+  background: #1148C4;
+  color: #fff;
+}
+
+.danger-btn {
+  border-radius: 999rpx;
+  background: #fff1f0;
+  color: #cf1322;
+  border: 1px solid #ffa39e;
+}
+

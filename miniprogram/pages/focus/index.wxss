@@ -89,3 +89,12 @@
 .big {
   font-size: 64rpx;
 }
+
+.focus-canvas {
+  /* 放在视图之外，仅用于导出分享卡片 */
+  position: absolute;
+  width: 600rpx;
+  height: 800rpx;
+  left: -9999rpx;
+  top: -9999rpx;
+}

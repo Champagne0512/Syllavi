@@ -1,24 +1,105 @@
-<view class="login-page">
+<view class="login-page" style="background: #F7F7F5;">
   <custom-navbar title="Syllaby" subtitle="Academic Zen" />
 
-  <view class="hero card">
-    <text class="brand">Syllaby</text>
-    <text class="tagline">Academic Zen · 学术禅意</text>
-    <text class="muted copy">
-      一键导入课程表 · 集中管理待办 · AI 划重点 · 番茄专注。
-    </text>
-  </view>
+  <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
+    <view class="hero-section">
+      <view class="hero card glass">
+        <text class="brand">Syllaby</text>
+        <text class="tagline">Academic Zen · 学术禅意</text>
+        <text class="muted copy">
+          一键导入课程表 · 集中管理待办 · AI 划重点 · 番茄专注。
+        </text>
+      </view>
+    </view>
 
-  <view class="actions">
-    <button class="primary" open-type="getUserInfo" bindtap="handleLogin" loading="{{loading}}">
-      微信一键登录
-    </button>
-    <button class="ghost" bindtap="skipLogin">
-      先体验 Demo
-    </button>
-    <text class="muted legal">
-      登录即表示同意《用户协议》和《隐私政策》
-    </text>
-  </view>
+    <view class="auth-section">
+      <view class="auth card glass">
+        <view class="section-head">
+          <text>账号登录</text>
+          <text class="muted mono">Login</text>
+        </view>
+
+        <view class="segment glass">
+          <text class="segment-item {{authMode === 'login' ? 'chip-active' : ''}}" data-mode="login" bindtap="setAuthMode">
+            账号登录
+          </text>
+          <text class="segment-item {{authMode === 'register' ? 'chip-active' : ''}}" data-mode="register" bindtap="setAuthMode">
+            快速注册
+          </text>
+        </view>
+
+        <view class="input-group">
+          <input
+            class="zen-input"
+            placeholder="邮箱"
+            value="{{form.email}}"
+            bindinput="handleInput"
+            data-field="email"
+            type="text"
+            confirm-type="next"
+          />
+          <input
+            class="zen-input"
+            placeholder="{{authMode === 'register' ? '设置密码（至少6位）' : '密码'}}"
+            value="{{form.password}}"
+            bindinput="handleInput"
+            data-field="password"
+            password="true"
+            confirm-type="{{authMode === 'register' ? 'next' : 'done'}}"
+          />
+          <input
+            class="zen-input"
+            wx:if="{{authMode === 'register'}}"
+            placeholder="确认密码"
+            value="{{form.confirm}}"
+            bindinput="handleInput"
+            data-field="confirm"
+            password="true"
+            confirm-type="done"
+          />
+        </view>
+
+        <text class="error" wx:if="{{errorMessage}}">{{errorMessage}}</text>
+
+        <button
+          class="primary-btn"
+          bindtap="handleEmailAuth"
+          loading="{{formLoading}}"
+          disabled="{{!canSubmit || formLoading}}"
+        >
+          {{authMode === 'login' ? '邮箱登录' : '注册并登录'}}
+        </button>
+      </view>
+    </view>
+
+    <view class="actions-section">
+      <view class="actions card glass">
+        <view class="section-head">
+          <text>其他登录方式</text>
+          <text class="muted mono">Alternative</text>
+        </view>
+
+        <button
+          class="wechat-btn"
+          open-type="getUserInfo"
+          bindtap="handleWechatLogin"
+          loading="{{wechatLoading}}"
+        >
+          微信一键登录
+        </button>
+        <button class="ghost-btn" bindtap="skipLogin">
+          游客体验
+        </button>
+        <text class="muted helper">
+          支持邮箱密码和微信授权登录，亦可直接体验游客模式
+        </text>
+      </view>
+    </view>
+
+    <view class="legal-section">
+      <text class="muted legal">
+        登录即表示同意《用户协议》和《隐私政策》
+      </text>
+    </view>
+  </scroll-view>
 </view>
-
