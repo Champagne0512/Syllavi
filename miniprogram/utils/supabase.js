@@ -115,7 +115,7 @@ export function emailPasswordLogin(email, password) {
 export function emailPasswordSignUp(email, password) {
   return new Promise((resolve, reject) => {
     wx.request({
-      url: `${SUPABASE_URL}/auth/v1/signup`,
+      url: `${SUPABASE_URL}/functions/v1/email-signup`,
       method: 'POST',
       data: { email, password },
       header: {
