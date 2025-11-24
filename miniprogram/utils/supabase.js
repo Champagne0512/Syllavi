@@ -367,11 +367,31 @@ export function fetchProfile(userId = DEMO_USER_ID) {
 }
 
 export function updateProfile(userId, patch) {
-  return request('profiles', {
-    method: 'PATCH',
-    query: `id=eq.${userId}`,
-    headers: { Prefer: 'return=representation' },
-    data: patch
+  const payload = {
+    p_nickname: patch?.nickname ?? null,
+    p_school_name: patch?.school_name ?? null,
+    p_grade: patch?.grade ?? null,
+    p_bio: patch?.bio ?? null,
+    p_avatar_url: patch?.avatar_url ?? null
+  };
+
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/rest/v1/rpc/update_profile_info`,
+      method: 'POST',
+      data: payload,
+      header: buildHeaders(),
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
   });
 }
 
