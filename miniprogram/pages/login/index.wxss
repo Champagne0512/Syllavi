@@ -78,7 +78,7 @@
 .segment-item {
   flex: 1;
   text-align: center;
-  padding: 20rpx 0;
+  padding: 16rpx 0 24rpx 0;
   border-radius: 52rpx;
   font-size: 26rpx;
   color: rgba(28, 28, 30, 0.4);
@@ -118,13 +118,15 @@
   width: 100%;
   border-radius: 999rpx;
   height: 96rpx;
-  line-height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
   background: #1148C4;
   color: #fff;
   border: none;
   margin-top: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .primary-btn[disabled] {
@@ -147,26 +149,30 @@
   width: 100%;
   border-radius: 999rpx;
   height: 96rpx;
-  line-height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
   background: #07C160;
   color: #fff;
   border: none;
   margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ghost-btn {
   width: 100%;
   border-radius: 999rpx;
   height: 96rpx;
-  line-height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
   border: 1px solid rgba(28, 28, 30, 0.24);
   background: transparent;
   color: #1C1C1E;
   margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .helper {

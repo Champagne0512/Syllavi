@@ -7,7 +7,8 @@ import {
   fetchResources,
   fetchAchievements,
   fetchLearningHeatmap,
-  updateProfile
+  updateProfile,
+  uploadToStorage
 } from '../../utils/supabase';
 
 // 内联年级选项，避免模块依赖问题
@@ -88,7 +89,8 @@ Page({
       nickname: '',
       school_name: '',
       grade: '',
-      bio: ''
+      bio: '',
+      avatar_url: ''
     },
     gradeOptions: GRADE_PICKER_OPTIONS,
     gradePickerIndex: GRADE_PICKER_OPTIONS.indexOf(GRADE_OPTION_NONE)
@@ -143,7 +145,8 @@ Page({
           nickname: profile.nickname || userInfo?.nickName || '同学',
           school_name: profile.school_name || '',
           grade: normalizedGrade,
-          bio: profile.bio || '让学习成为一种习惯'
+          bio: profile.bio || '让学习成为一种习惯',
+          avatar_url: profile.avatar_url || userInfo?.avatarUrl || ''
         },
         gradePickerIndex: getGradePickerIndex(normalizedGrade)
       });
@@ -316,7 +319,8 @@ Page({
         nickname: profile.nickname || '同学',
         school_name: profile.school_name || '',
         grade,
-        bio: profile.bio || ''
+        bio: profile.bio || '',
+        avatar_url: profile.avatar_url || ''
       },
       gradePickerIndex: getGradePickerIndex(grade)
     });
@@ -350,6 +354,68 @@ Page({
     return true;
   },
 
+  chooseAvatar() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      maxDuration: 30,
+      camera: 'back',
+      success: (res) => {
+        const tempFilePath = res.tempFiles[0].tempFilePath;
+        
+        // 压缩图片
+        wx.compressImage({
+          src: tempFilePath,
+          quality: 80,
+          success: (compressRes) => {
+            this.setData({
+              'editForm.avatar_url': compressRes.tempFilePath
+            });
+          },
+          fail: () => {
+            // 压缩失败，使用原图
+            this.setData({
+              'editForm.avatar_url': tempFilePath
+            });
+          }
+        });
+      },
+      fail: (err) => {
+        console.log('选择头像失败', err);
+      }
+    });
+  },
+
+  resetAvatar() {
+    wx.showModal({
+      title: '确认重置头像',
+      content: '确定要使用默认头像吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({
+            'editForm.avatar_url': ''
+          });
+        }
+      }
+    });
+  },
+
+  getImageBase64(filePath) {
+    return new Promise((resolve, reject) => {
+      wx.getFileSystemManager().readFile({
+        filePath,
+        encoding: 'base64',
+        success: (res) => {
+          resolve(res.data);
+        },
+        fail: (err) => {
+          reject(err);
+        }
+      });
+    });
+  },
+
   async saveProfile() {
     if (this.data.savingProfile) return;
     const app = getApp();
@@ -378,11 +444,34 @@ Page({
       wx.showToast({ title: '年级仅支持：大一至博士', icon: 'none' });
       return;
     }
+    let avatarUrl = this.data.editForm.avatar_url;
+    
+    // 如果是新选择的图片（临时路径），转换为 Base64 存储
+    if (avatarUrl && avatarUrl.startsWith('http://tmp/')) {
+      try {
+        wx.showLoading({ title: '处理头像中...' });
+        
+        console.log('转换头像为 Base64');
+        const base64Data = await this.getImageBase64(avatarUrl);
+        avatarUrl = `data:image/jpeg;base64,${base64Data}`;
+        console.log('头像 Base64 转换成功，长度:', base64Data.length);
+        
+        wx.hideLoading();
+      } catch (error) {
+        wx.hideLoading();
+        console.error('头像处理失败:', error);
+        wx.showToast({ title: '头像处理失败', icon: 'none' });
+        this.setData({ savingProfile: false });
+        return;
+      }
+    }
+
     const payload = {
       nickname,
       school_name: schoolName,
       grade: normalizedGrade || null,
-      bio: (this.data.editForm.bio || '').trim()
+      bio: (this.data.editForm.bio || '').trim(),
+      avatar_url: avatarUrl || null
     };
     this.setData({ savingProfile: true });
     wx.showLoading({ title: '保存中...' });
@@ -391,7 +480,8 @@ Page({
       const nextProfile = {
         ...this.data.profile,
         ...payload,
-        grade: normalizedGrade || ''
+        grade: normalizedGrade || '',
+        avatar_url: avatarUrl || this.data.profile.avatar_url || ''
       };
       this.setData({
         profile: nextProfile,
