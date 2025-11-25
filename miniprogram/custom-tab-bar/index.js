@@ -16,6 +16,7 @@ Component({
         ? windowInfo.screenHeight - windowInfo.safeArea.bottom
         : windowInfo.safeArea?.bottomInset || 0;
       this.setData({ safeBottom });
+      this.syncSelected();
     }
   },
   methods: {
@@ -33,6 +34,16 @@ Component({
     },
     setSelected(index) {
       this.setData({ selected: index });
+    },
+    syncSelected() {
+      const pages = getCurrentPages();
+      const current = pages[pages.length - 1];
+      if (!current || !current.route) return;
+      const route = current.route.startsWith('/') ? current.route.slice(1) : current.route;
+      const matchedIndex = this.data.list.findIndex((item) => item.pagePath === route);
+      if (matchedIndex >= 0 && matchedIndex !== this.data.selected) {
+        this.setData({ selected: matchedIndex });
+      }
     }
   }
 });

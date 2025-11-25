@@ -147,8 +147,8 @@
   height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
-  background: linear-gradient(135deg, var(--sage), var(--coral));
-  color: #fff;
+  background: linear-gradient(135deg, rgba(47, 87, 134, 0.95), rgba(224, 142, 121, 0.95));
+  color: #2D3436;
   border: none;
   margin-top: 16rpx;
   display: flex;
@@ -157,7 +157,8 @@
 }
 
 .primary-btn[disabled] {
-  opacity: 0.45;
+  opacity: 0.5;
+  color: rgba(45, 52, 54, 0.7);
 }
 
 .actions-section {
@@ -180,7 +181,7 @@
   font-size: 30rpx;
   font-weight: 600;
   background: linear-gradient(135deg, #0BAB7C, #00C39A);
-  color: #fff;
+  color: #2D3436;
   border: none;
   margin-bottom: 16rpx;
   display: flex;
@@ -196,7 +197,7 @@
   font-weight: 600;
   border: 1px solid rgba(45, 52, 54, 0.15);
   background: rgba(255, 255, 255, 0.55);
-  color: var(--day-text);
+  color: #2D3436;
   margin-bottom: 16rpx;
   display: flex;
   align-items: center;
