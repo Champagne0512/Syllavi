@@ -180,7 +180,17 @@
       </view>
       <view class="sheet-field">
         <text class="label">年级</text>
-        <input class="input" value="{{editForm.grade}}" data-field="grade" bindinput="onEditInput" placeholder="例如：大三" />
+        <picker
+          mode="selector"
+          range="{{gradeOptions}}"
+          value="{{gradePickerIndex}}"
+          bindchange="onGradePickerChange"
+        >
+          <view class="picker-display {{editForm.grade ? '' : 'placeholder'}}">
+            <text>{{editForm.grade || '请选择年级（可暂不填写）'}}</text>
+            <text class="picker-arrow">⌄</text>
+          </view>
+        </picker>
       </view>
       <view class="sheet-field">
         <text class="label">个性签名</text>

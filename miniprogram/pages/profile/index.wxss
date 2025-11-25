@@ -370,6 +370,10 @@
   color: rgba(28, 28, 30, 0.7);
 }
 
+.sheet-field picker {
+  width: 100%;
+}
+
 .sheet-field .input,
 .sheet-field .textarea {
   width: 100%;
@@ -379,10 +383,37 @@
   box-sizing: border-box;
   font-size: 28rpx;
   background: rgba(247, 247, 245, 0.6);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+  line-height: 1.4;
+  min-height: 72rpx;
 }
 
 .sheet-field .textarea {
   min-height: 140rpx;
+  line-height: 1.6;
+}
+
+.picker-display {
+  width: 100%;
+  border-radius: 20rpx;
+  border: 1px solid rgba(28, 28, 30, 0.12);
+  padding: 20rpx 24rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  background: rgba(247, 247, 245, 0.6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  line-height: 1.4;
+}
+
+.picker-display.placeholder {
+  color: rgba(28, 28, 30, 0.4);
+}
+
+.picker-arrow {
+  font-size: 32rpx;
+  color: rgba(28, 28, 30, 0.4);
 }
 
 .primary-btn,

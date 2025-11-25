@@ -1,4 +1,5 @@
 import {
+  DEMO_USER_ID,
   fetchProfile,
   fetchFocusStats,
   fetchTasks,
@@ -8,6 +9,16 @@ import {
   fetchLearningHeatmap,
   updateProfile
 } from '../../utils/supabase';
+
+// 内联年级选项，避免模块依赖问题
+const ALLOWED_GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士'];
+const GRADE_OPTION_NONE = '暂不填写';
+const GRADE_PICKER_OPTIONS = [...ALLOWED_GRADES, GRADE_OPTION_NONE];
+
+const normalizeGradeInput = (grade) => {
+  if (!grade) return '';
+  return ALLOWED_GRADES.includes(grade) ? grade : '';
+};
 
 const DEFAULT_STATS = {
   today_focus_minutes: 0,
@@ -32,6 +43,25 @@ const DEFAULT_ACHIEVEMENTS = [
   { id: 'continuous_7', name: '坚持不懈', desc: '连续学习7天', icon: '📅', unlocked: false },
   { id: 'continuous_30', name: '习惯养成', desc: '连续学习30天', icon: '🏆', unlocked: false }
 ];
+
+const sanitizeGrade = (grade) => {
+  if (typeof grade !== 'string') return '';
+  return normalizeGradeInput(grade.trim());
+};
+
+const getGradePickerIndex = (grade) => {
+  const options = GRADE_PICKER_OPTIONS;
+  const fallbackIndex = options.indexOf(GRADE_OPTION_NONE);
+  const normalized = sanitizeGrade(grade);
+  if (!normalized) return fallbackIndex;
+  const idx = options.indexOf(normalized);
+  return idx >= 0 ? idx : fallbackIndex;
+};
+
+const formatGradeForSave = (grade) => {
+  const normalized = sanitizeGrade(grade);
+  return normalized || null;
+};
 
 Page({
   data: {
@@ -59,7 +89,9 @@ Page({
       school_name: '',
       grade: '',
       bio: ''
-    }
+    },
+    gradeOptions: GRADE_PICKER_OPTIONS,
+    gradePickerIndex: GRADE_PICKER_OPTIONS.indexOf(GRADE_OPTION_NONE)
   },
 
   onLoad() {
@@ -98,20 +130,22 @@ Page({
       // 获取微信用户信息作为默认头像
       const userInfo = wx.getStorageSync('userInfo');
 
+      const normalizedGrade = sanitizeGrade(profile.grade || '');
       this.setData({
         profile: {
           nickname: profile.nickname || userInfo?.nickName || '同学',
           school_name: profile.school_name || '',
-          grade: profile.grade || '',
+          grade: normalizedGrade,
           avatar_url: profile.avatar_url || userInfo?.avatarUrl || '',
           bio: profile.bio || '让学习成为一种习惯'
         },
         editForm: {
           nickname: profile.nickname || userInfo?.nickName || '同学',
           school_name: profile.school_name || '',
-          grade: profile.grade || '',
+          grade: normalizedGrade,
           bio: profile.bio || '让学习成为一种习惯'
-        }
+        },
+        gradePickerIndex: getGradePickerIndex(normalizedGrade)
       });
 
       // 缓存profile
@@ -275,14 +309,16 @@ Page({
 
   editProfile() {
     const { profile } = this.data;
+    const grade = sanitizeGrade(profile.grade || '');
     this.setData({
       editModalVisible: true,
       editForm: {
         nickname: profile.nickname || '同学',
         school_name: profile.school_name || '',
-        grade: profile.grade || '',
+        grade,
         bio: profile.bio || ''
-      }
+      },
+      gradePickerIndex: getGradePickerIndex(grade)
     });
   },
 
@@ -297,6 +333,19 @@ Page({
     this.setData({ [`editForm.${field}`]: e.detail.value });
   },
 
+  onGradePickerChange(e) {
+    const options = this.data.gradeOptions || [];
+    const fallbackIndex = options.indexOf(GRADE_OPTION_NONE);
+    const pickedIndex = Number(e?.detail?.value);
+    const index = Number.isNaN(pickedIndex) ? fallbackIndex : pickedIndex;
+    const selected = options[index] || GRADE_OPTION_NONE;
+    const gradeValue = selected === GRADE_OPTION_NONE ? '' : selected;
+    this.setData({
+      gradePickerIndex: index,
+      'editForm.grade': gradeValue
+    });
+  },
+
   stopTouchMove() {
     return true;
   },
@@ -305,30 +354,59 @@ Page({
     if (this.data.savingProfile) return;
     const app = getApp();
     const userId = app?.globalData?.supabase?.userId;
-    if (!userId) {
-      wx.showToast({ title: '请先登录', icon: 'none' });
+    const accessToken =
+      wx.getStorageSync('access_token') || app?.globalData?.supabase?.accessToken;
+    if (!userId || userId === DEMO_USER_ID || !accessToken) {
+      wx.showModal({
+        title: '请先登录',
+        content: '登录后才能同步和保存个人资料。',
+        confirmText: '去登录',
+        cancelText: '稍后',
+        success(res) {
+          if (res?.confirm) {
+            wx.navigateTo({ url: '/pages/login/index' });
+          }
+        }
+      });
+      return;
+    }
+    const nickname = (this.data.editForm.nickname || '').trim() || '同学';
+    const schoolName = (this.data.editForm.school_name || '').trim();
+    const gradeInput = (this.data.editForm.grade || '').trim();
+    const normalizedGrade = sanitizeGrade(gradeInput);
+    if (gradeInput && !normalizedGrade) {
+      wx.showToast({ title: '年级仅支持：大一至博士', icon: 'none' });
       return;
     }
     const payload = {
-      nickname: (this.data.editForm.nickname || '').trim() || '同学',
-      school_name: (this.data.editForm.school_name || '').trim(),
-      grade: (this.data.editForm.grade || '').trim(),
+      nickname,
+      school_name: schoolName,
+      grade: normalizedGrade || null,
       bio: (this.data.editForm.bio || '').trim()
     };
     this.setData({ savingProfile: true });
     wx.showLoading({ title: '保存中...' });
     try {
       await updateProfile(userId, payload);
-      const nextProfile = { ...this.data.profile, ...payload };
+      const nextProfile = {
+        ...this.data.profile,
+        ...payload,
+        grade: normalizedGrade || ''
+      };
       this.setData({
         profile: nextProfile,
-        editModalVisible: false
+        editModalVisible: false,
+        gradePickerIndex: getGradePickerIndex(normalizedGrade)
       });
       wx.setStorageSync('profile', nextProfile);
       wx.showToast({ title: '已更新', icon: 'success' });
     } catch (err) {
       console.warn('update profile failed', err);
-      wx.showToast({ title: '保存失败', icon: 'none' });
+      if (err?.statusCode === 401) {
+        wx.showToast({ title: '登录过期，请重新登录', icon: 'none' });
+      } else {
+        wx.showToast({ title: '保存失败', icon: 'none' });
+      }
     } finally {
       wx.hideLoading();
       this.setData({ savingProfile: false });

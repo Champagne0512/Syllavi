@@ -17,7 +17,21 @@
       </view>
       <view class="field">
         <text class="label">年级</text>
-        <input class="input" placeholder="例如：大三" value="{{form.grade}}" data-field="grade" bindinput="onInput" />
+        <picker
+          mode="selector"
+          range="{{gradeOptions}}"
+          value="{{gradePickerIndex}}"
+          bindchange="onGradePickerChange"
+        >
+          <view class="picker-display {{form.grade ? '' : 'placeholder'}}">
+            <text>{{form.grade || '请选择年级（可暂不填写）'}}</text>
+            <text class="picker-arrow">⌄</text>
+          </view>
+        </picker>
+      </view>
+      <view class="field">
+        <text class="label">个人简介</text>
+        <textarea class="textarea" placeholder="让学习成为一种习惯" value="{{form.bio}}" data-field="bio" bindinput="onInput"></textarea>
       </view>
       <button class="primary-btn" loading="{{saving}}" bindtap="saveProfile">
         保存
@@ -33,4 +47,3 @@
     </view>
   </scroll-view>
 </view>
-

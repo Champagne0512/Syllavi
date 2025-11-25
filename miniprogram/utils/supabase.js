@@ -1,8 +1,28 @@
+// 内联年级验证逻辑，避免模块依赖问题
+const ALLOWED_GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士'];
+const normalizeGradeInput = (grade) => {
+  if (!grade) return '';
+  return ALLOWED_GRADES.includes(grade) ? grade : '';
+};
+
 export const SUPABASE_URL = 'https://nqixahasfhwofusuwsal.supabase.co';
 export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xaXhhaGFzZmh3b2Z1c3V3c2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NjE1MjcsImV4cCI6MjA3OTIzNzUyN30.o0MpDV0Q_84iv2xY2TSNBwyaJh0BP8n8pLaIxS1ott4';
 
 export const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+const normalizeTextField = (value) => {
+  if (value === undefined || value === null) return null;
+  const str = String(value).trim();
+  return str === '' ? null : str;
+};
+
+const normalizeGradeField = (value) => {
+  const normalized = normalizeTextField(value);
+  if (!normalized) return null;
+  const allowed = normalizeGradeInput(normalized);
+  return allowed || null;
+};
 
 function buildHeaders(extra = {}) {
   const token = wx.getStorageSync('access_token');
@@ -367,13 +387,17 @@ export function fetchProfile(userId = DEMO_USER_ID) {
 }
 
 export function updateProfile(userId, patch) {
+  console.log('updateProfile called with:', { userId, patch });
+  
   const payload = {
-    p_nickname: patch?.nickname ?? null,
-    p_school_name: patch?.school_name ?? null,
-    p_grade: patch?.grade ?? null,
-    p_bio: patch?.bio ?? null,
-    p_avatar_url: patch?.avatar_url ?? null
+    p_nickname: normalizeTextField(patch?.nickname),
+    p_school_name: normalizeTextField(patch?.school_name),
+    p_grade: normalizeGradeField(patch?.grade),
+    p_bio: normalizeTextField(patch?.bio),
+    p_avatar_url: normalizeTextField(patch?.avatar_url)
   };
+
+  console.log('Sending payload to database:', payload);
 
   return new Promise((resolve, reject) => {
     wx.request({
