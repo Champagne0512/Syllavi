@@ -193,6 +193,22 @@
         </picker>
       </view>
       <view class="sheet-field">
+        <text class="label">头像</text>
+        <view class="avatar-upload">
+          <image class="avatar-preview" src="{{editForm.avatar_url || '/static/default-avatar.png'}}" mode="aspectFill" />
+          <view class="avatar-actions">
+            <view class="upload-btn" bindtap="chooseAvatar">
+              <text class="upload-icon">📷</text>
+              <text class="upload-text">更换头像</text>
+            </view>
+            <view class="reset-btn" wx:if="{{editForm.avatar_url}}" bindtap="resetAvatar">
+              <text class="reset-icon">🔄</text>
+              <text class="reset-text">使用默认</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="sheet-field">
         <text class="label">个性签名</text>
         <textarea class="textarea" value="{{editForm.bio}}" data-field="bio" bindinput="onEditInput" placeholder="写点自我介绍吧" maxlength="60"></textarea>
       </view>

@@ -456,24 +456,36 @@ function uploadToStorage(bucket, filePath, fileName) {
   const userId = wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id') || DEMO_USER_ID;
   const storagePath = `${userId}/${Date.now()}_${fileName}`;
 
+  console.log('上传配置:', { bucket, filePath, fileName, userId, storagePath, token: !!token });
+
   return new Promise((resolve, reject) => {
     wx.uploadFile({
       url: `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`,
       filePath,
       name: 'file',
       header: {
-        Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
-        apikey: SUPABASE_ANON_KEY
+        Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`
       },
       success(res) {
+        console.log('上传响应:', { 
+          statusCode: res.statusCode, 
+          data: res.data
+        });
+        
         if (res.statusCode === 200 || res.statusCode === 201) {
           const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`;
+          console.log('文件上传成功:', { publicUrl, path: storagePath });
           resolve({ publicUrl, path: storagePath });
         } else {
-          reject(new Error('Upload failed'));
+          // 简化错误处理
+          const error = new Error(`上传失败，状态码: ${res.statusCode}`);
+          error.statusCode = res.statusCode;
+          error.data = res.data;
+          reject(error);
         }
       },
       fail(err) {
+        console.error('上传请求失败:', err);
         reject(err);
       }
     });
