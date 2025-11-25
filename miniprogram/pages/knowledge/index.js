@@ -1,5 +1,5 @@
-import { MORANDI_COLORS } from '../../utils/colors';
-import {
+const { MORANDI_COLORS } = require('../../utils/colors');
+const {
   createResource,
   deleteFromStorage,
   deleteResource,
@@ -7,7 +7,7 @@ import {
   summarizeFile,
   uploadToStorage,
   updateResource
-} from '../../utils/supabase';
+} = require('../../utils/supabase');
 
 const MOCK_FOLDERS = [
   { id: 1, name: '高数', count: 12, tone: '#9BB5CE' },

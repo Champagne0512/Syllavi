@@ -5,11 +5,20 @@ const normalizeGradeInput = (grade) => {
   return ALLOWED_GRADES.includes(grade) ? grade : '';
 };
 
-export const SUPABASE_URL = 'https://nqixahasfhwofusuwsal.supabase.co';
-export const SUPABASE_ANON_KEY =
+const SUPABASE_URL = 'https://nqixahasfhwofusuwsal.supabase.co';
+const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xaXhhaGFzZmh3b2Z1c3V3c2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NjE1MjcsImV4cCI6MjA3OTIzNzUyN30.o0MpDV0Q_84iv2xY2TSNBwyaJh0BP8n8pLaIxS1ott4';
 
-export const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+const EMPTY_FOCUS_STATS = Object.freeze({
+  today_minutes: 0,
+  week_minutes: 0,
+  total_minutes: 0,
+  session_count: 0,
+  streak_days: 0,
+  total_sessions: 0,
+  continuous_days: 0
+});
 
 const normalizeTextField = (value) => {
   if (value === undefined || value === null) return null;
@@ -60,7 +69,7 @@ function request(path, { method = 'GET', data = null, query = '', headers = {} }
 }
 
 // Auth & token helpers
-export function wechatLoginWithCode(code) {
+function wechatLoginWithCode(code) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/functions/v1/wechat-login`,
@@ -84,7 +93,7 @@ export function wechatLoginWithCode(code) {
   });
 }
 
-export function refreshToken(refreshToken) {
+function refreshToken(refreshToken) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
@@ -108,7 +117,7 @@ export function refreshToken(refreshToken) {
   });
 }
 
-export function emailPasswordLogin(email, password) {
+function emailPasswordLogin(email, password) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
@@ -132,7 +141,7 @@ export function emailPasswordLogin(email, password) {
   });
 }
 
-export function emailPasswordSignUp(email, password) {
+function emailPasswordSignUp(email, password) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/functions/v1/email-signup`,
@@ -187,7 +196,7 @@ function signupViaAuth(email, password) {
 // Domain data helpers
 
 // --- Course & schedule ---
-export function fetchWeekSchedule(userId = DEMO_USER_ID) {
+function fetchWeekSchedule(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
     'select=id,day_of_week,start_section,length,weeks,location,course:courses(id,name,color,location)',
@@ -196,7 +205,7 @@ export function fetchWeekSchedule(userId = DEMO_USER_ID) {
   return request('course_schedules', { query });
 }
 
-export function fetchCourses(userId = DEMO_USER_ID) {
+function fetchCourses(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
     'select=*',
@@ -205,7 +214,7 @@ export function fetchCourses(userId = DEMO_USER_ID) {
   return request('courses', { query });
 }
 
-export function createCourse(payload) {
+function createCourse(payload) {
   return request('courses', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
@@ -213,7 +222,7 @@ export function createCourse(payload) {
   });
 }
 
-export function updateCourse(id, patch) {
+function updateCourse(id, patch) {
   return request('courses', {
     method: 'PATCH',
     query: `id=eq.${id}`,
@@ -222,14 +231,14 @@ export function updateCourse(id, patch) {
   });
 }
 
-export function deleteCourse(id) {
+function deleteCourse(id) {
   return request('courses', {
     method: 'DELETE',
     query: `id=eq.${id}`
   });
 }
 
-export function createCourseSchedules(payloadArray) {
+function createCourseSchedules(payloadArray) {
   // 支持批量创建排课，payloadArray 是对象数组
   return request('course_schedules', {
     method: 'POST',
@@ -239,7 +248,7 @@ export function createCourseSchedules(payloadArray) {
 }
 
 // --- Tasks ---
-export function fetchTasks(userId = DEMO_USER_ID) {
+function fetchTasks(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
     'select=id,type,title,description,deadline,is_completed,progress,related_course_id',
@@ -248,7 +257,7 @@ export function fetchTasks(userId = DEMO_USER_ID) {
   return request('tasks', { query });
 }
 
-export function createTask(payload) {
+function createTask(payload) {
   return request('tasks', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
@@ -256,7 +265,7 @@ export function createTask(payload) {
   });
 }
 
-export function updateTask(id, patch) {
+function updateTask(id, patch) {
   return request('tasks', {
     method: 'PATCH',
     query: `id=eq.${id}`,
@@ -265,18 +274,18 @@ export function updateTask(id, patch) {
   });
 }
 
-export function updateTaskCompletion(id, isCompleted) {
+function updateTaskCompletion(id, isCompleted) {
   return updateTask(id, { is_completed: isCompleted });
 }
 
-export function deleteTask(id) {
+function deleteTask(id) {
   return request('tasks', {
     method: 'DELETE',
     query: `id=eq.${id}`
   });
 }
 
-export function fetchResources(userId = DEMO_USER_ID) {
+function fetchResources(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
     'select=id,file_name,file_url,file_type,file_size,subject,ai_summary,created_at',
@@ -285,7 +294,7 @@ export function fetchResources(userId = DEMO_USER_ID) {
   return request('resources', { query });
 }
 
-export function createResource(payload) {
+function createResource(payload) {
   return request('resources', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
@@ -293,7 +302,7 @@ export function createResource(payload) {
   });
 }
 
-export function updateResource(id, patch) {
+function updateResource(id, patch) {
   return request('resources', {
     method: 'PATCH',
     query: `id=eq.${id}`,
@@ -302,7 +311,7 @@ export function updateResource(id, patch) {
   });
 }
 
-export function deleteResource(id) {
+function deleteResource(id) {
   return request('resources', {
     method: 'DELETE',
     query: `id=eq.${id}`
@@ -310,7 +319,7 @@ export function deleteResource(id) {
 }
 
 // --- Focus sessions ---
-export function createFocusSession(payload) {
+function createFocusSession(payload) {
   return request('focus_sessions', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
@@ -318,7 +327,29 @@ export function createFocusSession(payload) {
   });
 }
 
-export function fetchFocusStats(userId = DEMO_USER_ID) {
+function normalizeFocusStats(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return { ...EMPTY_FOCUS_STATS };
+  }
+
+  const today = Number(payload.today_minutes ?? payload.today_focus_minutes ?? 0) || 0;
+  const week = Number(payload.week_minutes ?? payload.week_focus_minutes ?? 0) || 0;
+  const total = Number(payload.total_minutes ?? payload.total_focus_minutes ?? 0) || 0;
+  const sessions = Number(payload.session_count ?? payload.total_sessions ?? 0) || 0;
+  const streak = Number(payload.streak_days ?? payload.continuous_days ?? 0) || 0;
+
+  return {
+    today_minutes: today,
+    week_minutes: week,
+    total_minutes: total,
+    session_count: sessions,
+    streak_days: streak,
+    total_sessions: sessions,
+    continuous_days: streak
+  };
+}
+
+function fetchFocusStats(userId = DEMO_USER_ID) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/rest/v1/rpc/get_focus_stats`,
@@ -327,13 +358,13 @@ export function fetchFocusStats(userId = DEMO_USER_ID) {
       header: buildHeaders(),
       success(res) {
         if (res.statusCode === 404) {
-          // 函数未部署时返回空数据，避免前端整体失败
-          resolve(null);
+          // 函数未部署时返回默认值，避免前端整体失败
+          resolve({ ...EMPTY_FOCUS_STATS });
           return;
         }
         if (res.statusCode >= 200 && res.statusCode < 300) {
           const payload = Array.isArray(res.data) ? res.data[0] : res.data;
-          resolve(payload || null);
+          resolve(normalizeFocusStats(payload));
         } else {
           reject(res.data || res);
         }
@@ -345,7 +376,7 @@ export function fetchFocusStats(userId = DEMO_USER_ID) {
   });
 }
 
-export function fetchFocusSessions(userId = DEMO_USER_ID) {
+function fetchFocusSessions(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
     'select=*',
@@ -356,7 +387,7 @@ export function fetchFocusSessions(userId = DEMO_USER_ID) {
 }
 
 // --- Room reports (空教室众包, P2) ---
-export function fetchRoomReports() {
+function fetchRoomReports() {
   // 空教室信息对所有用户可见，这里不按用户过滤
   const query = [
     'select=id,building,room_name,floor,status,features,expires_at',
@@ -365,7 +396,7 @@ export function fetchRoomReports() {
   return request('room_reports', { query });
 }
 
-export function createRoomReport(payload) {
+function createRoomReport(payload) {
   return request('room_reports', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
@@ -373,7 +404,7 @@ export function createRoomReport(payload) {
   });
 }
 
-export function deleteRoomReport(id) {
+function deleteRoomReport(id) {
   return request('room_reports', {
     method: 'DELETE',
     query: `id=eq.${id}`
@@ -381,12 +412,12 @@ export function deleteRoomReport(id) {
 }
 
 // --- User profile ---
-export function fetchProfile(userId = DEMO_USER_ID) {
+function fetchProfile(userId = DEMO_USER_ID) {
   const query = [`id=eq.${userId}`, 'select=*'].join('&');
   return request('profiles', { query });
 }
 
-export function updateProfile(userId, patch) {
+function updateProfile(userId, patch) {
   console.log('updateProfile called with:', { userId, patch });
   
   const payload = {
@@ -420,7 +451,7 @@ export function updateProfile(userId, patch) {
 }
 
 // Storage helpers
-export function uploadToStorage(bucket, filePath, fileName) {
+function uploadToStorage(bucket, filePath, fileName) {
   const token = wx.getStorageSync('access_token');
   const userId = wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id') || DEMO_USER_ID;
   const storagePath = `${userId}/${Date.now()}_${fileName}`;
@@ -449,7 +480,7 @@ export function uploadToStorage(bucket, filePath, fileName) {
   });
 }
 
-export function deleteFromStorage(bucket, path) {
+function deleteFromStorage(bucket, path) {
   const token = wx.getStorageSync('access_token');
   return new Promise((resolve, reject) => {
     wx.request({
@@ -473,7 +504,7 @@ export function deleteFromStorage(bucket, path) {
   });
 }
 
-export function summarizeFile(fileUrl, fileType) {
+function summarizeFile(fileUrl, fileType) {
   const token = wx.getStorageSync('access_token');
   return new Promise((resolve, reject) => {
     wx.request({
@@ -499,7 +530,7 @@ export function summarizeFile(fileUrl, fileType) {
   });
 }
 
-export function parseImageWithAI(imageUrl, mode = 'task') {
+function parseImageWithAI(imageUrl, mode = 'task') {
   const token = wx.getStorageSync('access_token');
   const fn = mode === 'course' ? 'parse-schedule' : 'parse-task';
   return new Promise((resolve, reject) => {
@@ -527,7 +558,7 @@ export function parseImageWithAI(imageUrl, mode = 'task') {
 }
 
 // --- Profile & Stats (for profile page) ---
-export function getUserStats(userId = DEMO_USER_ID) {
+function getUserStats(userId = DEMO_USER_ID) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/rest/v1/rpc/get_user_stats`,
@@ -549,7 +580,7 @@ export function getUserStats(userId = DEMO_USER_ID) {
   });
 }
 
-export function fetchAchievements(userId = DEMO_USER_ID) {
+function fetchAchievements(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
     'select=*',
@@ -558,7 +589,7 @@ export function fetchAchievements(userId = DEMO_USER_ID) {
   return request('achievements', { query });
 }
 
-export function checkAndUnlockAchievements(userId = DEMO_USER_ID) {
+function checkAndUnlockAchievements(userId = DEMO_USER_ID) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/rest/v1/rpc/check_and_unlock_achievements`,
@@ -579,7 +610,7 @@ export function checkAndUnlockAchievements(userId = DEMO_USER_ID) {
   });
 }
 
-export function fetchLearningHeatmap(userId = DEMO_USER_ID, days = 30) {
+function fetchLearningHeatmap(userId = DEMO_USER_ID, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   const query = [
@@ -591,7 +622,7 @@ export function fetchLearningHeatmap(userId = DEMO_USER_ID, days = 30) {
   return request('learning_heatmap', { query });
 }
 
-export function updateLearningHeatmap(userId, date, focusMinutes, tasksCompleted) {
+function updateLearningHeatmap(userId, date, focusMinutes, tasksCompleted) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${SUPABASE_URL}/rest/v1/rpc/update_learning_heatmap`,
@@ -616,3 +647,45 @@ export function updateLearningHeatmap(userId, date, focusMinutes, tasksCompleted
     });
   });
 }
+
+module.exports = {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  DEMO_USER_ID,
+  wechatLoginWithCode,
+  refreshToken,
+  emailPasswordLogin,
+  emailPasswordSignUp,
+  fetchWeekSchedule,
+  fetchCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  createCourseSchedules,
+  fetchTasks,
+  createTask,
+  updateTask,
+  updateTaskCompletion,
+  deleteTask,
+  fetchResources,
+  createResource,
+  updateResource,
+  deleteResource,
+  createFocusSession,
+  fetchFocusStats,
+  fetchFocusSessions,
+  fetchRoomReports,
+  createRoomReport,
+  deleteRoomReport,
+  fetchProfile,
+  updateProfile,
+  uploadToStorage,
+  deleteFromStorage,
+  summarizeFile,
+  parseImageWithAI,
+  getUserStats,
+  fetchAchievements,
+  checkAndUnlockAchievements,
+  fetchLearningHeatmap,
+  updateLearningHeatmap
+};

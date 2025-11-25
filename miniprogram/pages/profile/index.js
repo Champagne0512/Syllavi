@@ -1,4 +1,4 @@
-import {
+const {
   DEMO_USER_ID,
   fetchProfile,
   fetchFocusStats,
@@ -8,7 +8,7 @@ import {
   fetchAchievements,
   fetchLearningHeatmap,
   updateProfile
-} from '../../utils/supabase';
+} = require('../../utils/supabase');
 
 // 内联年级选项，避免模块依赖问题
 const ALLOWED_GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士'];

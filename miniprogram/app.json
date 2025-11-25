@@ -2,12 +2,13 @@
   "pages": [
     "pages/login/index",
     "pages/hub/index",
-    "pages/tasks/index",
+    "pages/schedule-tasks/index",
     "pages/knowledge/index",
     "pages/focus/index",
     "pages/ai-import/index",
     "pages/profile/index",
-    "pages/settings/index"
+    "pages/settings/index",
+    "pages/tools/index"
   ],
   "window": {
     "backgroundColor": "#F7F7F5",
@@ -24,13 +25,7 @@
     "list": [
       {
         "pagePath": "pages/hub/index",
-        "text": "总览",
-        "iconPath": "static/tab/placeholder.png",
-        "selectedIconPath": "static/tab/placeholder.png"
-      },
-      {
-        "pagePath": "pages/tasks/index",
-        "text": "待办",
+        "text": "课程与待办",
         "iconPath": "static/tab/placeholder.png",
         "selectedIconPath": "static/tab/placeholder.png"
       },
@@ -41,8 +36,14 @@
         "selectedIconPath": "static/tab/placeholder.png"
       },
       {
+        "pagePath": "pages/tools/index",
+        "text": "工具",
+        "iconPath": "static/tab/placeholder.png",
+        "selectedIconPath": "static/tab/placeholder.png"
+      },
+      {
         "pagePath": "pages/profile/index",
-        "text": "主页",
+        "text": "个人",
         "iconPath": "static/tab/placeholder.png",
         "selectedIconPath": "static/tab/placeholder.png"
       }

@@ -11,6 +11,17 @@ interface SignupPayload {
 
 const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+function jsonResponse(body: unknown, init: ResponseInit = {}) {
+  const headers = new Headers(init.headers || {});
+  if (!headers.has('content-type')) {
+    headers.set('content-type', 'application/json');
+  }
+  return new Response(JSON.stringify(body), {
+    ...init,
+    headers
+  });
+}
+
 async function exchangePasswordForTokens(email: string, password: string) {
   const resp = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: 'POST',
@@ -41,10 +52,10 @@ Deno.serve(async (req) => {
     const password = payload?.password || '';
 
     if (!email || !EMAIL_REGEX.test(email)) {
-      return Response.json({ error: '请输入合法邮箱' }, { status: 400 });
+      return jsonResponse({ error: '请输入合法邮箱' }, { status: 400 });
     }
     if (!password || password.length < 6) {
-      return Response.json({ error: '密码至少6位' }, { status: 400 });
+      return jsonResponse({ error: '密码至少6位' }, { status: 400 });
     }
 
     const { data, error } = await supabase.auth.admin.createUser({
@@ -55,14 +66,14 @@ Deno.serve(async (req) => {
 
     if (error) {
       if (error.message && /already registered/i.test(error.message)) {
-        return Response.json({ error: '该邮箱已注册' }, { status: 409 });
+        return jsonResponse({ error: '该邮箱已注册' }, { status: 409 });
       }
-      return Response.json({ error: error.message || '注册失败' }, { status: 400 });
+      return jsonResponse({ error: error.message || '注册失败' }, { status: 400 });
     }
 
     const user = data?.user;
     if (!user) {
-      return Response.json({ error: '创建用户失败' }, { status: 400 });
+      return jsonResponse({ error: '创建用户失败' }, { status: 400 });
     }
 
     await supabase
@@ -77,7 +88,7 @@ Deno.serve(async (req) => {
 
     const tokens = await exchangePasswordForTokens(email, password);
 
-    return Response.json(
+    return jsonResponse(
       {
         ...tokens,
         user: {
@@ -89,13 +100,14 @@ Deno.serve(async (req) => {
       {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
           'Cache-Control': 'no-store'
         }
       }
     );
   } catch (err) {
     console.error('email-signup error', err);
-    return Response.json({ error: err.message || '注册失败' }, { status: 400 });
+    const message =
+      err instanceof Error ? err.message : typeof err === 'string' ? err : '注册失败';
+    return jsonResponse({ error: message }, { status: 400 });
   }
 });

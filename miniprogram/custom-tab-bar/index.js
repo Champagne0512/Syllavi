@@ -2,10 +2,10 @@ Component({
   data: {
     selected: 0,
     list: [
-      { pagePath: 'pages/hub/index', text: '总览' },
-      { pagePath: 'pages/tasks/index', text: '待办' },
+      { pagePath: 'pages/hub/index', text: '课程与待办' },
       { pagePath: 'pages/knowledge/index', text: '资料' },
-      { pagePath: 'pages/profile/index', text: '主页' }
+      { pagePath: 'pages/tools/index', text: '工具' },
+      { pagePath: 'pages/profile/index', text: '个人' }
     ],
     safeBottom: 0
   },

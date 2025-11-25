@@ -1,5 +1,5 @@
-import { SUPABASE_URL, DEMO_USER_ID, refreshToken } from './utils/supabase';
-import { GOTHAM_FONT_SOURCE } from './static/fonts/gotham-base64';
+const { SUPABASE_URL, DEMO_USER_ID, refreshToken } = require('./utils/supabase');
+const { GOTHAM_FONT_SOURCE } = require('./static/fonts/gotham-base64');
 
 const MORANDI = {
   mistBlue: '#9BB5CE',

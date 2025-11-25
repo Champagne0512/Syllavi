@@ -1,11 +1,11 @@
-import {
+const {
   uploadToStorage,
   parseImageWithAI,
   createTask,
   createCourse,
   createCourseSchedules
-} from '../../utils/supabase';
-import { MORANDI_COLORS } from '../../utils/colors';
+} = require('../../utils/supabase');
+const { MORANDI_COLORS } = require('../../utils/colors');
 
 Page({
   data: {

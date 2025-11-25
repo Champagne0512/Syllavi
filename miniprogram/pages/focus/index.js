@@ -1,4 +1,4 @@
-import { createFocusSession, fetchFocusStats } from '../../utils/supabase';
+const { createFocusSession, fetchFocusStats } = require('../../utils/supabase');
 
 const gradients = [
   ['#92B4EC', '#F7F7F5'],

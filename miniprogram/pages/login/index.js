@@ -1,9 +1,9 @@
-import {
+const {
   DEMO_USER_ID,
   wechatLoginWithCode,
   emailPasswordLogin,
   emailPasswordSignUp
-} from '../../utils/supabase';
+} = require('../../utils/supabase');
 
 Page({
   data: {
