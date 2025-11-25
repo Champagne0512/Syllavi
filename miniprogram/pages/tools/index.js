@@ -26,7 +26,7 @@ Page({
 
   onShow() {
     if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(3); // 工具模块在导航栏的索引
+      this.getTabBar().setSelected(2); // 工具模块在导航栏的索引
     }
   },
 

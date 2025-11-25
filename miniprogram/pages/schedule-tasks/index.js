@@ -80,9 +80,6 @@ Page({
   },
 
   onShow() {
-    if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(1);
-    }
   },
 
   initDate() {

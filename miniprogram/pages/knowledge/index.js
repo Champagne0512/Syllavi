@@ -33,7 +33,7 @@ Page({
   },
   onShow() {
     if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(2);
+      this.getTabBar().setSelected(1);
     }
   },
   async loadResources() {
