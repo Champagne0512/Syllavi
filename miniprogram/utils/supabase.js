@@ -349,6 +349,90 @@ function normalizeFocusStats(payload) {
   };
 }
 
+function computeFocusStatsFromSessions(rows) {
+  const sessions = Array.isArray(rows)
+    ? rows.filter((item) => item && (item.completed === undefined || item.completed === true))
+    : [];
+
+  if (!sessions.length) {
+    return { ...EMPTY_FOCUS_STATS };
+  }
+
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - 6);
+
+  let totalMinutes = 0;
+  let todayMinutes = 0;
+  let weekMinutes = 0;
+  const activeDays = new Set();
+
+  sessions.forEach((session) => {
+    const duration = Number(session.duration) || 0;
+    if (!duration) {
+      return;
+    }
+
+    const startedAt = session.started_at ? new Date(session.started_at) : null;
+    if (!startedAt || Number.isNaN(startedAt.getTime())) {
+      return;
+    }
+
+    const dayKey = startedAt.toISOString().slice(0, 10);
+    activeDays.add(dayKey);
+    totalMinutes += duration;
+
+    if (dayKey === todayKey) {
+      todayMinutes += duration;
+    }
+
+    if (startedAt >= weekStart) {
+      weekMinutes += duration;
+    }
+  });
+
+  const streakDays = (() => {
+    const cursor = new Date(today);
+    let streak = 0;
+    while (streak < 365) {
+      const key = cursor.toISOString().slice(0, 10);
+      if (activeDays.has(key)) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  })();
+
+  const sessionCount = sessions.length;
+
+  return {
+    today_minutes: todayMinutes,
+    week_minutes: weekMinutes,
+    total_minutes: totalMinutes,
+    session_count: sessionCount,
+    streak_days: streakDays,
+    total_sessions: sessionCount,
+    continuous_days: streakDays
+  };
+}
+
+function fetchFocusStatsFallback(userId) {
+  const query = [
+    `user_id=eq.${userId}`,
+    'select=duration,started_at,completed',
+    'order=started_at.desc',
+    'limit=365'
+  ].join('&');
+
+  return request('focus_sessions', { query })
+    .then((rows) => computeFocusStatsFromSessions(rows))
+    .catch(() => ({ ...EMPTY_FOCUS_STATS }));
+}
+
 function fetchFocusStats(userId = DEMO_USER_ID) {
   return new Promise((resolve, reject) => {
     wx.request({
@@ -358,8 +442,10 @@ function fetchFocusStats(userId = DEMO_USER_ID) {
       header: buildHeaders(),
       success(res) {
         if (res.statusCode === 404) {
-          // 函数未部署时返回默认值，避免前端整体失败
-          resolve({ ...EMPTY_FOCUS_STATS });
+          // 函数未部署时，回退到直接读取表并计算
+          fetchFocusStatsFallback(userId)
+            .then((stats) => resolve(stats))
+            .catch(() => resolve({ ...EMPTY_FOCUS_STATS }));
           return;
         }
         if (res.statusCode >= 200 && res.statusCode < 300) {
@@ -451,9 +537,24 @@ function updateProfile(userId, patch) {
 }
 
 // Storage helpers
-function uploadToStorage(bucket, filePath, fileName) {
-  const token = wx.getStorageSync('access_token');
-  const userId = wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id') || DEMO_USER_ID;
+function resolveSessionInfo() {
+  const app = typeof getApp === 'function' ? getApp() : null;
+  const globalUserId = app?.globalData?.supabase?.userId;
+  const globalToken = app?.globalData?.supabase?.accessToken;
+  const storedUserId = wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id');
+  const storedToken = wx.getStorageSync('access_token');
+
+  return {
+    userId: globalUserId || storedUserId || DEMO_USER_ID,
+    token: storedToken || globalToken || null
+  };
+}
+
+function uploadToStorage(bucket, filePath, fileName, options = {}) {
+  const { userId: overrideUserId, token: overrideToken } = options;
+  const session = resolveSessionInfo();
+  const userId = overrideUserId || session.userId;
+  const token = overrideToken || session.token;
   const storagePath = `${userId}/${Date.now()}_${fileName}`;
 
   console.log('上传配置:', { bucket, filePath, fileName, userId, storagePath, token: !!token });
@@ -464,7 +565,9 @@ function uploadToStorage(bucket, filePath, fileName) {
       filePath,
       name: 'file',
       header: {
-        Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`
+        Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
+        'x-upsert': 'true'
       },
       success(res) {
         console.log('上传响应:', { 

@@ -2,56 +2,80 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 32rpx;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(247, 247, 245, 0));
+  padding: 36rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(247, 247, 245, 0));
   position: sticky;
   top: 0;
   z-index: 98;
-  backdrop-filter: blur(20rpx);
+  backdrop-filter: blur(30rpx);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .date-block {
   display: flex;
   flex-direction: column;
   gap: 6rpx;
+  align-items: flex-start;
+  min-width: 140rpx;
 }
 
 .date {
-  font-size: 36rpx;
+  font-size: 34rpx;
   font-weight: 600;
-  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'JetBrains Mono', 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.06em;
+  color: rgba(45, 52, 54, 0.75);
 }
 
 .weekday {
-  font-size: 24rpx;
-  color: rgba(28, 28, 30, 0.5);
-  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 22rpx;
+  color: rgba(45, 52, 54, 0.5);
+  font-family: 'JetBrains Mono', 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 0.2em;
 }
 
 .titles {
-  flex: 1;
+  position: absolute;
+  left: 50%;
+  bottom: 18rpx;
+  transform: translateX(-50%);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 320rpx;
 }
 
 .title {
-  font-size: 40rpx;
-  letter-spacing: 4rpx;
-  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 56rpx;
+  letter-spacing: 0.12em;
+  font-family: 'DINAlternate-Bold', 'SF Pro Display', 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  text-transform: uppercase;
+  background: linear-gradient(120deg, rgba(135, 168, 164, 0.95), rgba(224, 142, 121, 0.9));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 18rpx 32rpx rgba(15, 23, 42, 0.15);
+  white-space: nowrap;
 }
 
 .subtitle {
-  font-size: 24rpx;
-  color: rgba(28, 28, 30, 0.5);
-  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 26rpx;
+  color: rgba(28, 28, 30, 0.55);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  font-family: 'SF Pro Display', 'PingFang SC', 'Gotham', sans-serif;
+  white-space: nowrap;
 }
 
 .badge {
-  padding: 12rpx 24rpx;
+  padding: 14rpx 28rpx;
   border-radius: 999rpx;
-  border: 1px solid rgba(17, 72, 196, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .navbar-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  min-width: 100rpx;
 }

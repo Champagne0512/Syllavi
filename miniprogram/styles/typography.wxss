@@ -1,14 +1,50 @@
-/* 非中文英文字体 */
+/* Typography system inspired by Fluid Order spec */
 .english-font {
-  font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Gotham', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* 中英文混合 */
 .mixed-font {
-  font-family: 'Gotham', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
-/* 纯中文（保持原样） */
 .chinese-font {
-  font-family: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+  font-family: 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+}
+
+.display-title {
+  font-size: 64rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  line-height: 1.1;
+}
+
+.display-subtitle {
+  font-size: 40rpx;
+  font-weight: 500;
+  color: rgba(45, 52, 54, 0.72);
+}
+
+.label-caps {
+  font-size: 22rpx;
+  letter-spacing: 4rpx;
+  text-transform: uppercase;
+  color: rgba(45, 52, 54, 0.45);
+}
+
+.mono-digit {
+  font-family: 'JetBrains Mono', 'Roboto Mono', Menlo, monospace;
+  letter-spacing: 1rpx;
+}
+
+.body-large {
+  font-size: 32rpx;
+  line-height: 1.5;
+  font-family: 'LXGW WenKai', 'PingFang SC', sans-serif;
+}
+
+.body-small {
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: rgba(45, 52, 54, 0.65);
+  font-family: 'LXGW WenKai', 'PingFang SC', sans-serif;
 }

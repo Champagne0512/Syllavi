@@ -2,10 +2,29 @@
   min-height: 100vh;
   padding: 0;
   box-sizing: border-box;
+  position: relative;
+  color: var(--day-text);
+}
+
+.login-page::before,
+.login-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.35;
+}
+
+.login-page::before {
+  background: radial-gradient(circle at 15% 15%, rgba(135, 168, 164, 0.5), transparent 55%);
+}
+
+.login-page::after {
+  background: radial-gradient(circle at 80% 80%, rgba(224, 142, 121, 0.45), transparent 60%);
 }
 
 .zen-scroll {
-  padding: 48rpx 32rpx 160rpx;
+  padding: 32rpx 32rpx 160rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -14,15 +33,16 @@
 }
 
 .hero-section {
-  margin-top: 64rpx;
+  margin-top: 24rpx;
 }
 
 .hero.card {
   border-radius: 32rpx;
   padding: 48rpx 32rpx;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(28, 28, 30, 0.08);
-  box-shadow: 0 20rpx 48rpx rgba(18, 18, 18, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18rpx);
 }
 
 .brand {
@@ -37,14 +57,16 @@
   font-size: 32rpx;
   font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
   display: block;
+  color: rgba(45, 52, 54, 0.7);
 }
 
 .copy {
   margin-top: 24rpx;
   line-height: 1.6;
-  font-family: 'Gotham', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   display: block;
   font-size: 26rpx;
+  color: rgba(45, 52, 54, 0.62);
 }
 
 .auth-section {
@@ -54,9 +76,10 @@
 .auth.card {
   border-radius: 32rpx;
   padding: 32rpx;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(28, 28, 30, 0.08);
-  box-shadow: 0 20rpx 48rpx rgba(18, 18, 18, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18rpx);
 }
 
 .section-head {
@@ -72,7 +95,8 @@
   display: flex;
   gap: 12rpx;
   padding: 12rpx;
-  background: rgba(28, 28, 30, 0.06);
+  background: rgba(247, 247, 247, 0.7);
+  border: 1px solid rgba(45, 52, 54, 0.08);
 }
 
 .segment-item {
@@ -81,12 +105,15 @@
   padding: 16rpx 0 24rpx 0;
   border-radius: 52rpx;
   font-size: 26rpx;
-  color: rgba(28, 28, 30, 0.4);
+  color: rgba(45, 52, 54, 0.85);
+  transition: color 0.2s ease;
 }
 
 .segment-item.chip-active {
-  background: #1C1C1E;
-  color: #fff;
+  background: linear-gradient(135deg, var(--sage), var(--coral));
+  color: var(--btn-primary-text);
+  box-shadow: 0 20rpx 40rpx rgba(135, 168, 164, 0.35);
+  text-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.2);
 }
 
 .input-group {
@@ -99,9 +126,9 @@
 .zen-input {
   width: 100%;
   border-radius: 24rpx;
-  border: 1px solid rgba(28, 28, 30, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   padding: 28rpx 32rpx;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.85);
   font-size: 28rpx;
   box-sizing: border-box;
   line-height: 1.4;
@@ -120,7 +147,7 @@
   height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
-  background: #1148C4;
+  background: linear-gradient(135deg, var(--sage), var(--coral));
   color: #fff;
   border: none;
   margin-top: 16rpx;
@@ -140,9 +167,10 @@
 .actions.card {
   border-radius: 32rpx;
   padding: 32rpx;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(28, 28, 30, 0.08);
-  box-shadow: 0 20rpx 48rpx rgba(18, 18, 18, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18rpx);
 }
 
 .wechat-btn {
@@ -151,7 +179,7 @@
   height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
-  background: #07C160;
+  background: linear-gradient(135deg, #0BAB7C, #00C39A);
   color: #fff;
   border: none;
   margin-bottom: 16rpx;
@@ -166,9 +194,9 @@
   height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
-  border: 1px solid rgba(28, 28, 30, 0.24);
-  background: transparent;
-  color: #1C1C1E;
+  border: 1px solid rgba(45, 52, 54, 0.15);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--day-text);
   margin-bottom: 16rpx;
   display: flex;
   align-items: center;
@@ -178,8 +206,9 @@
 .helper {
   font-size: 24rpx;
   line-height: 1.5;
-  color: rgba(28, 28, 30, 0.5);
+  color: rgba(45, 52, 54, 0.6);
   text-align: center;
+  font-family: 'LXGW WenKai', 'PingFang SC', sans-serif;
 }
 
 .legal-section {
@@ -191,9 +220,9 @@
   font-size: 22rpx;
   text-align: center;
   margin-top: 8rpx;
-  font-family: 'Gotham', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   line-height: 1.4;
-  color: rgba(28, 28, 30, 0.4);
+  color: rgba(45, 52, 54, 0.45);
 }
 
 /* Glassmorphism effect */

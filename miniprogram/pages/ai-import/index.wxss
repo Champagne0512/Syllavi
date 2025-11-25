@@ -1,10 +1,29 @@
 .ai-import-page {
   min-height: 100vh;
   padding: 48rpx;
-  background: #F7F7F5;
   display: flex;
   flex-direction: column;
   gap: 32rpx;
+  color: var(--day-text);
+  position: relative;
+  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+}
+
+.ai-import-page::before,
+.ai-import-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  z-index: -1;
+}
+
+.ai-import-page::before {
+  background: radial-gradient(circle at 15% 20%, rgba(135, 168, 164, 0.5), transparent 60%);
+}
+
+.ai-import-page::after {
+  background: radial-gradient(circle at 80% 70%, rgba(224, 142, 121, 0.45), transparent 65%);
 }
 
 .hero {
@@ -16,20 +35,22 @@
   display: inline-flex;
   padding: 4rpx;
   border-radius: 999rpx;
-  background: rgba(28, 28, 30, 0.06);
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .pill {
   padding: 12rpx 32rpx;
   border-radius: 999rpx;
   font-size: 24rpx;
-  color: rgba(28, 28, 30, 0.5);
+  color: rgba(45, 52, 54, 0.55);
   font-family: 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .pill.active {
-  background: #fff;
-  color: #1C1C1E;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--day-text);
+  box-shadow: 0 16rpx 36rpx rgba(15, 23, 42, 0.08);
 }
 
 .upload {
@@ -78,13 +99,13 @@
   margin-top: 24rpx;
   height: 12rpx;
   border-radius: 999rpx;
-  background: rgba(28, 28, 30, 0.08);
+  background: rgba(45, 52, 54, 0.08);
 }
 
 .progress .bar {
   height: 100%;
   border-radius: 999rpx;
-  background: linear-gradient(90deg, #1148C4, #FF5C00);
+  background: linear-gradient(90deg, var(--sage), var(--coral));
 }
 
 .result-row {
@@ -92,7 +113,7 @@
   align-items: center;
   gap: 24rpx;
   padding: 24rpx 0;
-  border-bottom: 1px solid rgba(28, 28, 30, 0.08);
+  border-bottom: 1px solid rgba(45, 52, 54, 0.08);
 }
 
 .info-row {
@@ -109,19 +130,20 @@
 }
 
 .chip.exam {
-  background: rgba(255, 92, 0, 0.2);
-  color: #FF5C00;
+  background: rgba(224, 142, 121, 0.18);
+  color: #E08E79;
 }
 
 .chip.homework {
-  background: rgba(17, 72, 196, 0.2);
-  color: #1148C4;
+  background: rgba(135, 168, 164, 0.25);
+  color: #5B7C78;
 }
 
 .ghost.mini {
   border-radius: 32rpx;
-  border: 1px solid rgba(28, 28, 30, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   padding: 12rpx 24rpx;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .bulk-actions {

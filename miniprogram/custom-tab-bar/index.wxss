@@ -23,13 +23,13 @@
   margin: 0 8rpx;
   padding: 16rpx;
   text-align: center;
-  color: rgba(28, 28, 30, 0.4);
+  color: rgba(45, 52, 54, 0.45);
   font-size: 26rpx;
   line-height: 1;
 }
 
 .tab-item.active {
-  color: #1C1C1E;
+  color: var(--day-text);
 }
 
 .pill {
@@ -38,7 +38,7 @@
   left: 50%;
   width: 8rpx;
   height: 8rpx;
-  background: #FF5C00;
+  background: var(--coral);
   border-radius: 999rpx;
   opacity: 0;
   transform: translateX(-50%) scale(0.4);
@@ -51,6 +51,9 @@
 }
 
 .label {
-  font-family: 'Gotham', 'JetBrainsMono', monospace;
-  letter-spacing: 0.2em;
+  font-family: 'Gotham', 'PingFang SC', 'SF Pro Display', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  display: inline-block;
 }

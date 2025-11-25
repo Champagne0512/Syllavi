@@ -1,4 +1,4 @@
-<view class="login-page" style="background: #F7F7F5;">
+<view class="login-page">
   <custom-navbar title="Syllaby" subtitle="Academic Zen" />
 
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
@@ -7,7 +7,7 @@
         <text class="brand">Syllaby</text>
         <text class="tagline">Academic Zen · 学术禅意</text>
         <text class="muted copy">
-          一键导入课程表 · 集中管理待办 · AI 划重点 · 番茄专注。
+          课程表 · 管理待办 · AI 划重点 · 番茄专注
         </text>
       </view>
     </view>

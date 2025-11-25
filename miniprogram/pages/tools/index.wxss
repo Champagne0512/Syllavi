@@ -1,8 +1,27 @@
 /* 工具页面样式 */
 .tools-page {
   min-height: 100vh;
-  background: #F7F7F5;
-  padding: 20rpx 30rpx;
+  padding: 32rpx;
+  color: var(--day-text);
+  position: relative;
+  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+}
+
+.tools-page::before,
+.tools-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+.tools-page::before {
+  background: radial-gradient(circle at 15% 20%, rgba(135, 168, 164, 0.6), transparent 65%);
+}
+
+.tools-page::after {
+  background: radial-gradient(circle at 80% 70%, rgba(224, 142, 121, 0.55), transparent 60%);
 }
 
 /* 头部 */
@@ -11,24 +30,25 @@
 }
 
 .title {
-  font-size: 48rpx;
+  font-size: 56rpx;
   font-weight: 600;
-  color: #1C1C1E;
+  color: var(--day-text);
   margin-bottom: 8rpx;
 }
 
 .subtitle {
   font-size: 28rpx;
-  color: #8C8C8C;
+  color: rgba(45, 52, 54, 0.6);
 }
 
 /* 工具模块 */
 .tool-section {
-  background: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 32rpx;
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 40rpx;
+  padding: 36rpx;
   margin-bottom: 32rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 30rpx 60rpx rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18rpx);
 }
 
 .section-header {
@@ -38,13 +58,13 @@
 .section-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #1C1C1E;
+  color: var(--day-text);
   margin-bottom: 8rpx;
 }
 
 .section-desc {
   font-size: 26rpx;
-  color: #8C8C8C;
+  color: rgba(45, 52, 54, 0.6);
 }
 
 /* 空教室列表 */
@@ -56,9 +76,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24rpx;
-  background: #FAFAFA;
-  border-radius: 16rpx;
+  padding: 28rpx;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 32rpx;
+  box-shadow: 0 18rpx 40rpx rgba(0, 0, 0, 0.05);
   margin-bottom: 16rpx;
 }
 
@@ -69,29 +90,30 @@
 .room-location {
   font-size: 30rpx;
   font-weight: 500;
-  color: #1C1C1E;
+  color: var(--day-text);
   margin-bottom: 4rpx;
 }
 
 .room-tag {
   font-size: 24rpx;
-  color: #8C8C8C;
+  color: rgba(45, 52, 54, 0.6);
 }
 
 .room-status {
   font-size: 26rpx;
-  color: #34C759;
+  color: var(--sage);
   font-weight: 500;
   margin-right: 20rpx;
 }
 
 .room-action {
-  background: #1148C4;
-  color: white;
-  padding: 12rpx 24rpx;
-  border-radius: 12rpx;
-  font-size: 24rpx;
-  font-weight: 500;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  padding: 16rpx 32rpx;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  box-shadow: 0 24rpx 40rpx rgba(135, 168, 164, 0.35);
 }
 
 /* 快速操作按钮 */
@@ -105,21 +127,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20rpx;
-  border-radius: 16rpx;
+  padding: 24rpx;
+  border-radius: 28rpx;
   font-size: 26rpx;
   font-weight: 500;
 }
 
 .action-btn.primary {
-  background: #1148C4;
+  background: linear-gradient(135deg, var(--sage), var(--coral));
   color: white;
 }
 
 .action-btn.secondary {
-  background: #FAFAFA;
-  color: #1C1C1E;
-  border: 2rpx solid #E5E5E7;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--day-text);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .action-btn .icon {
@@ -131,11 +153,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #1148C4, #FF5C00);
-  border-radius: 16rpx;
-  padding: 32rpx;
+  background: linear-gradient(135deg, rgba(17, 72, 196, 0.85), rgba(255, 92, 0, 0.85));
+  border-radius: 40rpx;
+  padding: 40rpx;
   margin-bottom: 24rpx;
   color: white;
+  box-shadow: 0 30rpx 70rpx rgba(17, 72, 196, 0.35);
 }
 
 .focus-info {
@@ -158,7 +181,7 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.2);
   padding: 16rpx 24rpx;
-  border-radius: 12rpx;
+  border-radius: 999rpx;
   font-size: 24rpx;
   font-weight: 500;
 }
@@ -179,15 +202,15 @@
 }
 
 .stat-value {
-  font-size: 36rpx;
+  font-size: 42rpx;
   font-weight: 600;
-  color: #1148C4;
+  color: var(--day-text);
   margin-bottom: 4rpx;
 }
 
 .stat-label {
   font-size: 24rpx;
-  color: #8C8C8C;
+  color: rgba(45, 52, 54, 0.6);
 }
 
 /* 工具网格 */
@@ -202,9 +225,10 @@
   flex-direction: column;
   align-items: center;
   padding: 32rpx;
-  background: #FAFAFA;
-  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 32rpx;
   text-align: center;
+  box-shadow: 0 20rpx 40rpx rgba(15, 23, 42, 0.06);
 }
 
 .tool-icon {
@@ -215,5 +239,5 @@
 .tool-name {
   font-size: 26rpx;
   font-weight: 500;
-  color: #1C1C1E;
+  color: var(--day-text);
 }

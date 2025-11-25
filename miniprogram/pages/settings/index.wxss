@@ -1,5 +1,25 @@
 .settings-page {
   min-height: 100vh;
+  color: var(--day-text);
+  position: relative;
+  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+}
+
+.settings-page::before,
+.settings-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+.settings-page::before {
+  background: radial-gradient(circle at 20% 25%, rgba(135, 168, 164, 0.5), transparent 55%);
+}
+
+.settings-page::after {
+  background: radial-gradient(circle at 80% 70%, rgba(224, 142, 121, 0.45), transparent 60%);
 }
 
 .field {
@@ -10,6 +30,7 @@
   font-size: 26rpx;
   margin-bottom: 8rpx;
   display: block;
+  color: rgba(45, 52, 54, 0.7);
 }
 
 .field picker {
@@ -19,32 +40,34 @@
 .input {
   width: 100%;
   padding: 24rpx 28rpx;
-  border-radius: 24rpx;
-  border: 1px solid rgba(28, 28, 30, 0.12);
+  border-radius: 30rpx;
+  border: 1px solid rgba(255, 255, 255, 0.45);
   box-sizing: border-box;
   font-size: 28rpx;
   line-height: 1.5;
   min-height: 88rpx;
   vertical-align: middle;
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .textarea {
   width: 100%;
   padding: 24rpx 28rpx;
-  border-radius: 24rpx;
-  border: 1px solid rgba(28, 28, 30, 0.12);
+  border-radius: 30rpx;
+  border: 1px solid rgba(255, 255, 255, 0.45);
   box-sizing: border-box;
   font-size: 28rpx;
   line-height: 1.5;
   min-height: 120rpx;
   resize: none;
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .picker-display {
   width: 100%;
   padding: 24rpx 28rpx;
-  border-radius: 24rpx;
-  border: 1px solid rgba(28, 28, 30, 0.12);
+  border-radius: 30rpx;
+  border: 1px solid rgba(255, 255, 255, 0.45);
   box-sizing: border-box;
   font-size: 28rpx;
   line-height: 1.5;
@@ -52,52 +75,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #1C1C1E;
-  background: rgba(255, 255, 255, 0.95);
+  color: var(--day-text);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .picker-display.placeholder {
-  color: rgba(28, 28, 30, 0.5);
-}
-
-.picker-arrow {
-  font-size: 20rpx;
-  color: rgba(28, 28, 30, 0.4);
-}
-
-.picker-display {
-  width: 100%;
-  padding: 24rpx 28rpx;
-  border-radius: 24rpx;
-  border: 1px solid rgba(28, 28, 30, 0.12);
-  box-sizing: border-box;
-  font-size: 28rpx;
-  line-height: 1.5;
-  background: rgba(247, 247, 245, 0.6);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.picker-display.placeholder {
-  color: rgba(28, 28, 30, 0.4);
+  color: rgba(45, 52, 54, 0.5);
 }
 
 .picker-arrow {
   font-size: 32rpx;
-  color: rgba(28, 28, 30, 0.4);
+  color: rgba(45, 52, 54, 0.45);
 }
 
 .primary-btn {
   margin-top: 32rpx;
   border-radius: 999rpx;
-  background: #1148C4;
+  background: linear-gradient(135deg, var(--sage), var(--coral));
   color: #fff;
+  box-shadow: 0 20rpx 40rpx rgba(135, 168, 164, 0.35);
 }
 
 .danger-btn {
   border-radius: 999rpx;
-  background: #fff1f0;
+  background: rgba(255, 240, 240, 0.8);
   color: #cf1322;
-  border: 1px solid #ffa39e;
+  border: 1px solid rgba(255, 163, 158, 0.6);
 }

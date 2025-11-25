@@ -1,3 +1,4 @@
+const supabaseApi = require('../../utils/supabase');
 const {
   DEMO_USER_ID,
   fetchProfile,
@@ -9,7 +10,7 @@ const {
   fetchLearningHeatmap,
   updateProfile,
   uploadToStorage
-} from '../../utils/supabase';
+} = supabaseApi;
 
 // 内联年级选项，避免模块依赖问题
 const ALLOWED_GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士'];
@@ -90,7 +91,9 @@ Page({
       school_name: '',
       grade: '',
       bio: '',
-      avatar_url: ''
+      avatar_url: '',
+      avatar_temp_path: '',
+      avatar_temp_name: ''
     },
     gradeOptions: GRADE_PICKER_OPTIONS,
     gradePickerIndex: GRADE_PICKER_OPTIONS.indexOf(GRADE_OPTION_NONE)
@@ -320,7 +323,9 @@ Page({
         school_name: profile.school_name || '',
         grade,
         bio: profile.bio || '',
-        avatar_url: profile.avatar_url || ''
+        avatar_url: profile.avatar_url || '',
+        avatar_temp_path: '',
+        avatar_temp_name: ''
       },
       gradePickerIndex: getGradePickerIndex(grade)
     });
@@ -362,22 +367,28 @@ Page({
       maxDuration: 30,
       camera: 'back',
       success: (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath;
-        
-        // 压缩图片
+        const file = res.tempFiles && res.tempFiles[0];
+        if (!file) return;
+        const tempFilePath = file.tempFilePath;
+        const extension = (tempFilePath.split('.').pop() || 'jpg').toLowerCase();
+        const fileName = `avatar.${extension}`;
+
+        const applyAvatar = (finalPath) => {
+          this.setData({
+            'editForm.avatar_url': finalPath,
+            'editForm.avatar_temp_path': finalPath,
+            'editForm.avatar_temp_name': fileName
+          });
+        };
+
         wx.compressImage({
           src: tempFilePath,
           quality: 80,
           success: (compressRes) => {
-            this.setData({
-              'editForm.avatar_url': compressRes.tempFilePath
-            });
+            applyAvatar(compressRes.tempFilePath);
           },
           fail: () => {
-            // 压缩失败，使用原图
-            this.setData({
-              'editForm.avatar_url': tempFilePath
-            });
+            applyAvatar(tempFilePath);
           }
         });
       },
@@ -394,7 +405,9 @@ Page({
       success: (res) => {
         if (res.confirm) {
           this.setData({
-            'editForm.avatar_url': ''
+            'editForm.avatar_url': '',
+            'editForm.avatar_temp_path': '',
+            'editForm.avatar_temp_name': ''
           });
         }
       }
@@ -406,12 +419,8 @@ Page({
       wx.getFileSystemManager().readFile({
         filePath,
         encoding: 'base64',
-        success: (res) => {
-          resolve(res.data);
-        },
-        fail: (err) => {
-          reject(err);
-        }
+        success: (res) => resolve(res.data),
+        fail: (err) => reject(err)
       });
     });
   },
@@ -444,39 +453,43 @@ Page({
       wx.showToast({ title: '年级仅支持：大一至博士', icon: 'none' });
       return;
     }
-    let avatarUrl = this.data.editForm.avatar_url;
-    
-    // 如果是新选择的图片（临时路径），转换为 Base64 存储
-    if (avatarUrl && avatarUrl.startsWith('http://tmp/')) {
-      try {
-        wx.showLoading({ title: '处理头像中...' });
-        
-        console.log('转换头像为 Base64');
-        const base64Data = await this.getImageBase64(avatarUrl);
-        avatarUrl = `data:image/jpeg;base64,${base64Data}`;
-        console.log('头像 Base64 转换成功，长度:', base64Data.length);
-        
-        wx.hideLoading();
-      } catch (error) {
-        wx.hideLoading();
-        console.error('头像处理失败:', error);
-        wx.showToast({ title: '头像处理失败', icon: 'none' });
-        this.setData({ savingProfile: false });
-        return;
-      }
-    }
+    const {
+      avatar_url: avatarPreview,
+      avatar_temp_path: avatarTempPath,
+      avatar_temp_name: avatarTempName
+    } = this.data.editForm;
+    let avatarUrl = avatarPreview;
 
     const payload = {
       nickname,
       school_name: schoolName,
       grade: normalizedGrade || null,
-      bio: (this.data.editForm.bio || '').trim(),
-      avatar_url: avatarUrl || null
+      bio: (this.data.editForm.bio || '').trim()
     };
     this.setData({ savingProfile: true });
-    wx.showLoading({ title: '保存中...' });
+    wx.showLoading({ title: '处理中...' });
     try {
-      await updateProfile(userId, payload);
+      if (avatarTempPath) {
+        try {
+          const fileName = avatarTempName || `avatar_${Date.now()}.jpg`;
+          const uploadResult = await uploadToStorage('avatars', avatarTempPath, fileName, {
+            userId,
+            token: accessToken
+          });
+          avatarUrl = uploadResult.publicUrl;
+        } catch (uploadErr) {
+          console.warn('avatar upload failed, fallback to base64', uploadErr);
+          wx.showToast({ title: '头像上传受限，已改为本地保存', icon: 'none' });
+          try {
+            const base64Data = await this.getImageBase64(avatarTempPath);
+            avatarUrl = `data:image/jpeg;base64,${base64Data}`;
+          } catch (readErr) {
+            console.error('read avatar as base64 failed', readErr);
+            throw uploadErr;
+          }
+        }
+      }
+      await updateProfile(userId, { ...payload, avatar_url: avatarUrl || null });
       const nextProfile = {
         ...this.data.profile,
         ...payload,
@@ -486,7 +499,13 @@ Page({
       this.setData({
         profile: nextProfile,
         editModalVisible: false,
-        gradePickerIndex: getGradePickerIndex(normalizedGrade)
+        gradePickerIndex: getGradePickerIndex(normalizedGrade),
+        editForm: {
+          ...this.data.editForm,
+          avatar_temp_path: '',
+          avatar_temp_name: '',
+          avatar_url: nextProfile.avatar_url
+        }
       });
       wx.setStorageSync('profile', nextProfile);
       wx.showToast({ title: '已更新', icon: 'success' });

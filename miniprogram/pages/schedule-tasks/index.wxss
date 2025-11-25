@@ -3,29 +3,41 @@
 /* 全局与基础设置 */
 .tasks-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F7 100%); /* 柔和的渐变背景 */
+  position: relative;
   display: flex;
   flex-direction: column;
-  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  color: var(--day-text);
 }
 
-/* 通用玻璃态卡片 - 极简设计 */
+.tasks-page::before,
+.tasks-page::after {
+  content: '';
+  position: absolute;
+  width: 460rpx;
+  height: 460rpx;
+  border-radius: 50%;
+  filter: blur(70rpx);
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.tasks-page::before {
+  background: radial-gradient(circle, rgba(135, 168, 164, 0.6), transparent 70%);
+  top: -120rpx;
+  left: -80rpx;
+}
+
+.tasks-page::after {
+  background: radial-gradient(circle, rgba(224, 142, 121, 0.55), transparent 70%);
+  bottom: 10%;
+  right: -120rpx;
+}
+
+/* 全局 glass-card 已统一在 app.wxss，这里只做局部补充 */
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  border-radius: 16rpx;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 
-    0 2rpx 12rpx rgba(0, 0, 0, 0.03),
-    0 1rpx 4rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-card:active {
-  transform: scale(0.98);
-  box-shadow: 
-    0 1rpx 6rpx rgba(0, 0, 0, 0.02),
-    0 0.5rpx 2rpx rgba(0, 0, 0, 0.03);
+  border-radius: 40rpx;
+  padding: 32rpx;
 }
 
 /* 动画效果 */
@@ -46,40 +58,41 @@
 
 /* 顶部控制区 */
 .header-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   padding: 32rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(24rpx);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 /* 视图切换器 - 沉浸式导航 */
 .view-switch {
   display: flex;
-  background: rgba(240, 240, 245, 0.6);
-  padding: 4rpx;
-  border-radius: 12rpx;
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.25);
+  padding: 6rpx;
+  border-radius: 999rpx;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .switch-pill {
-  padding: 16rpx 32rpx;
+  padding: 18rpx 38rpx;
   font-size: 28rpx;
-  color: #8A8A8F;
-  border-radius: 8rpx;
+  color: rgba(45, 52, 54, 0.55);
+  border-radius: 999rpx;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 500;
 }
 
 .switch-pill.active {
   background: rgba(255, 255, 255, 0.95);
-  color: #1D1D1F;
+  color: var(--day-text);
   font-weight: 600;
-  box-shadow: 
-    0 2rpx 8rpx rgba(0, 0, 0, 0.08),
-    0 1rpx 3rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12rpx 24rpx rgba(15, 23, 42, 0.1);
 }
 
 /* 日期导航 */
@@ -169,57 +182,78 @@
 
 /* === 日视图样式 === */
 
+.course-timeline {
+  position: relative;
+  padding-left: 32rpx;
+}
+
+.course-timeline::before {
+  content: '';
+  position: absolute;
+  left: 24rpx;
+  top: 0;
+  bottom: 0;
+  width: 2rpx;
+  background: linear-gradient(180deg, rgba(45, 52, 54, 0.15) 0%, rgba(45, 52, 54, 0) 100%);
+}
+
 /* 时间线布局 */
 .timeline-item {
   display: flex;
-  margin-bottom: 24rpx;
+  margin-bottom: 32rpx;
   align-items: flex-start;
+  position: relative;
 }
 
 .time-col {
-  width: 120rpx;
+  width: 140rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 16rpx;
+  padding-top: 12rpx;
 }
 
 .start-time {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
-  color: #1D1D1F;
-  margin-bottom: 8rpx;
+  color: var(--day-text);
+  margin-bottom: 12rpx;
+  font-family: 'JetBrains Mono', 'Gotham', sans-serif;
 }
 
 .time-dot {
-  width: 16rpx;
-  height: 16rpx;
+  width: 18rpx;
+  height: 18rpx;
   border-radius: 50%;
   margin-top: 8rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6rpx 16rpx rgba(15, 23, 42, 0.25);
+  animation: breathe 2.4s ease-in-out infinite;
 }
 
 /* 课程卡片 - 莫兰迪色系应用 */
 .course-card {
   flex: 1;
-  padding: 28rpx;
+  padding: 32rpx;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-left-width: 8rpx;
+  border-left-width: 10rpx;
   border-left-style: solid;
+  border-radius: 36rpx;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 24rpx 60rpx rgba(15, 23, 42, 0.08);
 }
 
 .card-title { 
-  font-size: 32rpx; 
+  font-size: 34rpx; 
   font-weight: 600; 
   margin-bottom: 8rpx; 
-  color: #1D1D1F;
+  color: var(--day-text);
 }
 
 .card-sub { 
   font-size: 26rpx; 
-  color: #8A8A8F; 
+  color: rgba(45, 52, 54, 0.55); 
   font-weight: 500;
 }
 
@@ -230,6 +264,11 @@
   padding: 28rpx;
   margin-bottom: 16rpx;
   transition: all 0.3s ease;
+  border-radius: 36rpx;
+}
+
+.task-row:active {
+  transform: scale(0.98);
 }
 
 .task-row.done { 
@@ -240,7 +279,7 @@
 .check-circle {
   width: 44rpx;
   height: 44rpx;
-  border: 2px solid #D1D1D6;
+  border: 2px solid rgba(45, 52, 54, 0.2);
   border-radius: 50%;
   margin-right: 24rpx;
   flex-shrink: 0;
@@ -248,9 +287,9 @@
 }
 
 .check-circle.checked {
-  background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
-  border-color: #34C759;
-  box-shadow: 0 2rpx 8rpx rgba(52, 199, 89, 0.3);
+  background: linear-gradient(135deg, #87A8A4 0%, #E08E79 100%);
+  border-color: transparent;
+  box-shadow: 0 6rpx 18rpx rgba(224, 142, 121, 0.45);
 }
 
 .task-info { 

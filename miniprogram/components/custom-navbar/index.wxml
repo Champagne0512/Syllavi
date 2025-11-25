@@ -4,13 +4,10 @@
     <text class="weekday mono">{{weekdayLabel}}</text>
   </view>
   <view class="titles">
-    <text class="title">{{title}}</text>
+    <text class="title">{{displayTitle}}</text>
     <text class="subtitle">{{subtitle}}</text>
   </view>
   <view class="navbar-right">
     <slot name="right"></slot>
-    <view wx:if="{{!hasRightSlot}}" class="badge glass">
-      <text class="mono">AI READY</text>
-    </view>
   </view>
 </view>

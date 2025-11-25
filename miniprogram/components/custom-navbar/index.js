@@ -9,17 +9,24 @@ Component({
       value: 'Academic Zen'
     }
   },
+  observers: {
+    title(value) {
+      this.normalizeTitle(value);
+    }
+  },
   data: {
     dateLabel: '',
     weekdayLabel: '',
     statusBarHeight: 44,
-    hasRightSlot: false
+    hasRightSlot: false,
+    displayTitle: 'Syllaby'
   },
   lifetimes: {
     attached() {
       const windowInfo = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
       this.setData({ statusBarHeight: windowInfo.statusBarHeight || 44 });
       this.refreshDate();
+      this.normalizeTitle(this.properties.title);
     }
   },
   methods: {
@@ -32,6 +39,11 @@ Component({
         dateLabel: `${month} · ${day}`,
         weekdayLabel: `周${weekdayMap[now.getDay()]}`
       });
+    },
+    normalizeTitle(raw) {
+      const text = typeof raw === 'string' ? raw : '';
+      const cleaned = text.replace(/日程管理/g, '').trim();
+      this.setData({ displayTitle: cleaned || (text || 'Syllaby') });
     }
   }
 });
