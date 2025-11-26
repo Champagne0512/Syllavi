@@ -1,99 +1,106 @@
 <view class="tools-page">
-  <!-- 头部 -->
-  <view class="header">
-    <view class="title">工具</view>
-    <view class="subtitle">实用工具，提升学习效率</view>
-  </view>
+  <custom-navbar title="Syllaby" subtitle="Toolbox" />
 
-  <!-- 空教室预约 -->
-  <view class="tool-section">
-    <view class="section-header">
-      <view class="section-title">空教室预约</view>
-      <view class="section-desc">实时查看空闲教室，快速预约学习空间</view>
-    </view>
+  <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
     
-    <view class="room-list">
-      <view wx:for="{{emptyRooms}}" wx:key="index" class="room-card">
-        <view class="room-info">
-          <view class="room-location">{{item.building}}</view>
-          <view class="room-tag">{{item.tag}}</view>
+    <!-- 空教室预约 -->
+    <view class="tool-section">
+      <view class="section-header">
+        <view class="section-title">空教室预约</view>
+        <view class="section-desc">实时查看空闲教室，快速预约学习空间</view>
+      </view>
+
+      <view class="room-list">
+        <view wx:for="{{emptyRooms}}" wx:key="index" class="room-card">
+          <view class="room-info">
+            <view class="room-location">{{item.building}}</view>
+            <view class="room-tag">{{item.tag}}</view>
+          </view>
+          <view class="room-status">{{item.status}}</view>
+          <view class="room-action" bindtap="goToRoomDetail" data-room="{{item}}">
+            预约
+          </view>
         </view>
-        <view class="room-status">{{item.status}}</view>
-        <view class="room-action" bindtap="goToRoomDetail" data-room="{{item}}">
-          预约
+      </view>
+
+      <view class="quick-actions">
+        <view class="action-btn primary" bindtap="markRoom">
+          <view class="icon-shape mark-icon"></view>
+          <text>标记空教室</text>
+        </view>
+        <view class="action-btn secondary" bindtap="refreshRooms">
+          <view class="icon-shape refresh-icon"></view>
+          <text>刷新列表</text>
         </view>
       </view>
     </view>
 
-    <view class="quick-actions">
-      <view class="action-btn primary" bindtap="markRoom">
-        <text class="icon">📍</text>
-        <text>标记空教室</text>
+    <!-- 番茄钟 -->
+    <view class="tool-section">
+      <view class="section-header">
+        <view class="section-title">番茄钟</view>
+        <view class="section-desc">专注学习，提升效率</view>
       </view>
-      <view class="action-btn secondary" bindtap="refreshRooms">
-        <text class="icon">🔄</text>
-        <text>刷新列表</text>
-      </view>
-    </view>
-  </view>
 
-  <!-- 番茄钟 -->
-  <view class="tool-section">
-    <view class="section-header">
-      <view class="section-title">番茄钟</view>
-      <view class="section-desc">专注学习，提升效率</view>
-    </view>
-    
-    <view class="focus-card">
-      <view class="focus-info">
-        <view class="focus-title">专注学习</view>
-        <view class="focus-desc">设置专注时间，避免干扰</view>
+      <view class="focus-card">
+        <view class="focus-info">
+          <view class="focus-title">专注学习</view>
+          <view class="focus-desc">设置专注时间，避免干扰</view>
+        </view>
+        <view class="focus-action" bindtap="goToFocus">
+          <view class="icon-shape timer-icon"></view>
+          <text>开始专注</text>
+        </view>
       </view>
-      <view class="focus-action" bindtap="goToFocus">
-        <text class="icon">⏱️</text>
-        <text>开始专注</text>
+
+      <view class="focus-stats">
+        <view class="stat-item">
+          <view class="stat-value">{{focusStats.todayFocus || 0}}</view>
+          <view class="stat-label">今日专注</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{focusStats.totalSessions || 0}}</view>
+          <view class="stat-label">总次数</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{focusStats.streakDays || 0}}</view>
+          <view class="stat-label">连续天数</view>
+        </view>
       </view>
     </view>
 
-    <view class="focus-stats">
-      <view class="stat-item">
-        <view class="stat-value">{{focusStats.todayFocus || 0}}</view>
-        <view class="stat-label">今日专注</view>
+    <!-- 其他工具 -->
+    <view class="tool-section">
+      <view class="section-header">
+        <view class="section-title">其他工具</view>
       </view>
-      <view class="stat-item">
-        <view class="stat-value">{{focusStats.totalSessions || 0}}</view>
-        <view class="stat-label">总次数</view>
-      </view>
-      <view class="stat-item">
-        <view class="stat-value">{{focusStats.streakDays || 0}}</view>
-        <view class="stat-label">连续天数</view>
-      </view>
-    </view>
-  </view>
 
-  <!-- 其他工具 -->
-  <view class="tool-section">
-    <view class="section-header">
-      <view class="section-title">其他工具</view>
+      <view class="tools-grid">
+        <view class="tool-item" bindtap="comingSoon">
+          <view class="tool-icon">
+            <view class="icon-shape note-icon"></view>
+          </view>
+          <view class="tool-name">笔记</view>
+        </view>
+        <view class="tool-item" bindtap="comingSoon">
+          <view class="tool-icon">
+            <view class="icon-shape stats-icon"></view>
+          </view>
+          <view class="tool-name">统计</view>
+        </view>
+        <view class="tool-item" bindtap="comingSoon">
+          <view class="tool-icon">
+            <view class="icon-shape reminder-icon"></view>
+          </view>
+          <view class="tool-name">提醒</view>
+        </view>
+        <view class="tool-item" bindtap="comingSoon">
+          <view class="tool-icon">
+            <view class="icon-shape goal-icon"></view>
+          </view>
+          <view class="tool-name">目标</view>
+        </view>
+      </view>
     </view>
-    
-    <view class="tools-grid">
-      <view class="tool-item" bindtap="comingSoon">
-        <view class="tool-icon">📝</view>
-        <view class="tool-name">笔记</view>
-      </view>
-      <view class="tool-item" bindtap="comingSoon">
-        <view class="tool-icon">📊</view>
-        <view class="tool-name">统计</view>
-      </view>
-      <view class="tool-item" bindtap="comingSoon">
-        <view class="tool-icon">🔔</view>
-        <view class="tool-name">提醒</view>
-      </view>
-      <view class="tool-item" bindtap="comingSoon">
-        <view class="tool-icon">🎯</view>
-        <view class="tool-name">目标</view>
-      </view>
-    </view>
-  </view>
+  </scroll-view>
 </view>

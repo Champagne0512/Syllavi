@@ -26,7 +26,25 @@ Page({
     files: [],
     filteredFiles: [],
     activeFolder: '全部',
-    loading: true
+    loading: true,
+    // 艺术设计新增状态
+    showQuote: false,
+    currentQuote: { text: '', author: '' },
+    zenMode: false,
+    sortOrder: 'asc',
+    quotes: [
+      { text: "Knowledge is the only treasure that increases when shared.", author: "Unknown" },
+      { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
+      { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
+      { text: "Live as if you were to die tomorrow. Learn as if you were to live forever.", author: "Mahatma Gandhi" },
+      { text: "The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.", author: "Brian Herbert" }
+    ],
+    zenQuotes: [
+      "宁静致远，智慧沉淀",
+      "心无杂念，学有所成", 
+      "专注当下，收获永恒",
+      "静水流深，厚积薄发"
+    ]
   },
   onLoad() {
     this.loadResources();
@@ -125,7 +143,7 @@ Page({
     if (!relatedFiles.length) return;
 
     wx.showActionSheet({
-      itemList: ['重命名', '删除（移入“未分类”）'],
+      itemList: ['重命名', '删除（移入"未分类"）'],
       success: (res) => {
         if (res.tapIndex === 0) {
           // 重命名
@@ -164,10 +182,10 @@ Page({
             }
           });
         } else if (res.tapIndex === 1) {
-          // 删除：将文件移动到“未分类”
+          // 删除：将文件移动到"未分类"
           wx.showModal({
             title: '删除文件夹',
-            content: '仅删除分类，不会删除文件，文件将移动到“未分类”。确认继续？',
+            content: '仅删除分类，不会删除文件，文件将移动到"未分类"。确认继续？',
             success: async (modalRes) => {
               if (!modalRes.confirm) return;
               wx.showLoading({ title: '处理中...' });
@@ -223,9 +241,86 @@ Page({
           },
           fail: () => {
             wx.hideLoading();
-            wx.showToast({ title: '无法预览', icon: 'none' });
-          }
-        });
+            wx.showToast({ title: '无法预览', icon: 'none'     });
+  },
+
+  // 艺术设计新增方法
+  showMoodQuote() {
+    const randomIndex = Math.floor(Math.random() * this.data.quotes.length);
+    this.setData({
+      showQuote: true,
+      currentQuote: this.data.quotes[randomIndex]
+    });
+    
+    // 震动反馈
+    wx.vibrateShort({ type: 'light' });
+    
+    // 5秒后自动隐藏
+    setTimeout(() => {
+      this.setData({ showQuote: false });
+    }, 5000);
+  },
+
+  toggleZenMode() {
+    const zenMode = !this.data.zenMode;
+    const randomIndex = Math.floor(Math.random() * this.data.zenQuotes.length);
+    
+    this.setData({
+      zenMode,
+      zenQuote: this.data.zenQuotes[randomIndex]
+    });
+
+    // 震动反馈
+    wx.vibrateShort({ type: 'light' });
+    
+    if (zenMode) {
+      // 进入专注模式
+      wx.showToast({
+        title: '进入专注模式',
+        icon: 'none',
+        duration: 1000
+      });
+    }
+  },
+
+  toggleSort() {
+    const sortOrder = this.data.sortOrder === 'asc' ? 'desc' : 'asc';
+    this.setData({ sortOrder }, () => {
+      this.sortFiles();
+    });
+    
+    // 震动反馈
+    wx.vibrateShort({ type: 'light' });
+  },
+
+  sortFiles() {
+    const { filteredFiles, sortOrder } = this.data;
+    const sortedFiles = [...filteredFiles].sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.name.localeCompare(b.name);
+      } else {
+        return b.name.localeCompare(a.name);
+      }
+    });
+    
+    this.setData({ filteredFiles: sortedFiles });
+  },
+
+  playAmbientSound() {
+    wx.showToast({
+      title: '环境音效功能开发中',
+      icon: 'none',
+      duration: 2000
+    });
+  },
+
+  formatSize(bytes) {
+    if (!bytes) return '';
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  }
+});
       },
       fail: () => {
         wx.hideLoading();
@@ -386,5 +481,82 @@ Page({
         }
       }
     });
+  },
+
+  // 艺术设计新增方法
+  showMoodQuote() {
+    const randomIndex = Math.floor(Math.random() * this.data.quotes.length);
+    this.setData({
+      showQuote: true,
+      currentQuote: this.data.quotes[randomIndex]
+    });
+    
+    // 震动反馈
+    wx.vibrateShort({ type: 'light' });
+    
+    // 5秒后自动隐藏
+    setTimeout(() => {
+      this.setData({ showQuote: false });
+    }, 5000);
+  },
+
+  toggleZenMode() {
+    const zenMode = !this.data.zenMode;
+    const randomIndex = Math.floor(Math.random() * this.data.zenQuotes.length);
+    
+    this.setData({
+      zenMode,
+      zenQuote: this.data.zenQuotes[randomIndex]
+    });
+
+    // 震动反馈
+    wx.vibrateShort({ type: 'light' });
+    
+    if (zenMode) {
+      // 进入专注模式
+      wx.showToast({
+        title: '进入专注模式',
+        icon: 'none',
+        duration: 1000
+      });
+    }
+  },
+
+  toggleSort() {
+    const sortOrder = this.data.sortOrder === 'asc' ? 'desc' : 'asc';
+    this.setData({ sortOrder }, () => {
+      this.sortFiles();
+    });
+    
+    // 震动反馈
+    wx.vibrateShort({ type: 'light' });
+  },
+
+  sortFiles() {
+    const { filteredFiles, sortOrder } = this.data;
+    const sortedFiles = [...filteredFiles].sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.name.localeCompare(b.name);
+      } else {
+        return b.name.localeCompare(a.name);
+      }
+    });
+    
+    this.setData({ filteredFiles: sortedFiles });
+  },
+
+  playAmbientSound() {
+    wx.showToast({
+      title: '环境音效功能开发中',
+      icon: 'none',
+      duration: 2000
+    });
+  },
+
+  formatSize(bytes) {
+    if (!bytes) return '';
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   }
 });

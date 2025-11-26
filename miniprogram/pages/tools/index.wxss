@@ -1,9 +1,10 @@
-/* 工具页面样式 */
+/* 工具页面样式 - 流动的秩序设计 */
 .tools-page {
   min-height: 100vh;
   padding: 32rpx;
-  color: var(--day-text);
+  color: #2D3436;
   position: relative;
+  background: #F2F4F6;
   font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
 }
 
@@ -142,6 +143,215 @@
   background: rgba(255, 255, 255, 0.65);
   color: var(--day-text);
   border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* 简约高级图标系统 */
+.icon-shape {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 6rpx;
+  position: relative;
+  margin-right: 8rpx;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 标记图标 */
+.mark-icon {
+  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
+}
+
+.mark-icon::before {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  left: 6rpx;
+  width: 12rpx;
+  height: 8rpx;
+  border: 2rpx solid white;
+  border-radius: 2rpx;
+}
+
+.mark-icon::after {
+  content: '';
+  position: absolute;
+  top: 10rpx;
+  left: 9rpx;
+  width: 6rpx;
+  height: 4rpx;
+  background: white;
+  border-radius: 1rpx;
+}
+
+/* 刷新图标 */
+.refresh-icon {
+  background: linear-gradient(135deg, #BCA0BC 0%, #A2B18A 100%);
+}
+
+.refresh-icon::before {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border: 2rpx solid white;
+  border-radius: 50%;
+}
+
+.refresh-icon::after {
+  content: '';
+  position: absolute;
+  top: 12rpx;
+  left: 16rpx;
+  width: 4rpx;
+  height: 4rpx;
+  background: white;
+  border-radius: 1rpx;
+}
+
+/* 计时器图标 */
+.timer-icon {
+  background: linear-gradient(135deg, #E2C2A4 0%, #D4A5A5 100%);
+}
+
+.timer-icon::before {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  left: 6rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border: 2rpx solid white;
+  border-radius: 50%;
+}
+
+.timer-icon::after {
+  content: '';
+  position: absolute;
+  top: 8rpx;
+  left: 11rpx;
+  width: 2rpx;
+  height: 6rpx;
+  background: white;
+  border-radius: 1rpx;
+}
+
+/* 工具网格图标 */
+.tool-item .icon-shape {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 12rpx;
+  margin-right: 0;
+  margin-bottom: 16rpx;
+}
+
+/* 笔记图标 */
+.note-icon {
+  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
+}
+
+.note-icon::before {
+  content: '';
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  width: 24rpx;
+  height: 16rpx;
+  border: 2rpx solid white;
+  border-radius: 2rpx;
+}
+
+.note-icon::after {
+  content: '';
+  position: absolute;
+  top: 20rpx;
+  left: 18rpx;
+  width: 12rpx;
+  height: 8rpx;
+  background: white;
+  border-radius: 1rpx;
+}
+
+/* 统计图标 */
+.stats-icon {
+  background: linear-gradient(135deg, #BCA0BC 0%, #A2B18A 100%);
+}
+
+.stats-icon::before {
+  content: '';
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  width: 24rpx;
+  height: 24rpx;
+  background: white;
+  border-radius: 4rpx;
+}
+
+.stats-icon::after {
+  content: '';
+  position: absolute;
+  top: 18rpx;
+  left: 18rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border: 2rpx solid #BCA0BC;
+  border-radius: 2rpx;
+}
+
+/* 提醒图标 */
+.reminder-icon {
+  background: linear-gradient(135deg, #E2C2A4 0%, #D4A5A5 100%);
+}
+
+.reminder-icon::before {
+  content: '';
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  width: 24rpx;
+  height: 24rpx;
+  border: 2rpx solid white;
+  border-radius: 50%;
+}
+
+.reminder-icon::after {
+  content: '';
+  position: absolute;
+  top: 18rpx;
+  left: 18rpx;
+  width: 12rpx;
+  height: 12rpx;
+  background: white;
+  border-radius: 50%;
+}
+
+/* 目标图标 */
+.goal-icon {
+  background: linear-gradient(135deg, #E08E79 0%, #D4A5A5 100%);
+}
+
+.goal-icon::before {
+  content: '';
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  width: 24rpx;
+  height: 24rpx;
+  border: 2rpx solid white;
+  border-radius: 50%;
+}
+
+.goal-icon::after {
+  content: '';
+  position: absolute;
+  top: 18rpx;
+  left: 18rpx;
+  width: 12rpx;
+  height: 12rpx;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2rpx #E08E79;
 }
 
 .action-btn .icon {

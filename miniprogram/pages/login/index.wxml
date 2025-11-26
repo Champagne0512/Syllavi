@@ -4,7 +4,6 @@
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
     <view class="hero-section">
       <view class="hero card glass">
-        <text class="brand">Syllaby</text>
         <text class="tagline">Academic Zen · 学术禅意</text>
         <text class="muted copy">
           课程表 · 管理待办 · AI 划重点 · 番茄专注

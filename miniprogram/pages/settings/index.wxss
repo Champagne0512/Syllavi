@@ -1,7 +1,9 @@
+/* 个人资料页面 - 流动的秩序设计 */
 .settings-page {
   min-height: 100vh;
-  color: var(--day-text);
+  color: #2D3436;
   position: relative;
+  background: #F2F4F6;
   font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
 }
 

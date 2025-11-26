@@ -147,8 +147,8 @@
   height: 96rpx;
   font-size: 30rpx;
   font-weight: 600;
-  background: linear-gradient(135deg, rgba(47, 87, 134, 0.95), rgba(224, 142, 121, 0.95));
-  color: #2D3436;
+  background: linear-gradient(135deg, #2F5786, #E08E79);
+  color: #FFFFFF;
   border: none;
   margin-top: 16rpx;
   display: flex;
