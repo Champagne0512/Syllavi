@@ -141,6 +141,7 @@ const formatGradeForSave = (grade) => {
 Page({
   data: {
     loading: true,
+    isGuest: false,
     profile: {
       nickname: '同学',
       school_name: '',
@@ -173,10 +174,15 @@ Page({
   },
 
   onLoad() {
+    this.setData({ isGuest: this.detectGuestMode() });
     this.bootstrap();
   },
 
   onShow() {
+    const guestMode = this.detectGuestMode();
+    if (guestMode !== this.data.isGuest) {
+      this.setData({ isGuest: guestMode });
+    }
     if (this.getTabBar && this.getTabBar()) {
       this.getTabBar().setSelected(3);
     }
@@ -196,6 +202,16 @@ Page({
       this.loadHeatmap()
     ]);
     this.setData({ loading: false });
+  },
+
+  detectGuestMode() {
+    const app = getApp();
+    const supabase = app?.globalData?.supabase || {};
+    const userId = supabase.userId || wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id');
+    const token = supabase.accessToken || wx.getStorageSync('access_token');
+    if (!userId) return true;
+    if (userId === DEMO_USER_ID) return true;
+    return !token;
   },
 
   async loadProfile() {
@@ -427,6 +443,10 @@ Page({
       gradePickerIndex: index,
       'editForm.grade': gradeValue
     });
+  },
+
+  goLogin() {
+    wx.navigateTo({ url: '/pages/login/index' });
   },
 
   stopTouchMove() {

@@ -21,9 +21,20 @@
           </view>
           <view class="bio muted" wx:if="{{profile.bio}}">{{profile.bio}}</view>
         </view>
-        <view class="edit-btn" bindtap="editProfile">
+        <view class="edit-btn" wx:if="{{!isGuest}}" bindtap="editProfile">
           <text>编辑</text>
         </view>
+      </view>
+    </view>
+
+    <view class="guest-card" wx:if="{{isGuest}}">
+      <view class="guest-header">
+        <text class="guest-title">当前为游客模式</text>
+        <text class="guest-tag">Visitor</text>
+      </view>
+      <view class="guest-desc">登录 / 注册后即可同步课程、任务和专注记录。</view>
+      <view class="guest-actions">
+        <view class="login-btn" bindtap="goLogin">登录 · 注册</view>
       </view>
     </view>
 

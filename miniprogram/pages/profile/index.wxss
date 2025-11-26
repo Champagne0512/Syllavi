@@ -82,6 +82,60 @@
   backdrop-filter: blur(12rpx);
 }
 
+.guest-card {
+  margin-bottom: 24rpx;
+  padding: 32rpx;
+  border-radius: 40rpx;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(24rpx);
+  box-shadow: 0 24rpx 60rpx rgba(15, 23, 42, 0.12);
+}
+
+.guest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.guest-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--day-text);
+}
+
+.guest-tag {
+  font-size: 22rpx;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  border: 1px solid rgba(45, 52, 54, 0.2);
+  color: rgba(45, 52, 54, 0.6);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.guest-desc {
+  font-size: 26rpx;
+  color: rgba(45, 52, 54, 0.7);
+  margin-bottom: 24rpx;
+}
+
+.guest-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.login-btn {
+  padding: 20rpx 48rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.9), rgba(224, 142, 121, 0.9));
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 600;
+  box-shadow: 0 24rpx 48rpx rgba(135, 168, 164, 0.3);
+}
+
 /* 学习统计卡片 */
 .stats-card {
   margin-bottom: 24rpx;
