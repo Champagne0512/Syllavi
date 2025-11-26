@@ -6,6 +6,9 @@ const gradients = [
   ['#1148C4', '#FF5C00']
 ];
 
+const MIN_MINUTES = 5;
+const MAX_MINUTES = 180;
+
 const formatTime = (seconds) => {
   const m = Math.floor(seconds / 60)
     .toString()
@@ -25,7 +28,9 @@ Page({
     running: false,
     gradientIndex: 0,
     courseName: '',
-    summaryCard: null
+    summaryCard: null,
+    customMinutes: 45,
+    customMinutesDraft: '45'
   },
   onLoad(query) {
     if (query.course) {
@@ -110,7 +115,39 @@ Page({
   },
   adjustMinutes(e) {
     const minutes = e.detail.value;
-    this.setData({ minutes, remaining: minutes * 60, displayTime: formatTime(minutes * 60) });
+    this.setFocusMinutes(minutes);
+  },
+  setFocusMinutes(minutes) {
+    if (this.data.running) return;
+    const normalized = this.normalizeMinutes(minutes);
+    const seconds = normalized * 60;
+    this.setData({
+      minutes: normalized,
+      customMinutes: normalized,
+      customMinutesDraft: String(normalized),
+      remaining: seconds,
+      displayTime: formatTime(seconds)
+    });
+  },
+  normalizeMinutes(value) {
+    const num = Number(value);
+    if (Number.isNaN(num)) return this.data.minutes;
+    return Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Math.round(num)));
+  },
+  onCustomMinutesInput(e) {
+    this.setData({ customMinutesDraft: e.detail.value });
+  },
+  applyCustomMinutes() {
+    if (this.data.running) {
+      wx.showToast({ title: '专注进行中，稍后再改', icon: 'none' });
+      return;
+    }
+    const normalized = this.normalizeMinutes(this.data.customMinutesDraft);
+    this.setFocusMinutes(normalized);
+    if (String(normalized) !== this.data.customMinutesDraft) {
+      this.setData({ customMinutesDraft: String(normalized) });
+    }
+    wx.vibrateShort({ type: 'light' });
   },
   exitFocus() {
     wx.vibrateShort({ type: 'light' });

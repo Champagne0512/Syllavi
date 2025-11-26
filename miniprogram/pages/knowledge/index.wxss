@@ -5,7 +5,7 @@
   position: relative;
   background: #F2F4F6; /* 冷调灰白背景 */
   color: #2D3436; /* 深炭灰文字 */
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: var(--main-font);
   overflow-x: hidden;
 }
 

@@ -73,6 +73,10 @@ App({
 
   loadLXGWWenKaiFont() {
     if (!wx.loadFontFace) return;
+    
+    // 设置字体加载状态
+    this.setFontLoadingState(true);
+    
     // 1. 加载霞鹜文楷 (中文主力)
     wx.loadFontFace({
       family: 'LXGW WenKai',
@@ -80,11 +84,29 @@ App({
       global: true, // 全局生效
       success: () => {
         console.log('LXGW WenKai font loaded successfully');
+        this.setFontLoadingState(false);
       },
       fail: (err) => {
         console.warn('Failed to load LXGW WenKai font', err);
+        this.setFontLoadingState(false);
       }
     });
+  },
+
+  setFontLoadingState(loading) {
+    // 设置全局字体加载状态
+    this.globalData.fontLoading = loading;
+    
+    // 如果页面已经存在，更新页面状态
+    const pages = getCurrentPages();
+    if (pages.length > 0) {
+      const currentPage = pages[pages.length - 1];
+      if (currentPage.setData) {
+        currentPage.setData({
+          fontLoading: loading
+        });
+      }
+    }
   },
   async refreshSession(refreshTok) {
     try {

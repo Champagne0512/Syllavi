@@ -58,6 +58,24 @@ page {
   -webkit-font-smoothing: antialiased; /* iOS 抗锯齿，字体更清晰 */
 }
 
+/* 字体加载状态指示器 */
+.font-loading {
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif !important;
+}
+
+.font-loaded {
+  font-family: var(--main-font) !important;
+}
+
+view,
+text,
+button,
+input,
+textarea,
+form {
+  font-family: var(--main-font);
+}
+
 .page-shell {
   position: relative;
   min-height: 100vh;
