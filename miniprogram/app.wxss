@@ -29,12 +29,33 @@
   --chip-text: #2D3436;
 }
 
+/* 定义全局字体变量 */
 page {
+  /* 
+    字体逻辑：
+    1. 'LXGW WenKai': 我们刚加载的艺术字体
+    2. 'PingFang SC': iOS 默认
+    3. 'HarmonyOS Sans': 华为鸿蒙默认（非常漂亮）
+    4. 'Microsoft YaHei': 安卓/Windows 备选
+  */
+  --main-font: "LXGW WenKai", "PingFang SC", "HarmonyOS Sans", "Microsoft YaHei", sans-serif;
+  
+  /* 
+    数字/英文专用字体：
+    DIN Alternate 是 iOS 自带的高级数字字体，非常有工业设计感
+    Roboto 是安卓自带
+  */
+  --num-font: "DIN Alternate", "Roboto", "Helvetica Neue", sans-serif;
+  
+  /* 基础设定 */
   min-height: 100vh;
   background: linear-gradient(135deg, #F2F4F6 0%, #ECECF0 60%, #F9FAFB 100%);
   color: var(--day-text);
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  font-family: var(--main-font);
+  font-size: 28rpx;
+  line-height: 1.6; /* 黄金阅读行高，不要挤在一起 */
   letter-spacing: 0.2rpx;
+  -webkit-font-smoothing: antialiased; /* iOS 抗锯齿，字体更清晰 */
 }
 
 .page-shell {
@@ -273,4 +294,58 @@ page {
     transform: scale(0.9);
     opacity: 0.6;
   }
+}
+
+/* 数字专用类：用于时间、日期、教室号 */
+.num-text {
+  font-family: var(--num-font);
+  font-weight: bold; /* 数字加粗更好看 */
+  letter-spacing: 1px; /* 数字稍微疏散一点，显得高级 */
+}
+
+/* 标题类 */
+.title-text {
+  font-weight: bold;
+  /* 可以在这里把标题字间距稍微拉开 */
+  letter-spacing: 2rpx; 
+}
+
+/* 次要信息样式 */
+.secondary-text {
+  color: #9CA3AF; /* 把颜色变淡而不是字体变小 */
+}
+
+/* 强调样式 - 极细超大数字装饰 */
+.week-indicator {
+    font-family: var(--num-font);
+    font-size: 80rpx;
+    font-weight: 200; /* 极细的超大数字，非常高级 */
+    opacity: 0.1;     /* 极淡的背景装饰 */
+}
+
+/* 数字专用类：用于时间、日期、教室号 */
+.num-text {
+  font-family: var(--num-font);
+  font-weight: bold; /* 数字加粗更好看 */
+  letter-spacing: 1px; /* 数字稍微疏散一点，显得高级 */
+}
+
+/* 标题类 */
+.title-text {
+  font-weight: bold;
+  /* 可以在这里把标题字间距稍微拉开 */
+  letter-spacing: 2rpx; 
+}
+
+/* 次要信息样式 */
+.secondary-text {
+  color: #9CA3AF; /* 把颜色变淡而不是字体变小 */
+}
+
+/* 强调样式 - 极细超大数字装饰 */
+.week-indicator {
+    font-family: var(--num-font);
+    font-size: 80rpx;
+    font-weight: 200; /* 极细的超大数字，非常高级 */
+    opacity: 0.1;     /* 极淡的背景装饰 */
 }
