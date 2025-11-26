@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/hub/index",
+    "pages/schedule-tasks/index",
+    "pages/knowledge/index",
+    "pages/focus/index",
+    "pages/ai-import/index",
+    "pages/profile/index",
+    "pages/settings/index",
+    "pages/tools/index"
+  ],
+  "window": {
+    "backgroundColor": "#F7F7F5",
+    "backgroundTextStyle": "light",
+    "navigationStyle": "custom",
+    "enablePullDownRefresh": true
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#8C8C8C",
+    "selectedColor": "#1C1C1E",
+    "backgroundColor": "#F7F7F5",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/hub/index",
+        "text": "课程与待办",
+        "iconPath": "static/tab/placeholder.png",
+        "selectedIconPath": "static/tab/placeholder.png"
+      },
+      {
+        "pagePath": "pages/knowledge/index",
+        "text": "资料",
+        "iconPath": "static/tab/placeholder.png",
+        "selectedIconPath": "static/tab/placeholder.png"
+      },
+      {
+        "pagePath": "pages/tools/index",
+        "text": "工具",
+        "iconPath": "static/tab/placeholder.png",
+        "selectedIconPath": "static/tab/placeholder.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "个人",
+        "iconPath": "static/tab/placeholder.png",
+        "selectedIconPath": "static/tab/placeholder.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

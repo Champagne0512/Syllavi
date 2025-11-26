@@ -1,0 +1,111 @@
+.focus-page {
+  min-height: 100vh;
+  padding: 80rpx 48rpx;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 48rpx;
+  background: radial-gradient(circle at 20% 20%, rgba(129, 140, 248, 0.2), transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(224, 142, 121, 0.15), transparent 45%),
+    linear-gradient(135deg, #0F172A, #111827 40%, #1E1B4B 100%);
+}
+
+.exit-btn {
+  position: absolute;
+  top: 80rpx;
+  right: 48rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-size: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(16rpx);
+}
+
+.exit-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.9);
+}
+
+.course-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.countdown {
+  font-size: 160rpx;
+  letter-spacing: 0.08em;
+  text-align: center;
+  font-family: 'JetBrains Mono', 'Gotham', sans-serif;
+  text-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.35);
+}
+
+.controls {
+  display: flex;
+  gap: 32rpx;
+}
+
+.primary {
+  flex: 1;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #F2F4F6, #FFFFFF);
+  color: #111827;
+  border: none;
+  box-shadow: 0 30rpx 60rpx rgba(15, 23, 42, 0.35);
+}
+
+.ghost {
+  flex: 1;
+  border-radius: 999rpx;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+  backdrop-filter: blur(12rpx);
+}
+
+.slider-block {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 32rpx;
+  border-radius: 40rpx;
+  backdrop-filter: blur(16rpx);
+}
+
+.summary {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 36rpx;
+  padding: 32rpx;
+  color: #F5F6FB;
+  box-shadow: 0 24rpx 60rpx rgba(0, 0, 0, 0.25);
+}
+
+.rings {
+  display: flex;
+  justify-content: space-between;
+  margin: 32rpx 0;
+}
+
+.ring {
+  flex: 1;
+  text-align: center;
+}
+
+.big {
+  font-size: 64rpx;
+}
+
+.focus-canvas {
+  /* 放在视图之外，仅用于导出分享卡片 */
+  position: absolute;
+  width: 600rpx;
+  height: 800rpx;
+  left: -9999rpx;
+  top: -9999rpx;
+}

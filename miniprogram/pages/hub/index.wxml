@@ -1,0 +1,230 @@
+<view class="hub-page">
+  <!-- 顶部导航 -->
+  <custom-navbar title="Syllaby" subtitle="日程管理">
+    <view slot="right" class="profile-avatar" bindtap="goToProfile">
+      <image wx:if="{{profile.avatar_url}}" src="{{profile.avatar_url}}" class="avatar-img"></image>
+      <view wx:else class="avatar-placeholder">👤</view>
+    </view>
+  </custom-navbar>
+
+  <!-- 视图切换器 & 日期控制 -->
+  <view class="header-controls">
+    <view class="view-switch">
+      <view class="chip {{viewMode === 'day' ? 'chip-active' : ''}}" bindtap="switchView" data-mode="day">日</view>
+      <view class="chip {{viewMode === 'week' ? 'chip-active' : ''}}" bindtap="switchView" data-mode="week">周</view>
+      <view class="chip {{viewMode === 'month' ? 'chip-active' : ''}}" bindtap="switchView" data-mode="month">月</view>
+    </view>
+
+    <view class="date-nav glass" wx:if="{{viewMode !== 'nothing'}}">
+      <view class="nav-btn" bindtap="changeDate" data-direction="-1">
+        <text class="arrow">‹</text>
+      </view>
+      <text class="date-display">{{currentDateText}}</text>
+      <view class="nav-btn" bindtap="changeDate" data-direction="1">
+        <text class="arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="zen-scroll" scroll-y="true" enable-flex>
+    
+    <!-- === 日视图 (Day) === -->
+    <view wx:if="{{viewMode === 'day'}}" class="view-container day-view fade-in">
+      <!-- 今日课程 -->
+      <view class="section-head">
+        <text class="head-title">今日课程</text>
+        <text class="head-sub">{{todayCourses.length}} 节</text>
+      </view>
+      
+      <view class="course-timeline">
+        <block wx:for="{{todayCourses}}" wx:key="id">
+          <view class="timeline-item">
+            <view class="time-col">
+              <text class="start-time">{{item.time.split('-')[0]}}</text>
+              <view class="time-dot" style="background: {{item.color}}"></view>
+            </view>
+            <view class="course-card glass-card" style="border-left: 8rpx solid {{item.color}}">
+              <text class="card-title">{{item.name}}</text>
+              <text class="card-sub">{{item.location}}</text>
+            </view>
+          </view>
+        </block>
+        <view wx:if="{{todayCourses.length === 0}}" class="empty-tip">
+          <text>今天没有课，去图书馆学习吧</text>
+        </view>
+      </view>
+
+      <!-- 今日待办 -->
+      <view class="section-head mt-40">
+        <text class="head-title">今日待办</text>
+        <view class="head-sub">{{todayTasks.length}} 项</view>
+      </view>
+
+      <view class="task-stack">
+        <block wx:for="{{todayTasks}}" wx:key="id">
+          <view class="task-row glass-card {{item.completed ? 'done' : ''}}">
+            <view class="check-circle {{item.completed ? 'checked' : ''}}"></view>
+            <view class="task-info">
+              <text class="task-text">{{item.title}}</text>
+              <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadline}}</text>
+            </view>
+          </view>
+        </block>
+        <view wx:if="{{todayTasks.length === 0}}" class="empty-tip">
+          <text>今日任务已清空</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- === 周视图 (Week) === -->
+    <view wx:if="{{viewMode === 'week'}}" class="view-container week-view fade-in">
+      <!-- 简易课表网格 -->
+      <view class="week-grid-container">
+        <view class="week-header-row">
+          <view class="corner-box"></view>
+          <block wx:for="{{weekDays}}" wx:key="date">
+            <view class="day-col-head {{item.isToday ? 'today-head' : ''}}">
+              <text class="day-name">周{{item.name}}</text>
+              <text class="day-num">{{item.date}}</text>
+            </view>
+          </block>
+        </view>
+
+        <view class="week-body">
+          <!-- 侧边时间轴 -->
+          <view class="time-sidebar">
+            <block wx:for="{{[1,2,3,4,5,6,7,8,9,10,11,12]}}" wx:key="*this">
+              <view class="sidebar-slot">{{item}}</view>
+            </block>
+          </view>
+          
+          <!-- 课程渲染区 -->
+          <view class="course-matrix">
+             <block wx:for="{{weekDays}}" wx:key="date" wx:for-item="day" wx:for-index="dIdx">
+                <!-- 每一列 -->
+                <view class="day-column-bg"></view>
+             </block>
+             
+             <!-- 绝对定位渲染课程 (遍历 slot 数据) -->
+             <block wx:for="{{timeSlots}}" wx:key="time" wx:for-item="slot">
+                <block wx:for="{{slot.courses}}" wx:key="id" wx:for-item="course">
+                  <!-- 计算位置: left = (day-1)*100/7 %, top = (start-1)*itemHeight -->
+                  <view class="grid-course-item" 
+                        style="left: {{(course.day - 1) * 14.28}}%; top: {{(course.start - 1) * 100}}rpx; height: {{course.len * 100}}rpx; background: {{course.color}};"
+                        bindtap="openCourse" data-id="{{course.id}}">
+                    <text class="grid-text">{{course.name}}</text>
+                    <text class="grid-loc">{{course.location}}</text>
+                  </view>
+                </block>
+             </block>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部：本周任务概览 -->
+      <view class="section-head mt-40">
+        <text class="head-title">本周任务分布</text>
+        <text class="head-sub">{{totalWeekTasks}} 项</text>
+      </view>
+      <scroll-view scroll-x class="week-task-scroll" enable-flex>
+        <block wx:for="{{weekTasksByDay}}" wx:key="date">
+          <view class="week-task-card glass-card" wx:if="{{item.tasks.length > 0}}">
+            <text class="wt-day">周{{item.label}}</text>
+            <block wx:for="{{item.tasks}}" wx:key="id" wx:for-item="t">
+               <view class="wt-chip {{t.type}}">{{t.title}}</view>
+            </block>
+          </view>
+        </block>
+        <view wx:if="{{hasNoWeekTasks}}" class="empty-tip inline">本周无任务</view>
+      </scroll-view>
+    </view>
+
+    <!-- === 月视图 (Month / Dashboard) === -->
+    <view wx:if="{{viewMode === 'month'}}" class="view-container month-view fade-in">
+      
+      <!-- 1. 月度统计卡片 -->
+      <view class="stats-grid">
+        <view class="stat-card glass-card">
+          <text class="stat-num">{{monthStats.totalTasks || 0}}</text>
+          <text class="stat-label">总待办</text>
+        </view>
+        <view class="stat-card glass-card">
+          <text class="stat-num">{{monthStats.completedTasks || 0}}</text>
+          <text class="stat-label">已完成</text>
+        </view>
+        <view class="stat-card glass-card highlight">
+          <text class="stat-num">{{monthStats.exams || 0}}</text>
+          <text class="stat-label">考试</text>
+        </view>
+        <view class="stat-card glass-card">
+          <text class="stat-num">{{monthStats.busiestDay || '-'}}</text>
+          <text class="stat-label">最忙碌</text>
+        </view>
+      </view>
+
+      <!-- 2. 任务热力图 -->
+      <view class="section-head mt-40">
+        <text class="head-title">能量分布</text>
+        <text class="head-sub">本月任务密度</text>
+      </view>
+      <view class="heatmap-container glass-card">
+        <view class="heatmap-grid">
+          <block wx:for="{{monthHeatmap}}" wx:key="day">
+            <view class="heat-cell {{item.level}}">
+              <text wx:if="{{item.count > 0}}" class="heat-num">{{item.day}}</text>
+            </view>
+          </block>
+        </view>
+        <view class="heatmap-legend">
+          <text>Less</text>
+          <view class="legend-dots">
+            <view class="dot l0"></view>
+            <view class="dot l1"></view>
+            <view class="dot l2"></view>
+            <view class="dot l3"></view>
+          </view>
+          <text>More</text>
+        </view>
+      </view>
+
+      <!-- 3. 近期重要日程 -->
+      <view class="section-head mt-40">
+        <text class="head-title">即将到来</text>
+        <text class="head-sub">{{upcomingTasks.length}} 项</text>
+      </view>
+      <view class="upcoming-list">
+        <block wx:for="{{upcomingTasks}}" wx:key="id">
+          <view class="upcoming-item glass-card">
+            <view class="up-date">
+              <text class="up-day">{{item.deadline.split('.')[1]}}</text>
+              <text class="up-mon">{{item.deadline.split('.')[0]}}月</text>
+            </view>
+            <view class="up-info">
+              <text class="up-title">{{item.title}}</text>
+              <text class="up-sub {{item.urgent ? 'urgent-text' : ''}}">{{item.course}}</text>
+            </view>
+            <view class="up-tag" style="background: {{item.accent}}"></view>
+          </view>
+        </block>
+        <view wx:if="{{upcomingTasks.length === 0}}" class="empty-tip">未来7天暂无急迫任务</view>
+      </view>
+
+    </view>
+
+    <!-- 功能提示：空教室和番茄钟功能已迁移到"工具"模块 -->
+    <view class="feature-tip card">
+      <view class="section-head">
+        <text>更多工具</text>
+        <text class="tip-arrow">→</text>
+      </view>
+      <view class="tip-content">
+        <text class="tip-text">空教室预约、番茄钟等实用工具已整合到</text>
+        <text class="tool-link" bindtap="goToTools">工具模块</text>
+      </view>
+    </view>
+
+    <view class="spacer-bottom"></view>
+  </scroll-view>
+
+  <floating-action-button />
+</view>

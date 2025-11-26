@@ -1,0 +1,41 @@
+<view class="focus-page" style="background-image: linear-gradient(160deg, {{gradients[gradientIndex][0]}}, {{gradients[gradientIndex][1]}});">
+  <!-- 退出按钮 -->
+  <button class="exit-btn" bindtap="exitFocus" wx:if="{{!running}}">
+    ✕
+  </button>
+
+  <view class="course-tag" wx:if="{{courseName}}">
+    <text class="muted">当前课程</text>
+    <text class="mono">{{courseName}}</text>
+  </view>
+
+  <view class="countdown mono">{{displayTime}}</view>
+
+  <view class="controls">
+    <button class="primary" bindtap="startFocus" disabled="{{running}}">开始专注</button>
+    <button class="ghost" bindtap="stopFocus" disabled="{{!running}}">结束</button>
+  </view>
+
+  <view class="slider-block" wx:if="{{!running}}">
+    <text class="muted">时长 (分钟)</text>
+    <slider min="15" max="90" step="5" value="{{minutes}}" bindchange="adjustMinutes" />
+  </view>
+
+  <view class="summary card" wx:if="{{summaryCard}}">
+    <text>专注卡片</text>
+    <view class="rings">
+      <view class="ring">
+        <text class="mono big">{{summaryCard.focus}}</text>
+        <text class="muted">Focus h</text>
+      </view>
+      <view class="ring">
+        <text class="mono big">{{summaryCard.streak}}</text>
+        <text class="muted">Streak</text>
+      </view>
+    </view>
+    <button class="ghost" bindtap="saveCard">保存到相册</button>
+  </view>
+
+  <!-- 分享卡片绘制用 canvas，常驻但不占主视觉 -->
+  <canvas canvas-id="focusCard" class="focus-canvas"></canvas>
+</view>

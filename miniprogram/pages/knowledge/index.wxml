@@ -1,0 +1,47 @@
+<view class="knowledge-page">
+  <custom-navbar title="Syllaby" subtitle="知识星图" />
+
+  <scroll-view class="zen-scroll" scroll-y="true">
+    <view class="toolbar">
+      <button class="upload-btn" bindtap="uploadResource">
+        ＋ 上传资料
+      </button>
+    </view>
+
+    <view class="folder-grid">
+      <block wx:for="{{folders}}" wx:key="id">
+        <view class="folder-card {{activeFolder === item.name ? 'active' : ''}}"
+          style="--tone: {{item.tone}};"
+          data-name="{{item.name}}"
+          bindtap="selectFolder"
+          bindlongpress="handleFolderLongPress">
+          <view class="folder-clip"></view>
+          <text class="name">{{item.name}}</text>
+          <text class="muted">{{item.count}} files</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="card">
+      <view class="section-head">
+        <text>{{activeFolder}} · 文件</text>
+        <text class="muted mono">Supabase Storage</text>
+      </view>
+      <block wx:for="{{filteredFiles}}" wx:key="id">
+        <view class="file-row"
+          data-id="{{item.id}}"
+          bindtap="previewFile"
+          bindlongpress="handleFileLongPress">
+          <view class="file-icon">
+            <text class="mono">{{item.type}}</text>
+          </view>
+          <view class="details">
+            <text>{{item.name}}</text>
+            <text class="muted">{{item.subject}}</text>
+          </view>
+          <text class="mono muted">预览</text>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

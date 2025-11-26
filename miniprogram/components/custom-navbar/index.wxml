@@ -1,0 +1,13 @@
+<view class="navbar" style="padding-top: {{statusBarHeight}}px;">
+  <view class="date-block">
+    <text class="date">{{dateLabel}}</text>
+    <text class="weekday mono">{{weekdayLabel}}</text>
+  </view>
+  <view class="titles">
+    <text class="title">{{displayTitle}}</text>
+    <text class="subtitle">{{subtitle}}</text>
+  </view>
+  <view class="navbar-right">
+    <slot name="right"></slot>
+  </view>
+</view>

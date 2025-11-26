@@ -1,0 +1,89 @@
+<view class="ai-import-page">
+  <custom-navbar title="Syllaby" subtitle="AI 导入" />
+
+  <view class="hero">
+    <view class="mode-switch">
+      <view class="pill {{mode === 'task' ? 'active' : ''}}"
+        data-mode="task"
+        bindtap="switchMode">
+        任务通知
+      </view>
+      <view class="pill {{mode === 'course' ? 'active' : ''}}"
+        data-mode="course"
+        bindtap="switchMode">
+        课程表
+      </view>
+    </view>
+    <text class="mono">
+      {{mode === 'task' ? 'Screenshot to Tasks' : 'Screenshot to Schedule'}}
+    </text>
+    <text>
+      {{mode === 'task'
+        ? '上传作业/考试通知截图，自动生成待办。'
+        : '上传考试/课表截图，一键转化为课程数据。'}}
+    </text>
+  </view>
+
+  <view class="upload card" bindtap="chooseImage">
+    <view class="preview" wx:if="{{image}}">
+      <image src="{{image}}" mode="aspectFit" />
+      <view class="scan-line" wx:if="{{scanning}}"></view>
+    </view>
+    <view wx:else class="placeholder">
+      <text class="mono">＋ 上传截图</text>
+    </view>
+    <view class="progress" wx:if="{{scanning}}">
+      <view class="bar" style="width: {{progress}}%;"></view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{result}}">
+    <view class="section-head">
+      <text>AI 识别结果</text>
+      <text class="muted">
+        {{mode === 'task' ? '可编辑后逐条或批量写入待办' : '可编辑后逐条或批量写入课程表'}}
+      </text>
+    </view>
+    <view class="bulk-actions">
+      <button class="ghost mini"
+        wx:if="{{mode === 'task'}}"
+        bindtap="confirmAll">
+        全部写入待办
+      </button>
+      <button class="ghost mini"
+        wx:elif="{{mode === 'course'}}"
+        bindtap="confirmAll">
+        全部写入课程表
+      </button>
+    </view>
+    <block wx:for="{{result}}" wx:key="index">
+      <view class="result-row">
+        <view wx:if="{{item.kind === 'task'}}" class="info-row"
+          data-index="{{index}}"
+          bindtap="editItem">
+          <view class="chip {{item.type}}">
+            {{item.type === 'exam' ? '考试' : '作业'}}
+          </view>
+          <view class="info">
+            <text>{{item.title}}</text>
+            <text class="muted">{{item.deadline}}</text>
+          </view>
+        </view>
+        <view wx:elif="{{item.kind === 'course'}}" class="info-row"
+          data-index="{{index}}"
+          bindtap="editItem">
+          <view class="chip exam">课程</view>
+          <view class="info">
+            <text>{{item.name}}</text>
+            <text class="muted">
+              周{{item.day_of_week}} · 第{{item.start_section}}节起 {{item.length}}节 · {{item.location}}
+            </text>
+          </view>
+        </view>
+        <button class="ghost mini" data-index="{{index}}" bindtap="confirmItem">
+          {{item.kind === 'task' ? '写入待办' : '稍后处理'}}
+        </button>
+      </view>
+    </block>
+  </view>
+</view>
