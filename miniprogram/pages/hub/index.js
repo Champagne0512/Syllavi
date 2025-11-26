@@ -361,14 +361,6 @@ Page({
     });
   },
 
-  // 跳转到工具模块
-  goToTools() {
-    wx.vibrateShort({ type: 'light' });
-    wx.switchTab({
-      url: '/pages/tools/index'
-    });
-  },
-
   goToProfile() {
     wx.navigateTo({ url: '/pages/profile/index' });
   },

@@ -1,26 +1,16 @@
 // pages/schedule-tasks/index.js
 import { MORANDI_COLORS } from '../../utils/colors';
 
-// 模拟课程数据 (使用莫兰迪色系)
-const MOCK_COURSES = [
-  { id: 'c1', name: '操作系统', location: 'C3-201', day: 1, start: 2, len: 2, color: '#9BB5CE' }, // 周一 2-4节
-  { id: 'c2', name: '线性代数', location: 'B1-105', day: 2, start: 1, len: 2, color: '#C9A5A0' }, // 周二 1-2节
-  { id: 'c3', name: '人工智能导论', location: 'A2-404', day: 3, start: 6, len: 3, color: '#A3B18A' },
-  { id: 'c4', name: '英语视听说', location: 'D1-302', day: 4, start: 3, len: 2, color: '#D6CDEA' },
-  { id: 'c5', name: '计算机网络', location: 'C3-101', day: 5, start: 1, len: 2, color: '#E0C3A5' }
-];
-
-// 模拟任务兜底
-const MOCK_TASKS = [
-  {
-    id: 'mock-1',
-    type: 'homework',
-    title: '操作系统实验报告',
-    deadline: new Date().toISOString(),
-    is_completed: false,
-    related_course_id: 'OS'
-  }
-];
+const supabaseApi = require('../../utils/supabase');
+const {
+  DEMO_USER_ID,
+  fetchWeekSchedule,
+  fetchTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+  updateTaskCompletion
+} = supabaseApi;
 
 function formatTime(dateStr) {
   const d = new Date(dateStr);
@@ -62,24 +52,28 @@ Page({
     weekDays: [], // 周视图头部
     timeSlots: [], // 周视图网格
     weekTasksByDay: [], 
-    monthStats: {},
+    monthStats: { totalTasks: 0, completedTasks: 0, exams: 0, busiestDay: '-' },
     monthHeatmap: [],
     upcomingTasks: [],
+    scheduleCourses: [],
 
     loadingTasks: true,
     editorVisible: false,
     editingTask: null,
     saving: false,
-    form: { type: 'homework', title: '', date: '', time: '', description: '' }
+    form: { type: 'homework', title: '', date: '', time: '', description: '', related_course_id: null }
   },
 
   onLoad() {
     this.initDate();
+    this.loadSchedule();
     this.loadTasks();
-    this.generateTimeSlots();
   },
 
   onShow() {
+    if (!this.data.loadingTasks) {
+      this.loadTasks();
+    }
   },
 
   initDate() {
@@ -143,10 +137,13 @@ Page({
     const dayOfWeek = date.getDay() || 7; // 1-7
 
     // 筛选今日课程
-    const courses = MOCK_COURSES.filter(c => c.day === dayOfWeek).map(c => ({
-      ...c,
-      time: `${8 + c.start - 1}:00 - ${8 + c.start - 1 + c.len}:00` // 简单计算时间
-    })).sort((a, b) => a.start - b.start);
+    const courses = (this.data.scheduleCourses || [])
+      .filter((c) => c.day === dayOfWeek)
+      .map((c) => ({
+        ...c,
+        time: this.formatCourseTime(c.start, c.len)
+      }))
+      .sort((a, b) => a.start - b.start);
 
     // 筛选今日任务 (截止日期是今天)
     const tasks = this.data.tasks.filter(t => {
@@ -239,21 +236,22 @@ Page({
     });
   },
 
-  generateTimeSlots() {
-    // 生成 8:00 - 20:00 的时间槽，并附带课程信息
+  buildTimeSlots(list = this.data.scheduleCourses || []) {
     const slots = [];
-    for (let i = 1; i <= 12; i++) { // 12节课
-      const coursesInSlot = MOCK_COURSES.filter(c => c.start === i).map(c => ({
-        ...c,
-        timeIndex: i - 1
-      }));
-      
-      slots.push({
-        time: i,
-        courses: coursesInSlot
-      });
+    for (let i = 1; i <= 12; i++) {
+      const coursesInSlot = list.filter((c) => c.start === i);
+      slots.push({ time: i, courses: coursesInSlot });
     }
     this.setData({ timeSlots: slots });
+  },
+
+  formatCourseTime(startSection, length) {
+    const start = Number(startSection) || 1;
+    const len = Number(length) || 1;
+    const startHour = 8 + start - 1;
+    const endHour = startHour + len;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(startHour)}:00 - ${pad(endHour)}:00`;
   },
 
   // --- 原始数据加载 ---
@@ -261,25 +259,29 @@ Page({
   async loadTasks() {
     this.setData({ loadingTasks: true });
     try {
-      // 这里应该从数据库加载真实数据
-      // 暂时使用模拟数据
-      const fallback = MOCK_TASKS.map((t, idx) => ({
-        ...t, 
-        accent: MORANDI_COLORS[idx % MORANDI_COLORS.length], 
-        rawDeadline: new Date().toISOString(), 
-        deadline: 'Today',
-        completed: t.is_completed,
-        course: t.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN',
-        urgent: t.type === 'exam'
-      }));
-      
-      this.setData({
-        tasks: fallback,
-        loadingTasks: false
-      }, () => this.updateViewData());
+      const rows = await fetchTasks(this.getUserId());
+      const tasks = this.decorateTasks(Array.isArray(rows) ? rows : []);
+      this.setData({ tasks, loadingTasks: false }, () => this.updateViewData());
     } catch (err) {
       console.warn('加载任务失败', err);
       this.setData({ loadingTasks: false });
+    }
+  },
+
+  async loadSchedule() {
+    try {
+      const rows = await fetchWeekSchedule(this.getUserId());
+      const normalized = this.decorateSchedule(Array.isArray(rows) ? rows : []);
+      this.setData({ scheduleCourses: normalized }, () => {
+        this.buildTimeSlots(normalized);
+        this.updateViewData();
+      });
+    } catch (err) {
+      console.warn('加载课程表失败', err);
+      this.setData({ scheduleCourses: [] }, () => {
+        this.buildTimeSlots([]);
+        this.updateViewData();
+      });
     }
   },
 
@@ -287,10 +289,14 @@ Page({
   
   async markDone(e) {
     const { id } = e.currentTarget.dataset;
-    const tasks = this.data.tasks.map(t => t.id === id ? { ...t, completed: true } : t);
-    this.setData({ tasks });
-    this.updateViewData(); // 刷新
-    wx.vibrateShort({ type: 'light' });
+    if (!id) return;
+    try {
+      await updateTaskCompletion(id, true);
+      wx.vibrateShort({ type: 'light' });
+      this.loadTasks();
+    } catch (err) {
+      console.warn('标记完成失败', err);
+    }
   },
 
   openCreate() {
@@ -304,7 +310,8 @@ Page({
         title: '', 
         date: now.toISOString().split('T')[0], 
         time: '23:59', 
-        description: '' 
+        description: '',
+        related_course_id: null
       }
     });
   },
@@ -324,7 +331,7 @@ Page({
     this.setData({
       editorVisible: true,
       editingTask: task,
-      form: { type: task.type, title: task.title, date, time, description: task.description || '' }
+      form: { type: task.type, title: task.title, date, time, description: task.description || '', related_course_id: task.related_course_id || null }
     });
   },
 
@@ -344,32 +351,112 @@ Page({
     this.setData({ saving: true });
     
     try {
-      // 这里应该保存到数据库
-      // 暂时模拟保存
-      setTimeout(() => {
-        this.setData({ editorVisible: false, saving: false });
-        wx.showToast({ title: '保存成功', icon: 'success' });
-        this.loadTasks(); // 重新加载
-      }, 500);
+      const deadlineIso = new Date(`${form.date}T${form.time}:00`).toISOString();
+      if (editingTask) {
+        const patch = {
+          type: form.type,
+          title: form.title,
+          description: form.description || null,
+          deadline: deadlineIso,
+          related_course_id: form.related_course_id || null
+        };
+        await updateTask(editingTask.id, patch);
+      } else {
+        const payload = {
+          user_id: this.getUserId(),
+          type: form.type,
+          title: form.title,
+          description: form.description || null,
+          deadline: deadlineIso,
+          is_completed: false,
+          related_course_id: form.related_course_id || null
+        };
+        await createTask(payload);
+      }
+      this.setData({ editorVisible: false, saving: false });
+      wx.showToast({ title: '保存成功', icon: 'success' });
+      this.loadTasks();
     } catch (err) {
+      console.warn('保存任务失败', err);
       this.setData({ saving: false });
       wx.showToast({ title: '保存失败', icon: 'none' });
     }
   },
   
   async deleteCurrent() {
-    if(!this.data.editingTask) return;
+    if (!this.data.editingTask) return;
     try {
-      // 这里应该从数据库删除
-      // 暂时模拟删除
+      await deleteTask(this.data.editingTask.id);
       this.setData({ editorVisible: false });
+      wx.showToast({ title: '已删除', icon: 'success' });
       this.loadTasks();
-    } catch(e) {}
+    } catch (err) {
+      console.warn('删除任务失败', err);
+      wx.showToast({ title: '删除失败', icon: 'none' });
+    }
   },
 
   // 打开课程详情
   openCourse(e) {
     const { id } = e.currentTarget.dataset;
     wx.showToast({ title: '课程详情开发中', icon: 'none' });
+  },
+
+  decorateTasks(rows = []) {
+    const paletteLen = MORANDI_COLORS.length;
+    return rows.map((task, idx) => {
+      const accent = MORANDI_COLORS[idx % paletteLen];
+      const deadlineIso = task.deadline;
+      const dateObj = deadlineIso ? new Date(deadlineIso) : null;
+      const month = dateObj ? dateObj.getMonth() + 1 : null;
+      const day = dateObj ? dateObj.getDate() : null;
+      const shortLabel = dateObj ? `${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}` : '--';
+      const timeLabel = dateObj
+        ? `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
+        : '--:--';
+
+      return {
+        id: task.id,
+        type: task.type,
+        title: task.title,
+        description: task.description,
+        accent,
+        rawDeadline: deadlineIso,
+        deadline: shortLabel,
+        deadlineMeta: `${shortLabel} ${timeLabel}`,
+        completed: task.is_completed,
+        course: task.course?.name || '未关联课程',
+        courseColor: task.course?.color || accent,
+        urgent: task.type === 'exam',
+        related_course_id: task.related_course_id || null
+      };
+    });
+  },
+
+  decorateSchedule(rows = []) {
+    const paletteLen = MORANDI_COLORS.length;
+    return rows.map((item, idx) => {
+      const course = item.course || {};
+      return {
+        id: item.id,
+        courseId: item.course_id,
+        day: item.day_of_week,
+        start: item.start_section,
+        len: item.length,
+        location: item.location || course.location || '未设置教室',
+        name: course.name || '未命名课程',
+        color: course.color || MORANDI_COLORS[idx % paletteLen]
+      };
+    });
+  },
+
+  getUserId() {
+    const app = getApp();
+    return (
+      app?.globalData?.supabase?.userId ||
+      wx.getStorageSync('user_id') ||
+      wx.getStorageSync('syllaby_user_id') ||
+      DEMO_USER_ID
+    );
   }
 })

@@ -211,18 +211,6 @@
 
     </view>
 
-    <!-- 功能提示：空教室和番茄钟功能已迁移到"工具"模块 -->
-    <view class="feature-tip card">
-      <view class="section-head">
-        <text>更多工具</text>
-        <text class="tip-arrow">→</text>
-      </view>
-      <view class="tip-content">
-        <text class="tip-text">空教室预约、番茄钟等实用工具已整合到</text>
-        <text class="tool-link" bindtap="goToTools">工具模块</text>
-      </view>
-    </view>
-
     <view class="spacer-bottom"></view>
   </scroll-view>
 

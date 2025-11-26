@@ -4,7 +4,7 @@
   color: #2D3436;
   position: relative;
   background: #F2F4F6;
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
 }
 
 .settings-page::before,

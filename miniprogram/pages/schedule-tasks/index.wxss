@@ -6,7 +6,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
   color: var(--day-text);
 }
 

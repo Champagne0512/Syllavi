@@ -33,12 +33,12 @@
 page {
   /* 
     字体逻辑：
-    1. 'LXGW WenKai': 我们刚加载的艺术字体
-    2. 'PingFang SC': iOS 默认
-    3. 'HarmonyOS Sans': 华为鸿蒙默认（非常漂亮）
-    4. 'Microsoft YaHei': 安卓/Windows 备选
+    1. 'HarmonyOS Sans SC': 新的主力无衬线，安卓/鸿蒙可用
+    2. 'PingFang SC': iOS 默认中文
+    3. 'Noto Sans CJK SC': 常见的跨平台 webfont
+    4. 'Microsoft YaHei' / 'Helvetica Neue': Windows/macOS 备选
   */
-  --main-font: "LXGW WenKai", "PingFang SC", "HarmonyOS Sans", "Microsoft YaHei", sans-serif;
+  --main-font: "HarmonyOS Sans SC", "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
   
   /* 
     数字/英文专用字体：

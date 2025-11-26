@@ -61,7 +61,7 @@
             <view class="check-circle {{item.completed ? 'checked' : ''}}" catchtap="markDone" data-id="{{item.id}}"></view>
             <view class="task-info">
               <text class="task-text">{{item.title}}</text>
-              <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadline}}</text>
+              <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadlineMeta}}</text>
             </view>
           </view>
         </block>
