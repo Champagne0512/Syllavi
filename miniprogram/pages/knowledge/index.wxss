@@ -676,43 +676,8 @@
   background: rgba(224, 142, 121, 0.15);
 }
 
-/* 标签图标简约设计 */
-.tag-icon {
-  width: 16rpx;
-  height: 16rpx;
-  border-radius: 4rpx;
-  position: relative;
-  margin-right: 6rpx;
-}
-
-.ai-tag-icon {
-  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
-}
-
-.ai-tag-icon::before {
-  content: '';
-  position: absolute;
-  top: 4rpx;
-  left: 4rpx;
-  width: 8rpx;
-  height: 8rpx;
-  background: white;
-  border-radius: 2rpx;
-}
-
-.preview-tag-icon {
-  background: linear-gradient(135deg, #BCA0BC 0%, #A2B18A 100%);
-}
-
-.preview-tag-icon::before {
-  content: '';
-  position: absolute;
-  top: 4rpx;
-  left: 4rpx;
-  width: 8rpx;
-  height: 8rpx;
-  border: 2rpx solid white;
-  border-radius: 2rpx;
+.tag-chip.longpress-hint {
+  background: rgba(135, 168, 164, 0.1);
 }
 
 /* 标签图标简约设计 */
@@ -752,6 +717,97 @@
   height: 8rpx;
   border: 2rpx solid white;
   border-radius: 2rpx;
+}
+
+.longpress-icon {
+  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
+}
+
+.longpress-icon::before {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 2rpx;
+  width: 12rpx;
+  height: 2rpx;
+  background: white;
+  border-radius: 1rpx;
+}
+
+.longpress-icon::after {
+  content: '';
+  position: absolute;
+  top: 2rpx;
+  left: 4rpx;
+  width: 2rpx;
+  height: 12rpx;
+  background: white;
+  border-radius: 1rpx;
+}
+
+/* 标签图标简约设计 */
+.tag-icon {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 4rpx;
+  position: relative;
+  margin-right: 6rpx;
+}
+
+.ai-tag-icon {
+  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
+}
+
+.ai-tag-icon::before {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 8rpx;
+  height: 8rpx;
+  background: white;
+  border-radius: 2rpx;
+}
+
+.preview-tag-icon {
+  background: linear-gradient(135deg, #BCA0BC 0%, #A2B18A 100%);
+}
+
+.preview-tag-icon::before {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 8rpx;
+  height: 8rpx;
+  border: 2rpx solid white;
+  border-radius: 2rpx;
+}
+
+.longpress-icon {
+  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
+}
+
+.longpress-icon::before {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 2rpx;
+  width: 12rpx;
+  height: 2rpx;
+  background: white;
+  border-radius: 1rpx;
+}
+
+.longpress-icon::after {
+  content: '';
+  position: absolute;
+  top: 2rpx;
+  left: 4rpx;
+  width: 2rpx;
+  height: 12rpx;
+  background: white;
+  border-radius: 1rpx;
 }
 
 .file-action {
@@ -1058,6 +1114,154 @@
   border-radius: 2rpx;
 }
 
+/* 批量操作工具栏 */
+.batch-toolbar {
+  margin: 0 32rpx 24rpx;
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8rpx 32rpx rgba(31, 38, 135, 0.07);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.batch-info {
+  display: flex;
+  align-items: center;
+}
+
+.selected-count {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.batch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.batch-action-btn {
+  padding: 10rpx 16rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
+  color: white;
+  border: none;
+  width: 140rpx;
+  text-align: center;
+}
+
+.batch-action-btn:disabled {
+  background: rgba(135, 168, 164, 0.4);
+  opacity: 0.7;
+}
+
+.batch-action-btn.cancel-btn {
+  background: linear-gradient(135deg, #BCA0BC 0%, #A2B18A 100%);
+}
+
+.batch-mode-btn {
+  background: rgba(135, 168, 164, 0.15);
+  color: #2D3436;
+}
+
+/* 文件选择模式样式 */
+.file-card.selection-mode {
+  padding-left: 24rpx;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.file-checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+  position: relative;
+}
+
+/* 复选框基础样式 - 使用方形设计，更清晰 */
+.checkbox-inner {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 4rpx;
+  border: 2rpx solid #CCCCCC;
+  background: #FFFFFF;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+}
+
+/* 选中状态 - 完全填充蓝色 */
+.checkbox-inner.checked {
+  border-color: #4B7BEC !important;
+  background: #4B7BEC !important;
+  box-shadow: 0 2rpx 8rpx rgba(75, 123, 236, 0.4) !important;
+  transform: scale(1.1);
+}
+
+/* 选中状态的对勾 */
+.checkbox-inner.checked::after {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 7rpx;
+  width: 6rpx;
+  height: 10rpx;
+  border: solid #FFFFFF;
+  border-width: 0 2rpx 2rpx 0;
+  transform: rotate(45deg);
+}
+
+/* 未选中状态样式 */
+.file-card.selection-mode:not(.selected) {
+  background: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(45, 52, 54, 0.06);
+}
+
+/* 增强选中状态的视觉效果 - 完全不同的样式 */
+.file-card.selected {
+  background: rgba(75, 123, 236, 0.1) !important;
+  border-left: 6rpx solid #4B7BEC !important;
+  transform: scale(1.01) !important;
+  box-shadow: 0 8rpx 16rpx rgba(75, 123, 236, 0.2) !important;
+  border-bottom: 1px solid rgba(75, 123, 236, 0.2) !important;
+}
+
+.file-card.selected .file-icon {
+  transform: scale(1.08);
+  box-shadow: 0 4rpx 8rpx rgba(75, 123, 236, 0.3);
+  filter: brightness(1.05);
+}
+
+.file-card.selected .file-name {
+  color: #2D3436 !important;
+  font-weight: 700 !important;
+}
+
+.file-card.selected .file-content {
+  opacity: 1;
+}
+
+.file-card.selected .file-subject {
+  background: rgba(75, 123, 236, 0.15) !important;
+  color: #2D3436 !important;
+  font-weight: 600;
+}
+
+.file-card.selected .file-size {
+  color: rgba(45, 52, 54, 0.8);
+  font-weight: 500;
+}
+
 /* 响应式优化 */
 @media (max-width: 375px) {
   .data-overview {
@@ -1067,5 +1271,11 @@
   
   .folder-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .batch-action-btn {
+    padding: 10rpx 16rpx;
+    font-size: 22rpx;
+    min-width: 100rpx;
   }
 }
