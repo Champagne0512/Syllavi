@@ -2,7 +2,6 @@
   "pages": [
     "pages/login/index",
     "pages/hub/index",
-    "pages/schedule-tasks/index",
     "pages/knowledge/index",
     "pages/focus/index",
     "pages/ai-import/index",

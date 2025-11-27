@@ -88,13 +88,40 @@ Page({
     totalWeekTasks: 0,
     hasNoWeekTasks: true,
     monthStats: {},
+    
+    // 周视图日期选择
+    selectedDay: null, // 当前选中的日期
+    selectedDayCourses: [], // 选中日期的课程
+    selectedDayTasks: [], // 选中日期的任务
     monthHeatmap: [],
     upcomingTasks: [],
+
+    // 课程详情弹窗
+    showCourseDetail: false,
+    selectedCourse: {},
+    selectedCourseTasks: [],
+    showCourseEditor: false,
+    editingCourse: {},
+    courseForm: {
+      name: '',
+      location: '',
+      teacher: '',
+      color: '#87A8A4',
+      day: 1,
+      start: 1,
+      len: 2
+    },
 
     // 通用数据
     profile: { nickname: '同学' },
     loading: false,
-    skeleton: true
+    skeleton: true,
+    
+    // 课程详情弹窗相关
+    showCourseDetail: false,
+    selectedCourse: {},
+    selectedCourseTasks: [],
+    modalAnimation: {}
   },
 
   onLoad() {
@@ -193,11 +220,13 @@ Page({
         dateKey: day.dateKey,
         date: day.date,
         label: day.name,
+        isToday: day.isToday, // 添加isToday属性
         tasks: dayTasks.map(t => ({
           id: t.id,
           title: t.title,
           time: formatTime(t.rawDeadline),
-          type: t.type === 'exam' ? 'exam-chip' : 'hw-chip'
+          type: t.type === 'exam' ? 'exam' : 'homework',
+          completed: t.completed
         }))
       };
     });
@@ -206,7 +235,54 @@ Page({
     const totalWeekTasks = weekTasksByDay.reduce((sum, day) => sum + day.tasks.length, 0);
     const hasNoWeekTasks = totalWeekTasks === 0;
 
+    // 初始化选中日期（默认为今天）
+    const todayKey = formatDateKey(new Date());
+    const selectedDay = this.data.selectedDay || todayKey;
+    this.updateSelectedDayCourses(selectedDay);
+
     this.setData({ weekDays, weekTasksByDay, totalWeekTasks, hasNoWeekTasks });
+  },
+
+  // 选中日期处理
+  selectDay(e) {
+    const { date } = e.currentTarget.dataset;
+    wx.vibrateShort({ type: 'light' });
+    
+    if (this.data.selectedDay === date) {
+      // 如果再次点击已选中的日期，则取消选中
+      this.setData({
+        selectedDay: null,
+        selectedDayCourses: [],
+        selectedDayText: ''
+      });
+    } else {
+      this.updateSelectedDayCourses(date);
+    }
+  },
+
+  updateSelectedDayCourses(dateKey) {
+    const selectedDay = dateKey;
+    const selectedDate = new Date(selectedDay);
+    
+    // 计算选中日期的星期几（1-7）
+    const dayOfWeek = selectedDate.getDay() || 7;
+    
+    // 筛选选中日期的课程
+    const selectedDayCourses = MOCK_COURSES.filter(c => c.day === dayOfWeek).map(c => ({
+      ...c,
+      time: `${8 + c.start - 1}:00 - ${8 + c.start - 1 + c.len}:00`
+    })).sort((a, b) => a.start - b.start);
+    
+    // 生成选中日期的文本
+    const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+    const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const selectedDayText = `${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}日 · ${days[selectedDate.getDay()]}`;
+    
+    this.setData({
+      selectedDay,
+      selectedDayCourses,
+      selectedDayText
+    });
   },
 
   calculateMonthView(date) {
@@ -346,12 +422,6 @@ Page({
     }
   },
 
-  // 打开课程详情
-  openCourse(e) {
-    const { id } = e.currentTarget.dataset;
-    wx.showToast({ title: '课程详情开发中', icon: 'none' });
-  },
-
   // 事件处理
   handleCourseOpen(e) {
     const course = e.detail;
@@ -428,5 +498,271 @@ Page({
         this.nextWeek();
       }
     }
+  },
+
+  // === 课程详情弹窗相关函数 ===
+  
+  openCourse(e) {
+    const { id } = e.currentTarget.dataset;
+    const course = MOCK_COURSES.find(c => c.id === id);
+    
+    if (!course) {
+      wx.showToast({ title: '课程信息未找到', icon: 'none' });
+      return;
+    }
+    
+    // 添加时间信息
+    course.time = `${8 + course.start - 1}:00 - ${8 + course.start - 1 + course.len}:00`;
+    
+    // 查找相关任务
+    const courseTasks = this.data.tasks.filter(task => {
+      const courseCode = (task.course || task.related_course_id || '').toLowerCase();
+      const courseName = course.name.toLowerCase();
+      return courseName.includes(courseCode) || courseCode.includes(courseName.slice(0, 4));
+    });
+    
+    this.setData({
+      selectedCourse: course,
+      selectedCourseTasks: courseTasks,
+      showCourseDetail: true
+    });
+    
+    wx.vibrateShort({ type: 'light' });
+  },
+
+  // 关闭课程详情
+  closeCourseDetail() {
+    this.setData({
+      showCourseDetail: false,
+      selectedCourse: {},
+      selectedCourseTasks: []
+    });
+  },
+
+  // 打开课程编辑器
+  openCourseEditor() {
+    const { selectedCourse } = this.data;
+    this.setData({
+      showCourseEditor: true,
+      editingCourse: { ...selectedCourse },
+      courseForm: {
+        name: selectedCourse.name || '',
+        location: selectedCourse.location || '',
+        teacher: selectedCourse.teacher || '',
+        color: selectedCourse.color || '#87A8A4',
+        day: selectedCourse.day || 1,
+        start: selectedCourse.start || 1,
+        len: selectedCourse.len || 2
+      }
+    });
+    wx.vibrateShort({ type: 'light' });
+  },
+
+  // 关闭课程编辑器
+  closeCourseEditor() {
+    this.setData({
+      showCourseEditor: false,
+      editingCourse: {},
+      courseForm: {
+        name: '',
+        location: '',
+        teacher: '',
+        color: '#87A8A4',
+        day: 1,
+        start: 1,
+        len: 2
+      }
+    });
+  },
+
+  // 表单输入处理
+  onCourseFormChange(e) {
+    const { field } = e.currentTarget.dataset;
+    const { value } = e.detail;
+    this.setData({
+      [`courseForm.${field}`]: value
+    });
+  },
+
+  // 选择颜色
+  selectCourseColor(e) {
+    const { color } = e.currentTarget.dataset;
+    this.setData({
+      'courseForm.color': color
+    });
+  },
+
+  // 保存课程
+  saveCourse() {
+    const { courseForm, editingCourse } = this.data;
+    
+    if (!courseForm.name.trim()) {
+      wx.showToast({ title: '请输入课程名称', icon: 'none' });
+      return;
+    }
+
+    if (editingCourse.isNew) {
+      // 保存新课程
+      this.saveNewCourse();
+    } else {
+      // 更新现有课程
+      const courseIndex = MOCK_COURSES.findIndex(c => c.id === editingCourse.id);
+      if (courseIndex !== -1) {
+        MOCK_COURSES[courseIndex] = {
+          ...MOCK_COURSES[courseIndex],
+          ...courseForm
+        };
+        
+        // 刷新时间槽数据
+        this.generateTimeSlots();
+        this.updateViewData();
+        
+        wx.showToast({ title: '课程已更新', icon: 'success' });
+        this.closeCourseEditor();
+        this.closeCourseDetail();
+      }
+    }
+  },
+
+  // 删除课程
+  deleteCourse() {
+    const { selectedCourse } = this.data;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除课程"${selectedCourse.name}"吗？此操作不可撤销。`,
+      confirmColor: '#FF3B30',
+      success: (res) => {
+        if (res.confirm) {
+          // 从模拟数据中删除
+          const courseIndex = MOCK_COURSES.findIndex(c => c.id === selectedCourse.id);
+          if (courseIndex !== -1) {
+            MOCK_COURSES.splice(courseIndex, 1);
+            
+            // 刷新时间槽数据
+            this.generateTimeSlots();
+            this.updateViewData();
+            
+            wx.showToast({ title: '课程已删除', icon: 'success' });
+            this.closeCourseDetail();
+          }
+        }
+      }
+    });
+  },
+
+  // 添加课程
+  addCourse() {
+    wx.vibrateShort({ type: 'light' });
+    
+    // 生成新课程ID
+    const newId = 'c' + Date.now();
+    
+    this.setData({
+      showCourseEditor: true,
+      editingCourse: { id: newId, isNew: true },
+      courseForm: {
+        name: '',
+        location: '',
+        teacher: '',
+        color: '#87A8A4',
+        day: 1,
+        start: 1,
+        len: 2
+      }
+    });
+  },
+
+  // 保存新课程
+  saveNewCourse() {
+    const { courseForm } = this.data;
+    
+    if (!courseForm.name.trim()) {
+      wx.showToast({ title: '请输入课程名称', icon: 'none' });
+      return;
+    }
+
+    // 创建新课程
+    const newCourse = {
+      id: 'c' + Date.now(),
+      name: courseForm.name,
+      location: courseForm.location,
+      teacher: courseForm.teacher,
+      color: courseForm.color,
+      day: courseForm.day,
+      start: courseForm.start,
+      len: courseForm.len
+    };
+
+    // 添加到模拟数据
+    MOCK_COURSES.push(newCourse);
+    
+    // 刷新界面
+    this.generateTimeSlots();
+    this.updateViewData();
+    
+    wx.showToast({ title: '课程添加成功', icon: 'success' });
+    this.closeCourseEditor();
+  },
+
+  closeCourseDetail() {
+    console.log('关闭课程详情'); // 调试日志
+    this.setData({
+      showCourseDetail: false,
+      selectedCourse: {},
+      selectedCourseTasks: []
+    });
+  },
+
+  editCourse() {
+    const { selectedCourse } = this.data;
+    wx.showModal({
+      title: '编辑课程',
+      content: `确定要编辑课程"${selectedCourse.name}"吗？`,
+      confirmText: '编辑',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showToast({
+            title: '编辑功能开发中',
+            icon: 'none'
+          });
+          // 这里可以跳转到课程编辑页面
+          // wx.navigateTo({
+          //   url: `/pages/course-edit/index?courseId=${selectedCourse.id}`
+          // });
+        }
+      }
+    });
+  },
+
+  deleteCourse() {
+    const { selectedCourse } = this.data;
+    wx.showModal({
+      title: '删除课程',
+      content: `确定要删除课程"${selectedCourse.name}"吗？此操作不可撤销。`,
+      confirmText: '删除',
+      confirmColor: '#FF3B30',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          // 从模拟数据中删除课程
+          const courseIndex = MOCK_COURSES.findIndex(c => c.id === selectedCourse.id);
+          if (courseIndex !== -1) {
+            MOCK_COURSES.splice(courseIndex, 1);
+            
+            // 更新视图数据
+            this.updateViewData();
+            
+            wx.showToast({
+              title: '删除成功',
+              icon: 'success'
+            });
+            
+            this.closeCourseDetail();
+          }
+        }
+      }
+    });
   }
 });
