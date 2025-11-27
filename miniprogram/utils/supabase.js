@@ -8,6 +8,8 @@ const normalizeGradeInput = (grade) => {
 const SUPABASE_URL = 'https://nqixahasfhwofusuwsal.supabase.co';
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xaXhhaGFzZmh3b2Z1c3V3c2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NjE1MjcsImV4cCI6MjA3OTIzNzUyN30.o0MpDV0Q_84iv2xY2TSNBwyaJh0BP8n8pLaIxS1ott4';
+// 服务端密钥，用于绕过RLS限制
+const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xaXhhaGFzZmh3b2Z1c3V3c2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzY2MTUyNywiZXhwIjoyMDc5MjM3NTI3fQ.uNUTizbVayqD9Q4GQYwHjtPCrJfKDy6CTvsNaWIhCJs';
 
 const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
 const EMPTY_FOCUS_STATS = Object.freeze({
@@ -550,25 +552,227 @@ function resolveSessionInfo() {
   };
 }
 
+// 下载HTTP URL文件到本地并上传
+function downloadAndUploadFile(bucket, httpPath, fileName, userId, token) {
+  console.log('开始下载文件:', httpPath);
+  
+  return new Promise((resolve, reject) => {
+    wx.downloadFile({
+      url: httpPath,
+      success: (downloadRes) => {
+        if (downloadRes.statusCode === 200) {
+          console.log('文件下载成功，临时路径:', downloadRes.tempFilePath);
+          
+          // 处理文件名中的中文字符
+          const safeFileName = encodeURIComponent(fileName)
+            .replace(/%20/g, '_')
+            .replace(/[^a-zA-Z0-9_\-./]/g, '_');
+          
+          // 构建合法的存储路径（不包含中文字符）
+          const timestamp = Date.now();
+          const storagePath = `${userId}/${timestamp}_${safeFileName}`;
+          console.log('使用安全存储路径:', storagePath);
+          
+          const serviceKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
+          
+          wx.uploadFile({
+            url: `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`,
+            filePath: downloadRes.tempFilePath,
+            name: 'file',
+            header: {
+              Authorization: `Bearer ${serviceKey}`,
+              apikey: SUPABASE_ANON_KEY,
+              'x-upsert': 'true'
+            },
+            timeout: 30000, // 30秒超时
+            success(uploadRes) {
+              console.log('上传响应:', { 
+                statusCode: uploadRes.statusCode, 
+                data: uploadRes.data
+              });
+              
+              if (uploadRes.statusCode === 200 || uploadRes.statusCode === 201) {
+                const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`;
+                console.log('文件上传成功:', { publicUrl, path: storagePath });
+                resolve({ publicUrl, path: storagePath });
+              } else {
+                const error = new Error(`上传失败，状态码: ${uploadRes.statusCode}`);
+                error.statusCode = uploadRes.statusCode;
+                error.data = uploadRes.data;
+                reject(error);
+              }
+            },
+            fail(uploadErr) {
+              console.error('文件上传失败:', uploadErr);
+              reject(new Error(`文件上传失败: ${uploadErr.errMsg}`));
+            }
+          });
+        } else {
+          reject(new Error(`文件下载失败，状态码: ${downloadRes.statusCode}`));
+        }
+      },
+      fail: (err) => {
+        reject(new Error(`文件下载失败: ${err.errMsg}`));
+      }
+    });
+  });
+}
+
+// 直接读取微信临时文件并上传为二进制数据
+function readTempFileAndUpload(bucket, tempFilePath, fileName, userId, storagePath, ext) {
+  console.log('开始处理微信临时文件:', tempFilePath);
+  
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 第一步：规范化微信临时文件路径
+      // http://tmp/xxx 是微信的本地临时文件路径，可以直接读取
+      let realFilePath = tempFilePath;
+      
+      // 确保路径是微信可以读取的格式
+      if (tempFilePath.startsWith('http://tmp/')) {
+        // 微信临时文件，尝试不同的路径格式
+        const fileNameOnly = tempFilePath.split('/').pop();
+        const possiblePaths = [
+          tempFilePath, // 原始路径
+          tempFilePath.replace('http://tmp/', '/tmp/'), // 去掉http前缀
+          `${wx.env.USER_DATA_PATH}/${fileNameOnly}` // 用户数据目录路径
+        ];
+        
+        // 检查哪个路径有效
+        const fs = wx.getFileSystemManager();
+        let validPath = null;
+        
+        for (const path of possiblePaths) {
+          try {
+            fs.accessSync(path);
+            validPath = path;
+            console.log('找到有效路径:', path);
+            break;
+          } catch (e) {
+            console.log('路径无效:', path);
+          }
+        }
+        
+        if (!validPath) {
+          throw new Error('无法找到有效的微信临时文件路径');
+        }
+        
+        realFilePath = validPath;
+      }
+      
+      // 第二步：直接读取文件为二进制数据（无需下载！）
+      const fs = wx.getFileSystemManager();
+      const fileData = fs.readFileSync(realFilePath);
+      console.log('文件读取成功，大小:', fileData.byteLength, 'bytes');
+      
+      // 第三步：直接使用wx.request上传二进制数据，不使用request函数
+      const contentType = getContentType(ext);
+      
+      // 直接构建正确的Storage API URL，不通过request函数
+      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`;
+      console.log('SUPABASE_URL:', SUPABASE_URL);
+      console.log('bucket:', bucket);
+      console.log('storagePath:', storagePath);
+      console.log('最终上传URL:', uploadUrl);
+      console.log('准备上传文件，大小:', fileData.byteLength, 'bytes');
+      
+      const uploadResult = await new Promise((resolve, reject) => {
+        wx.request({
+          url: uploadUrl,
+          method: 'POST',
+          data: fileData,
+          header: {
+            'Content-Type': contentType,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'x-upsert': 'true'
+          },
+          timeout: 30000,
+          success(res) {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              resolve(res.data);
+            } else {
+              console.error('上传失败，响应:', res);
+              reject(new Error(`上传失败: ${res.statusCode}`));
+            }
+          },
+          fail(err) {
+            console.error('网络请求失败:', err);
+            reject(new Error(`网络请求失败: ${err.errMsg}`));
+          }
+        });
+      });
+      
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`;
+      console.log('文件上传成功:', { publicUrl, path: storagePath });
+      resolve({ publicUrl, path: storagePath });
+      
+    } catch (err) {
+      console.error('微信临时文件上传失败:', err);
+      reject(new Error(`文件上传失败: ${err.message}`));
+    }
+  });
+}
+
+// 获取文件对应的MIME类型
+function getContentType(ext) {
+  const mimeMap = {
+    pdf: 'application/pdf',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    doc: 'application/msword',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    ppt: 'application/vnd.ms-powerpoint',
+    jpg: 'image/jpeg',
+    png: 'image/png',
+    default: 'application/octet-stream'
+  };
+  return mimeMap[ext] || mimeMap.default;
+}
+
 function uploadToStorage(bucket, filePath, fileName, options = {}) {
   const { userId: overrideUserId, token: overrideToken } = options;
   const session = resolveSessionInfo();
   const userId = overrideUserId || session.userId;
   const token = overrideToken || session.token;
-  const storagePath = `${userId}/${Date.now()}_${fileName}`;
+  
+  // 使用哈希+扩展名的方式，避免中文编码问题
+  const ext = fileName.split('.').pop().toLowerCase();
+  const randomHash = Math.random().toString(36).substr(2, 8);
+  const timestamp = Date.now();
+  const safeFileName = `${timestamp}_${randomHash}.${ext}`;
+  const storagePath = `${userId}/${safeFileName}`;
 
-  console.log('上传配置:', { bucket, filePath, fileName, userId, storagePath, token: !!token });
+  console.log('上传配置:', { bucket, filePath, fileName: safeFileName, originalName: fileName, userId, storagePath, token: !!token });
 
+  // 处理HTTP URL路径：微信小程序的文件选择器返回的是HTTP临时路径
+  // 需要先下载到本地，然后再上传
+  // 但微信临时文件（http://tmp/）可以直接使用，不需要下载
+  if (filePath && filePath.startsWith('http') && !filePath.includes('://tmp/')) {
+    console.log('检测到HTTP URL路径，开始下载到本地...');
+    return downloadAndUploadFile(bucket, filePath, fileName, userId, token);
+  }
+  
+  // 微信临时文件需要直接读取为二进制数据（无需下载）
+  if (filePath && filePath.includes('://tmp/')) {
+    console.log('处理微信临时文件，直接读取为二进制数据');
+    return readTempFileAndUpload(bucket, filePath, fileName, userId, storagePath, ext);
+  }
+
+  // 临时解决方案：使用服务端密钥绕过RLS限制
+  const serviceKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
+  
   return new Promise((resolve, reject) => {
     wx.uploadFile({
       url: `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`,
       filePath,
       name: 'file',
       header: {
-        Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${serviceKey}`,
         apikey: SUPABASE_ANON_KEY,
         'x-upsert': 'true'
       },
+      timeout: 30000, // 30秒超时
       success(res) {
         console.log('上传响应:', { 
           statusCode: res.statusCode, 

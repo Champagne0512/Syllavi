@@ -8,7 +8,8 @@
     "pages/ai-import/index",
     "pages/profile/index",
     "pages/settings/index",
-    "pages/tools/index"
+    "pages/tools/index",
+    "pages/web-view/web-view"
   ],
   "window": {
     "backgroundColor": "#F7F7F5",

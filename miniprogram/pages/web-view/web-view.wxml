@@ -1,0 +1,3 @@
+<view class="container">
+  <web-view src="{{fileUrl}}" binderror="onWebError"></web-view>
+</view>
