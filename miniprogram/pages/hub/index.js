@@ -26,25 +26,46 @@ const MOCK_TASKS = [
 
 function formatTime(dateStr) {
   const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) {
+    return '--:--';
+  }
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+function formatDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getWeekDays(currentDate) {
-  const curr = new Date(currentDate);
+  let curr = new Date(currentDate);
+  if (Number.isNaN(curr.getTime())) {
+    curr = new Date();
+  }
   // 调整到周一
-  const day = curr.getDay() || 7; 
-  if(day !== 1) curr.setHours(-24 * (day - 1));
-  
+  const day = curr.getDay() || 7;
+  curr.setDate(curr.getDate() - (day - 1));
+  curr.setHours(0, 0, 0, 0);
+
+  const todayKey = formatDateKey(new Date());
   const days = [];
   const weekNames = ['一', '二', '三', '四', '五', '六', '日'];
   for (let i = 0; i < 7; i++) {
     const d = new Date(curr);
     d.setDate(curr.getDate() + i);
+    d.setHours(0, 0, 0, 0);
+    const dateKey = formatDateKey(d);
     days.push({
       name: weekNames[i],
       date: d.getDate(),
-      fullDate: d.toISOString().split('T')[0],
-      isToday: d.toDateString() === new Date().toDateString(),
+      fullDate: dateKey,
+      dateKey,
+      isToday: dateKey === todayKey,
       dayIdx: i + 1 // 1-7
     });
   }
@@ -122,7 +143,6 @@ Page({
 
   updateViewData() {
     const date = new Date(this.data.currentDate);
-    const nowStr = date.toISOString().split('T')[0];
     
     // 1. 更新顶部日期文字
     let dateText = '';
@@ -145,7 +165,7 @@ Page({
   // --- 数据计算逻辑 ---
 
   calculateDayView(date) {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateKey = formatDateKey(date);
     const dayOfWeek = date.getDay() || 7; // 1-7
 
     // 筛选今日课程
@@ -155,10 +175,7 @@ Page({
     })).sort((a, b) => a.start - b.start);
 
     // 筛选今日任务 (截止日期是今天)
-    const tasks = this.data.tasks.filter(t => {
-      if (!t.rawDeadline) return false;
-      return t.rawDeadline.startsWith(dateStr);
-    });
+    const tasks = this.data.tasks.filter(t => t.deadlineKey === dateKey);
 
     this.setData({
       todayCourses: courses,
@@ -171,9 +188,10 @@ Page({
     
     // 聚合一周的任务
     const weekTasksByDay = weekDays.map(day => {
-      const dayTasks = this.data.tasks.filter(t => t.rawDeadline && t.rawDeadline.startsWith(day.fullDate));
+      const dayTasks = this.data.tasks.filter(t => t.deadlineKey === day.dateKey);
       return {
-        date: day.fullDate,
+        dateKey: day.dateKey,
+        date: day.date,
         label: day.name,
         tasks: dayTasks.map(t => ({
           id: t.id,
@@ -207,8 +225,8 @@ Page({
     // 寻找最忙的一天
     const countMap = {};
     currentMonthTasks.forEach(t => {
-      const d = t.rawDeadline.split('T')[0];
-      countMap[d] = (countMap[d] || 0) + 1;
+      if (!t.deadlineKey) return;
+      countMap[t.deadlineKey] = (countMap[t.deadlineKey] || 0) + 1;
     });
     let busiestDate = '-';
     let maxCount = 0;
@@ -284,6 +302,7 @@ Page({
         const hour = `${d.getHours()}`.padStart(2, '0');
         const minute = `${d.getMinutes()}`.padStart(2, '0');
         const deadlineStr = `${month}.${day} ${hour}:${minute}`;
+        const deadlineKey = formatDateKey(d);
 
         return {
           id: row.id,
@@ -291,6 +310,7 @@ Page({
           title: row.title,
           deadline: deadlineStr,
           rawDeadline: row.deadline,
+          deadlineKey,
           description: row.description,
           progress: row.is_completed ? 1 : 0,
           course: row.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN',
@@ -307,12 +327,16 @@ Page({
     } catch (err) {
       console.warn('Fallback tasks', err);
       const cached = wx.getStorageSync('tasks_cache');
-      const fallback = cached && cached.length ? cached : MOCK_TASKS.map(t => ({
-        ...t, 
-        accent: '#9BB5CE', 
-        rawDeadline: new Date().toISOString(), 
-        deadline: 'Today'
-      }));
+      const fallback = cached && cached.length ? cached : MOCK_TASKS.map(t => {
+        const now = new Date();
+        return {
+          ...t,
+          accent: '#9BB5CE',
+          rawDeadline: now.toISOString(),
+          deadlineKey: formatDateKey(now),
+          deadline: 'Today'
+        };
+      });
       
       this.setData({
         tasks: fallback,

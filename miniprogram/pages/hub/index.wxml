@@ -82,7 +82,7 @@
       <view class="week-grid-container">
         <view class="week-header-row">
           <view class="corner-box"></view>
-          <block wx:for="{{weekDays}}" wx:key="date">
+          <block wx:for="{{weekDays}}" wx:key="fullDate">
             <view class="day-col-head {{item.isToday ? 'today-head' : ''}}">
               <text class="day-name">周{{item.name}}</text>
               <text class="day-num">{{item.date}}</text>
@@ -100,7 +100,7 @@
           
           <!-- 课程渲染区 -->
           <view class="course-matrix">
-             <block wx:for="{{weekDays}}" wx:key="date" wx:for-item="day" wx:for-index="dIdx">
+             <block wx:for="{{weekDays}}" wx:key="fullDate" wx:for-item="day" wx:for-index="dIdx">
                 <!-- 每一列 -->
                 <view class="day-column-bg"></view>
              </block>
@@ -127,7 +127,7 @@
         <text class="head-sub">{{totalWeekTasks}} 项</text>
       </view>
       <scroll-view scroll-x class="week-task-scroll" enable-flex>
-        <block wx:for="{{weekTasksByDay}}" wx:key="date">
+        <block wx:for="{{weekTasksByDay}}" wx:key="dateKey">
           <view class="week-task-card glass-card" wx:if="{{item.tasks.length > 0}}">
             <text class="wt-day">周{{item.label}}</text>
             <block wx:for="{{item.tasks}}" wx:key="id" wx:for-item="t">

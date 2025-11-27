@@ -9,30 +9,56 @@ const {
   createTask,
   updateTask,
   deleteTask,
-  updateTaskCompletion
+  updateTaskCompletion,
+  fetchCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  createCourseSchedules
 } = supabaseApi;
 
 function formatTime(dateStr) {
   const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) {
+    return '--:--';
+  }
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+function formatDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getWeekDays(currentDate) {
-  const curr = new Date(currentDate);
+  let curr = new Date(currentDate);
+  if (Number.isNaN(curr.getTime())) {
+    curr = new Date();
+  }
   // 调整到周一
-  const day = curr.getDay() || 7; 
-  if(day !== 1) curr.setHours(-24 * (day - 1));
-  
+  const day = curr.getDay() || 7;
+  curr.setDate(curr.getDate() - (day - 1));
+  curr.setHours(0, 0, 0, 0);
+
+  const todayKey = formatDateKey(new Date());
   const days = [];
   const weekNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   for (let i = 0; i < 7; i++) {
     const d = new Date(curr);
     d.setDate(curr.getDate() + i);
+    d.setHours(0, 0, 0, 0);
+    const dateKey = formatDateKey(d);
     days.push({
       name: weekNames[i],
       date: d.getDate(),
-      fullDate: d.toISOString().split('T')[0],
-      isToday: d.toDateString() === new Date().toDateString(),
+      fullDate: dateKey,
+      dateKey,
+      isToday: dateKey === todayKey,
       dayIdx: i + 1 // 1-7
     });
   }
@@ -61,7 +87,20 @@ Page({
     editorVisible: false,
     editingTask: null,
     saving: false,
-    form: { type: 'homework', title: '', date: '', time: '', description: '', related_course_id: null }
+    form: { type: 'homework', title: '', date: '', time: '', description: '', related_course_id: null },
+    
+    // 课程编辑器
+    courseEditorVisible: false,
+    editingCourse: null,
+    savingCourse: false,
+    courses: [],
+    courseForm: {
+      name: '',
+      teacher: '',
+      location: '',
+      color: '#87A8A4',
+      credits: 2.0
+    }
   },
 
   onLoad() {
@@ -110,7 +149,6 @@ Page({
 
   updateViewData() {
     const date = new Date(this.data.currentDate);
-    const nowStr = date.toISOString().split('T')[0];
     
     // 1. 更新顶部日期文字
     let dateText = '';
@@ -133,7 +171,7 @@ Page({
   // --- 数据计算逻辑 ---
 
   calculateDayView(date) {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateKey = formatDateKey(date);
     const dayOfWeek = date.getDay() || 7; // 1-7
 
     // 筛选今日课程
@@ -146,10 +184,7 @@ Page({
       .sort((a, b) => a.start - b.start);
 
     // 筛选今日任务 (截止日期是今天)
-    const tasks = this.data.tasks.filter(t => {
-      if (!t.rawDeadline) return false;
-      return t.rawDeadline.startsWith(dateStr);
-    });
+    const tasks = this.data.tasks.filter(t => t.deadlineKey === dateKey);
 
     this.setData({
       todayCourses: courses,
@@ -162,20 +197,37 @@ Page({
     
     // 聚合一周的任务
     const weekTasksByDay = weekDays.map(day => {
-      const dayTasks = this.data.tasks.filter(t => t.rawDeadline && t.rawDeadline.startsWith(day.fullDate));
+      const dayTasks = this.data.tasks.filter(t => t.deadlineKey === day.dateKey);
       return {
-        date: day.fullDate,
+        dateKey: day.dateKey,
+        date: day.date,
         label: day.name,
+        isToday: day.isToday,
         tasks: dayTasks.map(t => ({
           id: t.id,
           title: t.title,
           time: formatTime(t.rawDeadline),
-          type: t.type === 'exam' ? 'exam-chip' : 'hw-chip'
+          type: t.type,
+          course: t.course,
+          deadlineMeta: t.deadlineMeta,
+          completed: t.completed,
+          urgent: t.urgent
         }))
       };
     });
 
-    this.setData({ weekDays, weekTasksByDay });
+    // 计算本周任务总数和完成率
+    const allWeekTasks = weekTasksByDay.flatMap(day => day.tasks);
+    const totalWeekTasks = allWeekTasks.length;
+    const completedWeekTasks = allWeekTasks.filter(t => t.completed).length;
+    const completionRate = totalWeekTasks > 0 ? Math.round((completedWeekTasks / totalWeekTasks) * 100) : 0;
+
+    this.setData({ 
+      weekDays, 
+      weekTasksByDay,
+      totalWeekTasks,
+      completionRate 
+    });
   },
 
   calculateMonthView(date) {
@@ -194,8 +246,8 @@ Page({
     // 寻找最忙的一天
     const countMap = {};
     currentMonthTasks.forEach(t => {
-      const d = t.rawDeadline.split('T')[0];
-      countMap[d] = (countMap[d] || 0) + 1;
+      if (!t.deadlineKey) return;
+      countMap[t.deadlineKey] = (countMap[t.deadlineKey] || 0) + 1;
     });
     let busiestDate = '-';
     let maxCount = 0;
@@ -399,7 +451,141 @@ Page({
   // 打开课程详情
   openCourse(e) {
     const { id } = e.currentTarget.dataset;
-    wx.showToast({ title: '课程详情开发中', icon: 'none' });
+    const course = this.data.scheduleCourses.find(c => c.id === id);
+    if (!course) return;
+    
+    this.setData({
+      courseEditorVisible: true,
+      editingCourse: course,
+      courseForm: {
+        name: course.name || '',
+        teacher: course.teacher || '',
+        location: course.location || '',
+        color: course.color || '#87A8A4',
+        credits: course.credits || 2.0
+      }
+    });
+  },
+
+  // 打开创建课程弹窗
+  openCreateCourse() {
+    wx.vibrateShort({ type: 'light' });
+    this.setData({
+      courseEditorVisible: true,
+      editingCourse: null,
+      courseForm: {
+        name: '',
+        teacher: '',
+        location: '',
+        color: '#87A8A4',
+        credits: 2.0
+      }
+    });
+  },
+
+  // 关闭课程编辑器
+  closeCourseEditor() {
+    this.setData({ courseEditorVisible: false });
+  },
+
+  // 课程表单输入处理
+  onCourseNameChange(e) {
+    this.setData({ 'courseForm.name': e.detail.value });
+  },
+
+  onCourseTeacherChange(e) {
+    this.setData({ 'courseForm.teacher': e.detail.value });
+  },
+
+  onCourseLocationChange(e) {
+    this.setData({ 'courseForm.location': e.detail.value });
+  },
+
+  onCourseCreditsChange(e) {
+    this.setData({ 'courseForm.credits': parseFloat(e.detail.value) || 0 });
+  },
+
+  // 选择颜色
+  selectCourseColor(e) {
+    const { color } = e.currentTarget.dataset;
+    this.setData({ 'courseForm.color': color });
+  },
+
+  // 保存课程
+  async saveCourse() {
+    if (this.data.savingCourse) return;
+    
+    const { courseForm, editingCourse } = this.data;
+    if (!courseForm.name) {
+      wx.showToast({ title: '请输入课程名称', icon: 'none' });
+      return;
+    }
+
+    this.setData({ savingCourse: true });
+
+    try {
+      const payload = {
+        user_id: this.getUserId(),
+        name: courseForm.name,
+        teacher: courseForm.teacher || null,
+        location: courseForm.location || null,
+        color: courseForm.color,
+        credits: courseForm.credits || 2.0
+      };
+
+      if (editingCourse) {
+        // 更新现有课程
+        await updateCourse(editingCourse.courseId, payload);
+        wx.showToast({ title: '课程已更新', icon: 'success' });
+      } else {
+        // 创建新课程
+        await createCourse(payload);
+        wx.showToast({ title: '课程已创建', icon: 'success' });
+      }
+
+      this.setData({ courseEditorVisible: false, savingCourse: false });
+      this.loadSchedule();
+      this.loadCourses();
+    } catch (err) {
+      console.error('保存课程失败', err);
+      this.setData({ savingCourse: false });
+      wx.showToast({ title: '保存失败', icon: 'none' });
+    }
+  },
+
+  // 删除课程
+  async deleteCourse() {
+    const { editingCourse } = this.data;
+    if (!editingCourse) return;
+
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除课程「${editingCourse.name}」吗？`,
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            await deleteCourse(editingCourse.courseId);
+            this.setData({ courseEditorVisible: false });
+            wx.showToast({ title: '课程已删除', icon: 'success' });
+            this.loadSchedule();
+            this.loadCourses();
+          } catch (err) {
+            console.error('删除课程失败', err);
+            wx.showToast({ title: '删除失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  },
+
+  // 加载所有课程列表（用于选择）
+  async loadCourses() {
+    try {
+      const courses = await fetchCourses(this.getUserId());
+      this.setData({ courses: Array.isArray(courses) ? courses : [] });
+    } catch (err) {
+      console.warn('加载课程列表失败', err);
+    }
   },
 
   decorateTasks(rows = []) {
@@ -414,6 +600,7 @@ Page({
       const timeLabel = dateObj
         ? `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
         : '--:--';
+      const deadlineKey = dateObj ? formatDateKey(dateObj) : '';
 
       return {
         id: task.id,
@@ -422,6 +609,7 @@ Page({
         description: task.description,
         accent,
         rawDeadline: deadlineIso,
+        deadlineKey,
         deadline: shortLabel,
         deadlineMeta: `${shortLabel} ${timeLabel}`,
         completed: task.is_completed,
