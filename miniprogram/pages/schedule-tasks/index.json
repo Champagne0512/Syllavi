@@ -1,9 +1,0 @@
-{
-  "usingComponents": {},
-  "navigationStyle": "custom",
-  "navigationBarTextStyle": "black",
-  "backgroundColor": "#FAFAFA",
-  "backgroundTextStyle": "dark",
-  "enablePullDownRefresh": true,
-  "onReachBottomDistance": 50
-}
