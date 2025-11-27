@@ -6,7 +6,8 @@ const {
   fetchResources,
   summarizeFile,
   uploadToStorage,
-  updateResource
+  updateResource,
+  request
 } = require('../../utils/supabase');
 
 const MOCK_FOLDERS = [
@@ -220,6 +221,61 @@ Page({
     this.setData({ activeFolder: name }, () => this.updateFilteredFiles());
     wx.vibrateShort({ type: 'light' });
   },
+
+  // 使用浏览器打开文件的替代方案
+  openFileInBrowser(publicUrl, originalName) {
+    try {
+      // 1. 复制 Supabase 公网链接到剪贴板
+      wx.setClipboardData({
+        data: publicUrl,
+        success: () => {
+          // 显示复制成功提示
+          wx.showToast({
+            title: '链接已复制到剪贴板 ✅',
+            icon: 'none',
+            duration: 2000
+          });
+          
+          // 2. 弹出引导弹窗，提示用户打开浏览器
+          setTimeout(() => {
+            wx.showModal({
+              title: '文件查看指引',
+              content: `1. 链接已复制到剪贴板\n2. 打开手机浏览器（如微信/Chrome）\n3. 粘贴链接并访问，即可下载/查看「${originalName}」`,
+              confirmText: '打开浏览器',
+              cancelText: '知道了',
+              success: (res) => {
+                if (res.confirm) {
+                  // 3. 尝试唤起微信内置浏览器
+                  wx.navigateTo({
+                    url: `/pages/web-view/web-view?url=${encodeURIComponent(publicUrl)}`,
+                    fail: () => {
+                      // 唤起失败则提示手动打开
+                      wx.showToast({
+                        title: '请手动打开浏览器粘贴链接',
+                        icon: 'none',
+                        duration: 4000
+                      });
+                    }
+                  });
+                }
+              }
+            });
+          }, 2000); // 延迟2秒显示弹窗，让用户先看到复制成功提示
+        },
+        fail: (err) => {
+          console.error('复制链接失败:', err);
+          wx.showToast({
+            title: '链接复制失败，请手动复制：' + publicUrl,
+            icon: 'none',
+            duration: 5000
+          });
+        }
+      });
+    } catch (err) {
+      console.error('唤起浏览器失败:', err);
+      wx.showToast({ title: '操作失败，请重试', icon: 'none' });
+    }
+  },
   previewFile(e) {
     const { id } = e.currentTarget.dataset;
     const file = this.data.files.find((f) => f.id === id);
@@ -227,121 +283,42 @@ Page({
       wx.showToast({ title: '暂无文件 URL', icon: 'none' });
       return;
     }
-    wx.showLoading({ title: '加载中...' });
-    wx.downloadFile({
-      url: file.url,
-      success: (res) => {
-        const { tempFilePath } = res;
-        wx.openDocument({
-          filePath: tempFilePath,
-          fileType: file.type,
-          showMenu: true,
-          success: () => {
-            wx.hideLoading();
-          },
-          fail: () => {
-            wx.hideLoading();
-            wx.showToast({ title: '无法预览', icon: 'none'     });
-  },
-
-  // 艺术设计新增方法
-  showMoodQuote() {
-    const randomIndex = Math.floor(Math.random() * this.data.quotes.length);
-    this.setData({
-      showQuote: true,
-      currentQuote: this.data.quotes[randomIndex]
-    });
     
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
+    console.log('预览文件:', file.url, '文件名:', file.name, '文件类型:', file.type);
     
-    // 5秒后自动隐藏
-    setTimeout(() => {
-      this.setData({ showQuote: false });
-    }, 5000);
+    // 直接使用浏览器打开方案，避免400错误
+    this.openFileInBrowser(file.url, file.name);
   },
 
-  toggleZenMode() {
-    const zenMode = !this.data.zenMode;
-    const randomIndex = Math.floor(Math.random() * this.data.zenQuotes.length);
-    
-    this.setData({
-      zenMode,
-      zenQuote: this.data.zenQuotes[randomIndex]
-    });
-
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
-    
-    if (zenMode) {
-      // 进入专注模式
-      wx.showToast({
-        title: '进入专注模式',
-        icon: 'none',
-        duration: 1000
-      });
-    }
-  },
-
-  toggleSort() {
-    const sortOrder = this.data.sortOrder === 'asc' ? 'desc' : 'asc';
-    this.setData({ sortOrder }, () => {
-      this.sortFiles();
-    });
-    
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
-  },
-
-  sortFiles() {
-    const { filteredFiles, sortOrder } = this.data;
-    const sortedFiles = [...filteredFiles].sort((a, b) => {
-      if (sortOrder === 'asc') {
-        return a.name.localeCompare(b.name);
-      } else {
-        return b.name.localeCompare(a.name);
-      }
-    });
-    
-    this.setData({ filteredFiles: sortedFiles });
-  },
-
-  playAmbientSound() {
-    wx.showToast({
-      title: '环境音效功能开发中',
-      icon: 'none',
-      duration: 2000
-    });
-  },
-
-  formatSize(bytes) {
-    if (!bytes) return '';
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  }
-});
-      },
-      fail: () => {
-        wx.hideLoading();
-        wx.showToast({ title: '下载失败', icon: 'none' });
-      }
-    });
-  },
   async uploadResource() {
+    // 防止重复上传
+    if (this._uploading) {
+      console.log('上传进行中，请勿重复操作');
+      return;
+    }
+    
     try {
+      this._uploading = true;
+      
       const { tempFiles } = await wx.chooseMessageFile({
         count: 1,
         type: 'file',
         extension: ['pdf', 'ppt', 'pptx', 'doc', 'docx', 'jpg', 'png']
       });
-      if (!tempFiles || !tempFiles.length) return;
+      if (!tempFiles || !tempFiles.length) {
+        this._uploading = false;
+        return;
+      }
       const file = tempFiles[0];
+      
+      // 调试日志：检查文件对象结构
+      console.log('选择的文件对象:', file);
+      
       wx.showLoading({ title: '上传中...' });
 
       const { publicUrl } = await uploadToStorage(
         'resources',
-        file.path || file.tempFilePath,
+        file.path || file.tempFilePath || file.url,
         file.name
       );
 
@@ -360,29 +337,37 @@ Page({
       wx.hideLoading();
       wx.showToast({ title: '已上传', icon: 'success' });
 
-      this.setData(
-        {
-          files: [
-            {
-              id: row.id,
-              name: row.file_name,
-              type: row.file_type,
-              subject: row.subject || '未分类',
-              url: row.file_url,
-              size: row.file_size,
-              aiSummary: row.ai_summary || ''
-            },
-            ...this.data.files
-          ]
-        },
-        () => this.updateFilteredFiles()
-      );
+      // 使用setTimeout避免立即触发页面重渲染
+      setTimeout(() => {
+        this.setData(
+          {
+            files: [
+              {
+                id: row.id,
+                name: row.file_name,
+                type: row.file_type,
+                subject: row.subject || '未分类',
+                url: row.file_url,
+                size: row.file_size,
+                aiSummary: row.ai_summary || ''
+              },
+              ...this.data.files
+            ]
+          },
+          () => {
+            this.updateFilteredFiles();
+            this._uploading = false;
+          }
+        );
+      }, 100);
     } catch (err) {
       console.warn('upload failed', err);
       wx.hideLoading();
       wx.showToast({ title: '上传失败', icon: 'none' });
+      this._uploading = false;
     }
   },
+
   getFileType(name = '') {
     const lower = name.toLowerCase();
     if (lower.endsWith('.pdf')) return 'pdf';
@@ -392,10 +377,12 @@ Page({
     if (lower.endsWith('.png')) return 'png';
     return 'other';
   },
+
   handleFileLongPress(e) {
     const { id } = e.currentTarget.dataset;
     const file = this.data.files.find((f) => f.id === id);
     if (!file) return;
+    
     wx.showActionSheet({
       itemList: ['AI 划重点', '删除'],
       success: (res) => {
@@ -407,6 +394,7 @@ Page({
       }
     });
   },
+
   async runSummary(file) {
     if (!file.url) {
       wx.showToast({ title: '缺少文件地址', icon: 'none' });
@@ -431,6 +419,7 @@ Page({
 
     this.generateSummary(file);
   },
+
   async generateSummary(file) {
     wx.showLoading({ title: 'AI 划重点中...' });
     try {
@@ -453,6 +442,7 @@ Page({
       wx.showToast({ title: '生成失败', icon: 'none' });
     }
   },
+
   async removeFile(file) {
     wx.showModal({
       title: '删除文件',
@@ -558,5 +548,7 @@ Page({
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  }
+  },
+
+  // 基础文件管理功能已简化，移除分享相关代码
 });

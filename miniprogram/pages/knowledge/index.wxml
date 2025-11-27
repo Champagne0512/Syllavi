@@ -98,7 +98,12 @@
             <view class="file-glow"></view>
           </view>
           <view class="file-content">
-            <text class="file-name">{{item.name}}</text>
+            <view class="file-header">
+              <text class="file-name">{{item.name}}</text>
+              <view class="file-codes">
+                <text class="file-type-badge">{{item.type.toUpperCase()}}</text>
+              </view>
+            </view>
             <view class="file-meta">
               <text class="file-subject">{{item.subject}}</text>
               <text class="file-size" wx:if="{{item.size}}">{{formatSize(item.size)}}</text>
