@@ -82,7 +82,7 @@
       <view class="week-grid-container">
         <view class="week-header-row">
           <view class="corner-box"></view>
-          <block wx:for="{{weekDays}}" wx:key="date">
+          <block wx:for="{{weekDays}}" wx:key="fullDate">
             <view class="day-col-head {{item.isToday ? 'today-head' : ''}}">
               <text class="day-name">周{{item.name}}</text>
               <text class="day-num">{{item.date}}</text>
@@ -100,7 +100,7 @@
           
           <!-- 课程渲染区 -->
           <view class="course-matrix">
-             <block wx:for="{{weekDays}}" wx:key="date" wx:for-item="day" wx:for-index="dIdx">
+             <block wx:for="{{weekDays}}" wx:key="fullDate" wx:for-item="day" wx:for-index="dIdx">
                 <!-- 每一列 -->
                 <view class="day-column-bg"></view>
              </block>
@@ -127,7 +127,7 @@
         <text class="head-sub">{{totalWeekTasks}} 项</text>
       </view>
       <scroll-view scroll-x class="week-task-scroll" enable-flex>
-        <block wx:for="{{weekTasksByDay}}" wx:key="date">
+        <block wx:for="{{weekTasksByDay}}" wx:key="dateKey">
           <view class="week-task-card glass-card" wx:if="{{item.tasks.length > 0}}">
             <text class="wt-day">周{{item.label}}</text>
             <block wx:for="{{item.tasks}}" wx:key="id" wx:for-item="t">
@@ -209,18 +209,6 @@
         <view wx:if="{{upcomingTasks.length === 0}}" class="empty-tip">未来7天暂无急迫任务</view>
       </view>
 
-    </view>
-
-    <!-- 功能提示：空教室和番茄钟功能已迁移到"工具"模块 -->
-    <view class="feature-tip card">
-      <view class="section-head">
-        <text>更多工具</text>
-        <text class="tip-arrow">→</text>
-      </view>
-      <view class="tip-content">
-        <text class="tip-text">空教室预约、番茄钟等实用工具已整合到</text>
-        <text class="tool-link" bindtap="goToTools">工具模块</text>
-      </view>
     </view>
 
     <view class="spacer-bottom"></view>

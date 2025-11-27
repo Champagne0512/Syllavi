@@ -21,9 +21,20 @@
           </view>
           <view class="bio muted" wx:if="{{profile.bio}}">{{profile.bio}}</view>
         </view>
-        <view class="edit-btn" bindtap="editProfile">
+        <view class="edit-btn" wx:if="{{!isGuest}}" bindtap="editProfile">
           <text>编辑</text>
         </view>
+      </view>
+    </view>
+
+    <view class="guest-card" wx:if="{{isGuest}}">
+      <view class="guest-header">
+        <text class="guest-title">当前为游客模式</text>
+        <text class="guest-tag">Visitor</text>
+      </view>
+      <view class="guest-desc">登录 / 注册后即可同步课程、任务和专注记录。</view>
+      <view class="guest-actions">
+        <view class="login-btn" bindtap="goLogin">登录 · 注册</view>
       </view>
     </view>
 
@@ -57,21 +68,30 @@
 
       <view class="stats-row">
         <view class="stats-row-item">
-          <text class="row-icon">📚</text>
+          <view class="row-icon row-icon-courses">
+            <view class="row-icon-core"></view>
+            <view class="row-icon-spark"></view>
+          </view>
           <view class="row-info">
             <text class="row-label muted">课程数</text>
             <text class="row-value">{{stats.total_courses}}</text>
           </view>
         </view>
         <view class="stats-row-item">
-          <text class="row-icon">✅</text>
+          <view class="row-icon row-icon-tasks">
+            <view class="row-icon-core"></view>
+            <view class="row-icon-spark"></view>
+          </view>
           <view class="row-info">
             <text class="row-label muted">完成任务</text>
             <text class="row-value">{{stats.completed_tasks}}/{{stats.total_tasks}}</text>
           </view>
         </view>
         <view class="stats-row-item">
-          <text class="row-icon">📁</text>
+          <view class="row-icon row-icon-resources">
+            <view class="row-icon-core"></view>
+            <view class="row-icon-spark"></view>
+          </view>
           <view class="row-info">
             <text class="row-label muted">学习资源</text>
             <text class="row-value">{{stats.total_resources}}</text>
@@ -102,7 +122,11 @@
             data-achievement="{{item}}"
             bindtap="viewAchievement"
           >
-            <view class="achievement-icon">{{item.icon}}</view>
+            <view class="achievement-icon badge-{{item.iconToken || 'default'}}">
+              <view class="badge-halo"></view>
+              <view class="badge-core"></view>
+              <text class="badge-caption">{{item.iconCaption}}</text>
+            </view>
             <view class="achievement-name">{{item.name}}</view>
             <view class="achievement-desc muted">{{item.desc}}</view>
             <view class="achievement-status" wx:if="{{!item.unlocked}}">🔒</view>
@@ -156,7 +180,10 @@
             data-path="{{item.path}}"
             bindtap="navigateToAction"
           >
-            <view class="action-icon">{{item.icon}}</view>
+            <view class="action-icon action-icon-{{item.iconToken || 'neutral'}}">
+              <view class="action-icon-core"></view>
+              <view class="action-icon-glow"></view>
+            </view>
             <view class="action-name">{{item.name}}</view>
           </view>
         </block>

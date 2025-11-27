@@ -6,7 +6,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
   color: var(--day-text);
 }
 
@@ -507,51 +507,512 @@
 
 .spacer-bottom { height: 120rpx; }
 
-/* === 周视图任务卡片样式 === */
-.week-task-scroll {
-  white-space: nowrap;
-  padding: 16rpx 0 32rpx;
+/* === 周视图待办部分 - 重新设计增强存在感 === */
+
+.week-tasks-enhanced {
+  margin-top: 60rpx !important;
+  position: relative !important;
+  padding: 40rpx 0 !important;
+  min-height: 500rpx !important;
+  display: block !important;
+  background: linear-gradient(135deg, #f0f8ff 0%, #fff8f0 100%) !important;
+  border-radius: 40rpx !important;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.1) !important;
 }
 
-.week-task-card {
+/* 弥散背景装饰 - 流动的秩序 */
+.tasks-background-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80rpx);
+  opacity: 0.4;
+  animation: float 20s infinite ease-in-out;
+}
+
+.blob-1 {
+  width: 400rpx;
+  height: 400rpx;
+  background: radial-gradient(circle, rgba(135, 168, 164, 0.6), transparent 70%);
+  top: -100rpx;
+  left: -100rpx;
+  animation-delay: 0s;
+}
+
+.blob-2 {
+  width: 350rpx;
+  height: 350rpx;
+  background: radial-gradient(circle, rgba(188, 160, 188, 0.5), transparent 70%);
+  bottom: 20%;
+  right: -80rpx;
+  animation-delay: 7s;
+}
+
+.blob-3 {
+  width: 300rpx;
+  height: 300rpx;
+  background: radial-gradient(circle, rgba(224, 142, 121, 0.4), transparent 70%);
+  top: 40%;
+  left: 50%;
+  animation-delay: 14s;
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1); 
+  }
+  25% { 
+    transform: translate(30rpx, -40rpx) scale(1.05); 
+  }
+  50% { 
+    transform: translate(-20rpx, 30rpx) scale(0.95); 
+  }
+  75% { 
+    transform: translate(40rpx, 20rpx) scale(1.02); 
+  }
+}
+
+/* 待办标题区 - 超级椭圆设计 */
+.tasks-title-section {
+  margin-bottom: 48rpx;
+  text-align: center;
+  position: relative;
+}
+
+.title-visual-element {
+  position: relative;
   display: inline-block;
-  padding: 28rpx;
-  margin-right: 20rpx;
-  min-width: 280rpx;
-  vertical-align: top;
+  margin-bottom: 32rpx;
 }
 
-.wt-day {
+.breathing-dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: linear-gradient(135deg, #87A8A4 0%, #BCA0BC 100%);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: -40rpx;
+  transform: translateY(-50%);
+  animation: breathe 3s ease-in-out infinite;
+  box-shadow: 0 0 20rpx rgba(135, 168, 164, 0.6);
+}
+
+@keyframes breathe {
+  0%, 100% { 
+    opacity: 0.3; 
+    transform: translateY(-50%) scale(0.8);
+  }
+  50% { 
+    opacity: 1; 
+    transform: translateY(-50%) scale(1.2);
+  }
+}
+
+.big-title {
+  font-size: 56rpx;
+  font-weight: 200;
+  color: #2D3436;
+  letter-spacing: 4rpx;
+  position: relative;
+  display: inline-block;
+}
+
+.title-underline {
+  position: absolute;
+  bottom: -8rpx;
+  left: 10%;
+  width: 80%;
+  height: 3rpx;
+  background: linear-gradient(90deg, transparent, #87A8A4, transparent);
+  border-radius: 2rpx;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 60rpx;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #87A8A4;
+  line-height: 1;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
   font-size: 24rpx;
   color: #8A8A8F;
+  font-weight: 500;
+}
+
+.progress-circle-container {
+  text-align: center;
+}
+
+.progress-circle {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: conic-gradient(#87A8A4 0deg, #87A8A4 180deg, rgba(45, 52, 54, 0.1) 180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 auto 12rpx;
+}
+
+.progress-circle::before {
+  content: '';
+  position: absolute;
+  width: 80rpx;
+  height: 80rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  backdrop-filter: blur(10rpx);
+}
+
+.circle-center {
+  position: relative;
+  z-index: 1;
+}
+
+.percentage-text {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #2D3436;
+}
+
+.progress-label {
+  font-size: 22rpx;
+  color: #8A8A8F;
+  font-weight: 500;
+}
+
+/* 待办内容区 - 流动卡片设计 */
+.tasks-content-area {
+  position: relative;
+  z-index: 1;
+}
+
+.day-flow-container {
+  margin-bottom: 40rpx;
+  position: relative;
+}
+
+.day-flow-container.today-highlight {
+  padding: 24rpx;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20rpx);
+  border-radius: 32rpx;
+  border: 1px solid rgba(135, 168, 164, 0.2);
+}
+
+/* 日期指示器 */
+.date-indicator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  position: relative;
+}
+
+.date-circle {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10rpx);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.date-circle.today {
+  background: linear-gradient(135deg, #87A8A4 0%, #BCA0BC 100%);
+  box-shadow: 0 8rpx 24rpx rgba(135, 168, 164, 0.3);
+}
+
+.date-text {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #2D3436;
+}
+
+.date-circle.today .date-text {
+  color: white;
+}
+
+.date-label {
+  font-size: 26rpx;
   font-weight: 600;
-  margin-bottom: 20rpx;
+  color: #8A8A8F;
+  margin-right: 16rpx;
+}
+
+.task-count-bubble {
+  background: linear-gradient(135deg, #E08E79 0%, #E2C2A4 100%);
+  color: white;
+  padding: 6rpx 16rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  box-shadow: 0 4rpx 12rpx rgba(224, 142, 121, 0.3);
+}
+
+/* 任务流 */
+.task-flow {
+  position: relative;
+  padding-left: 40rpx;
+}
+
+.task-flow-item {
+  position: relative;
+  margin-bottom: 24rpx;
+  display: flex;
+  align-items: center;
+}
+
+.flow-line {
+  position: absolute;
+  left: 0;
+  top: 40rpx;
+  bottom: -24rpx;
+  width: 2rpx;
+  background: linear-gradient(180deg, rgba(135, 168, 164, 0.3), transparent);
+}
+
+.task-flow-item:last-child .flow-line {
+  display: none;
+}
+
+.task-node {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.node-core {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  background: rgba(199, 199, 204, 0.5);
+  margin-right: 24rpx;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.node-core.completed-node {
+  background: linear-gradient(135deg, #87A8A4 0%, #BCA0BC 100%);
+  box-shadow: 0 0 20rpx rgba(135, 168, 164, 0.4);
+}
+
+.node-core.urgent-node {
+  background: linear-gradient(135deg, #E08E79 0%, #E2C2A4 100%);
+  animation: pulse 2s infinite;
+}
+
+/* 任务气泡 */
+.task-bubble {
+  flex: 1;
+  padding: 24rpx;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border-radius: 28rpx;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 8rpx 32rpx rgba(15, 23, 42, 0.06),
+    0 2rpx 8rpx rgba(15, 23, 42, 0.04);
+}
+
+.task-bubble:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.completed-flow .task-bubble {
+  opacity: 0.6;
+  background: rgba(248, 249, 250, 0.8);
+}
+
+.task-bubble.homework {
+  border-left: 4rpx solid #87A8A4;
+}
+
+.task-bubble.exam {
+  border-left: 4rpx solid #E08E79;
+}
+
+.bubble-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.bubble-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 6rpx;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bubble-subtitle {
+  font-size: 24rpx;
+  color: #8A8A8F;
+  font-weight: 500;
+}
+
+.bubble-type-indicator {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+.homework .bubble-type-indicator {
+  background: rgba(135, 168, 164, 0.15);
+}
+
+.exam .bubble-type-indicator {
+  background: rgba(224, 142, 121, 0.15);
+}
+
+.type-text {
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.homework .type-text {
+  color: #87A8A4;
+}
+
+.exam .type-text {
+  color: #E08E79;
+}
+
+/* 空状态 - 重新设计 */
+.zen-empty-state {
+  text-align: center;
+  padding: 100rpx 40rpx;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20rpx);
+  border-radius: 40rpx;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.empty-illustration {
+  position: relative;
+  margin-bottom: 32rpx;
+  display: inline-block;
+}
+
+.zen-circle {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.2), rgba(188, 160, 188, 0.2));
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.zen-text {
+  font-size: 64rpx;
+  position: relative;
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.empty-main-text {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #2D3436;
+  margin-bottom: 12rpx;
   display: block;
 }
 
-.wt-chip {
+.empty-sub-text {
+  font-size: 26rpx;
+  color: #8A8A8F;
+  margin-bottom: 40rpx;
+  display: block;
+}
+
+.zen-cta-button {
+  position: relative;
   display: inline-block;
-  padding: 12rpx 20rpx;
-  margin: 0 8rpx 8rpx 0;
-  border-radius: 20rpx;
-  font-size: 22rpx;
-  font-weight: 500;
-  white-space: nowrap;
+  padding: 24rpx 48rpx;
+  background: linear-gradient(135deg, #87A8A4 0%, #BCA0BC 100%);
+  color: white;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
-.wt-chip.hw-chip {
-  background: rgba(168, 190, 201, 0.2);
-  color: #6B8A9C;
-  border: 1px solid rgba(168, 190, 201, 0.3);
+.zen-cta-button:active {
+  transform: scale(0.95);
 }
 
-.wt-chip.exam-chip {
-  background: rgba(216, 137, 137, 0.2);
-  color: #A87777;
-  border: 1px solid rgba(216, 137, 137, 0.3);
+.cta-glow {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.zen-cta-button:active .cta-glow {
+  left: 100%;
 }
 
 /* === 近期任务样式 === */
@@ -913,4 +1374,99 @@ navigator {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* === 课程编辑相关样式 === */
+
+/* 添加课程按钮 */
+.add-course-btn {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  background: linear-gradient(135deg, #87A8A4 0%, #BCA0BC 100%);
+  border-radius: 999rpx;
+  color: white;
+  font-size: 24rpx;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4rpx 16rpx rgba(135, 168, 164, 0.3);
+  margin-left: 16rpx;
+}
+
+.add-course-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(135, 168, 164, 0.4);
+}
+
+.add-course-icon {
+  font-size: 28rpx;
+  font-weight: 300;
+  margin-right: 8rpx;
+}
+
+.add-course-text {
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+/* 课程编辑器中的颜色选择器 */
+.color-picker {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.color-option {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  border: 4rpx solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.color-option:active {
+  transform: scale(0.9);
+}
+
+.color-option.selected {
+  border-color: white;
+  box-shadow: 0 0 0 4rpx currentColor, 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
+/* 课程卡片点击效果 */
+.grid-course-item {
+  position: absolute;
+  width: 13.5%;
+  border-radius: 16rpx;
+  padding: 12rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  margin-left: 2px;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.grid-course-item:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+.grid-text { 
+  font-size: 20rpx; 
+  font-weight: 700; 
+  line-height: 1.2; 
+  margin-bottom: 4rpx;
+}
+
+.grid-loc { 
+  font-size: 18rpx; 
+  opacity: 0.9; 
+  margin-top: 4rpx;
 }

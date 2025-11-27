@@ -253,7 +253,7 @@ function createCourseSchedules(payloadArray) {
 function fetchTasks(userId = DEMO_USER_ID) {
   const query = [
     `user_id=eq.${userId}`,
-    'select=id,type,title,description,deadline,is_completed,progress,related_course_id',
+    'select=id,type,title,description,deadline,is_completed,progress,related_course_id,course:courses(id,name,color)',
     'order=deadline.asc'
   ].join('&');
   return request('tasks', { query });

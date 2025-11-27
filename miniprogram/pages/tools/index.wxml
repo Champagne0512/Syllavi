@@ -43,6 +43,8 @@
       </view>
 
       <view class="focus-card">
+        <view class="background-orb orb-left"></view>
+        <view class="background-orb orb-right"></view>
         <view class="focus-info">
           <view class="focus-title">专注学习</view>
           <view class="focus-desc">设置专注时间，避免干扰</view>

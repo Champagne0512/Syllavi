@@ -63,7 +63,7 @@
 .copy {
   margin-top: 24rpx;
   line-height: 1.6;
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
   display: block;
   font-size: 26rpx;
   color: rgba(45, 52, 54, 0.62);
@@ -209,7 +209,7 @@
   line-height: 1.5;
   color: rgba(45, 52, 54, 0.6);
   text-align: center;
-  font-family: 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
 }
 
 .legal-section {
@@ -221,7 +221,7 @@
   font-size: 22rpx;
   text-align: center;
   margin-top: 8rpx;
-  font-family: 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
   line-height: 1.4;
   color: rgba(45, 52, 54, 0.45);
 }

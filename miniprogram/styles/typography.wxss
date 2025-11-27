@@ -4,11 +4,11 @@
 }
 
 .mixed-font {
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
 }
 
 .chinese-font {
-  font-family: 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+  font-family: 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
 }
 
 .display-title {
@@ -39,12 +39,12 @@
 .body-large {
   font-size: 32rpx;
   line-height: 1.5;
-  font-family: 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
 }
 
 .body-small {
   font-size: 26rpx;
   line-height: 1.5;
   color: rgba(45, 52, 54, 0.65);
-  font-family: 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
 }

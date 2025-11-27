@@ -19,6 +19,12 @@
         <text class="arrow">›</text>
       </view>
     </view>
+
+    <!-- 添加课程按钮 -->
+    <view class="add-course-btn" bindtap="openCreateCourse">
+      <text class="add-course-icon">＋</text>
+      <text class="add-course-text">课程</text>
+    </view>
   </view>
 
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex>
@@ -61,7 +67,7 @@
             <view class="check-circle {{item.completed ? 'checked' : ''}}" catchtap="markDone" data-id="{{item.id}}"></view>
             <view class="task-info">
               <text class="task-text">{{item.title}}</text>
-              <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadline}}</text>
+              <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadlineMeta}}</text>
             </view>
           </view>
         </block>
@@ -77,7 +83,7 @@
       <view class="week-grid-container">
         <view class="week-header-row">
           <view class="corner-box"></view>
-          <block wx:for="{{weekDays}}" wx:key="date">
+          <block wx:for="{{weekDays}}" wx:key="fullDate">
             <view class="day-col-head {{item.isToday ? 'today-head' : ''}}">
               <text class="day-name">{{item.name}}</text>
               <text class="day-num">{{item.date}}</text>
@@ -95,7 +101,7 @@
           
           <!-- 课程渲染区 -->
           <view class="course-matrix">
-             <block wx:for="{{weekDays}}" wx:key="date" wx:for-item="day" wx:for-index="dIdx">
+             <block wx:for="{{weekDays}}" wx:key="fullDate" wx:for-item="day" wx:for-index="dIdx">
                 <!-- 每一列 -->
                 <view class="day-column-bg"></view>
              </block>
@@ -116,22 +122,98 @@
         </view>
       </view>
 
-      <!-- 底部：本周任务概览 -->
-      <view class="section-head mt-40">
-        <text class="head-title">本周任务分布</text>
-        <view class="add-btn-mini" bindtap="openCreate">＋</view>
-      </view>
-      <scroll-view scroll-x class="week-task-scroll" enable-flex>
-        <block wx:for="{{weekTasksByDay}}" wx:key="date">
-          <view class="week-task-card glass-card" wx:if="{{item.tasks.length > 0}}">
-            <text class="wt-day">{{item.label}}</text>
-            <block wx:for="{{item.tasks}}" wx:key="id" wx:for-item="t">
-               <view class="wt-chip {{t.type}}" bindtap="openEdit" data-id="{{t.id}}">{{t.title}}</view>
-            </block>
+      <!-- 本周待办 - 重新设计增强存在感 -->
+      <view class="week-tasks-enhanced">
+        <!-- 弥散背景装饰 -->
+        <view class="tasks-background-decoration">
+          <view class="blob blob-1"></view>
+          <view class="blob blob-2"></view>
+          <view class="blob blob-3"></view>
+        </view>
+        
+        <!-- 待办标题区 - 超级椭圆设计 -->
+        <view class="tasks-title-section">
+          <view class="title-visual-element">
+            <view class="breathing-dot"></view>
+            <text class="big-title">本周待办</text>
+            <view class="title-underline"></view>
           </view>
-        </block>
-        <view wx:if="{{!weekTasksByDay.length}}" class="empty-tip inline">本周无任务</view>
-      </scroll-view>
+          
+          <view class="stats-row">
+            <view class="stat-item">
+              <text class="stat-number">{{totalWeekTasks}}</text>
+              <text class="stat-label">项任务</text>
+            </view>
+            <view class="progress-circle-container">
+              <view class="progress-circle" style="background: conic-gradient(#87A8A4 0deg, #87A8A4 {{completionRate * 3.6}}deg, rgba(45, 52, 54, 0.1) {{completionRate * 3.6}}deg)">
+                <view class="circle-center">
+                  <text class="percentage-text">{{completionRate}}%</text>
+                </view>
+              </view>
+              <text class="progress-label">完成</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 待办内容区 - 流动卡片设计 -->
+        <view class="tasks-content-area">
+          <block wx:for="{{weekTasksByDay}}" wx:key="dateKey" wx:for-item="day">
+            <view class="day-flow-container {{day.isToday ? 'today-highlight' : ''}}" wx:if="{{day.tasks.length > 0}}">
+              <!-- 日期指示器 -->
+              <view class="date-indicator">
+                <view class="date-circle {{day.isToday ? 'today' : ''}}">
+                  <text class="date-text">{{day.date}}</text>
+                </view>
+                <text class="date-label">{{day.label}}</text>
+                <view class="task-count-bubble">{{day.tasks.length}}</view>
+              </view>
+              
+              <!-- 任务流 -->
+              <view class="task-flow">
+                <block wx:for="{{day.tasks}}" wx:key="id" wx:for-item="task">
+                  <view class="task-flow-item {{task.completed ? 'completed-flow' : ''}}" 
+                        bindtap="openEdit" data-id="{{task.id}}">
+                    <!-- 连接线 -->
+                    <view class="flow-line"></view>
+                    
+                    <!-- 任务节点 -->
+                    <view class="task-node">
+                      <view class="node-core {{task.completed ? 'completed-node' : task.urgent ? 'urgent-node' : ''}}">
+                        <view class="node-inner"></view>
+                      </view>
+                      
+                      <!-- 任务卡片 -->
+                      <view class="task-bubble {{task.type}}">
+                        <view class="bubble-content">
+                          <text class="bubble-title">{{task.title}}</text>
+                          <text class="bubble-subtitle">{{task.course}} · {{task.time}}</text>
+                        </view>
+                        <view class="bubble-type-indicator">
+                          <text class="type-text">{{task.type === 'exam' ? '考' : '业'}}</text>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </block>
+              </view>
+            </view>
+          </block>
+          
+          <!-- 空状态 - 重新设计 -->
+          <view wx:if="{{totalWeekTasks === 0}}" class="zen-empty-state">
+            <view class="empty-illustration">
+              <view class="zen-circle"></view>
+              <view class="zen-text">📋</view>
+            </view>
+            <text class="empty-main-text">本周无待办事项</text>
+            <text class="empty-sub-text">添加任务开始规划本周学习</text>
+            <view class="zen-cta-button" bindtap="openCreate">
+              <text class="cta-text">创建第一个任务</text>
+              <view class="cta-glow"></view>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
 
     <!-- === 月视图 (Month / Dashboard) === -->
@@ -238,6 +320,35 @@
       <view class="sheet-actions">
         <view class="del-btn" wx:if="{{editingTask}}" catchtap="deleteCurrent">删除</view>
         <view class="save-btn" catchtap="submitTask">保存</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程编辑器弹窗 -->
+  <view wx:if="{{courseEditorVisible}}" class="editor-mask fade-in" bindtap="closeCourseEditor">
+    <view class="editor-sheet" catchtap="noop">
+      <view class="sheet-header">
+        <text class="sheet-title">{{editingCourse ? '编辑课程' : '新建课程'}}</text>
+        <view class="color-picker">
+          <block wx:for="{{['#87A8A4', '#BCA0BC', '#E2C2A4', '#E08E79', '#9BB5CE', '#C9A5A0']}}" wx:key="*this">
+            <view class="color-option {{courseForm.color === item ? 'selected' : ''}}" 
+                  style="background: {{item}}" 
+                  catchtap="selectCourseColor" 
+                  data-color="{{item}}"></view>
+          </block>
+        </view>
+      </view>
+      
+      <view class="form-body">
+        <input class="zen-input" placeholder="课程名称*" value="{{courseForm.name}}" bindinput="onCourseNameChange" />
+        <input class="zen-input" placeholder="授课老师" value="{{courseForm.teacher}}" bindinput="onCourseTeacherChange" />
+        <input class="zen-input" placeholder="上课地点" value="{{courseForm.location}}" bindinput="onCourseLocationChange" />
+        <input class="zen-input" placeholder="学分" type="digit" value="{{courseForm.credits}}" bindinput="onCourseCreditsChange" />
+      </view>
+
+      <view class="sheet-actions">
+        <view class="del-btn" wx:if="{{editingCourse}}" catchtap="deleteCourse">删除课程</view>
+        <view class="save-btn" catchtap="saveCourse">保存课程</view>
       </view>
     </view>
   </view>

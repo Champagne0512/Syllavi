@@ -6,7 +6,7 @@
   gap: 32rpx;
   color: var(--day-text);
   position: relative;
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
 }
 
 .ai-import-page::before,

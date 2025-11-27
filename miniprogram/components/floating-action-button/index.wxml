@@ -1,26 +1,24 @@
-<view class="fab-wrapper {{docked ? 'docked' : ''}}">
-  <!-- 功能按钮列表 -->
-  <view class="actions {{expanded ? 'expanded' : ''}}" wx:if="{{expanded && !docked}}">
-    <block wx:for="{{actions}}" wx:key="id">
-      <button class="action-btn" style="background: {{item.color}};"
-        data-page="{{item.page}}"
-        bindtap="handleAction">
-        {{item.label}}
-      </button>
-    </block>
-  </view>
-  
+<view class="fab-wrapper">
   <!-- 主按钮 -->
-  <button class="fab {{docked ? 'docked' : ''}}" bindtap="toggleExpanded">
-    <view wx:if="{{docked}}" class="collapse-icon">《</view>
-    <view wx:else>
-      <view class="main-text">{{expanded ? '收起' : 'Flow'}}</view>
-      <view class="sub-text" wx:if="{{!expanded}}">专注模式</view>
+  <view class="fab-main {{expanded ? 'expanded' : ''}}" bindtap="toggleMenu" catchtouchmove="preventTouch">
+    <!-- 展开时的菜单项 -->
+    <view class="fab-menu-item {{expanded ? 'show' : ''}}" animation="{{itemAnimation}}" wx:if="{{expanded}}">
+      <view class="menu-item menu-add" bindtap="addItem">
+        <text class="menu-icon">+</text>
+        <text class="menu-label">添加</text>
+      </view>
+      <view class="menu-item menu-ai" bindtap="goAiUpload">
+        <text class="menu-icon">AI</text>
+        <text class="menu-label">智能导入</text>
+      </view>
     </view>
-  </button>
-  
-  <!-- 吸附提示 -->
-  <view class="dock-hint" wx:if="{{!docked && !expanded}}" bindtap="toggleDocked">
-    》
+    
+    <!-- 主按钮图标 -->
+    <view class="fab-icon">
+      <text class="fab-icon-text {{expanded ? 'close' : 'add'}}">{{expanded ? '×' : '+'}}</text>
+    </view>
   </view>
+  
+  <!-- 背景遮罩 -->
+  <view class="fab-overlay {{expanded ? 'show' : ''}}" bindtap="closeMenu" wx:if="{{expanded}}"></view>
 </view>

@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   color: var(--day-text);
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
 }
 
 .hub-page::before,
@@ -519,50 +519,6 @@
 }
 
 .spacer-bottom { height: 120rpx; }
-
-/* 功能提示模块样式 */
-.feature-tip {
-  padding: 32rpx;
-  margin-top: 40rpx;
-  background: linear-gradient(135deg, #F8F9FF 0%, #F0F2FF 100%);
-  border: 1px solid #E8EBFF;
-}
-
-.feature-tip .section-head {
-  margin-bottom: 16rpx;
-}
-
-.feature-tip .section-head text {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #1C1C1E;
-}
-
-.tip-arrow {
-  font-size: 28rpx;
-  color: #8E8E93;
-}
-
-.tip-content {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.tip-text {
-  font-size: 26rpx;
-  color: #8E8E93;
-}
-
-.tool-link {
-  font-size: 26rpx;
-  color: #1C1C1E;
-  font-weight: 600;
-  text-decoration: underline;
-  background: none;
-  border: none;
-  padding: 0;
-}
 
 /* 空教室模块样式 (已移除) */
 .empty-rooms {

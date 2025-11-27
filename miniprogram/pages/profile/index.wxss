@@ -3,7 +3,7 @@
   position: relative;
   padding-bottom: 120rpx;
   color: var(--day-text);
-  font-family: 'Gotham', 'LXGW WenKai', 'PingFang SC', sans-serif;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
 }
 
 .profile-page::before,
@@ -82,6 +82,60 @@
   backdrop-filter: blur(12rpx);
 }
 
+.guest-card {
+  margin-bottom: 24rpx;
+  padding: 32rpx;
+  border-radius: 40rpx;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(24rpx);
+  box-shadow: 0 24rpx 60rpx rgba(15, 23, 42, 0.12);
+}
+
+.guest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.guest-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--day-text);
+}
+
+.guest-tag {
+  font-size: 22rpx;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  border: 1px solid rgba(45, 52, 54, 0.2);
+  color: rgba(45, 52, 54, 0.6);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.guest-desc {
+  font-size: 26rpx;
+  color: rgba(45, 52, 54, 0.7);
+  margin-bottom: 24rpx;
+}
+
+.guest-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.login-btn {
+  padding: 20rpx 48rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.9), rgba(224, 142, 121, 0.9));
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 600;
+  box-shadow: 0 24rpx 48rpx rgba(135, 168, 164, 0.3);
+}
+
 /* 学习统计卡片 */
 .stats-card {
   margin-bottom: 24rpx;
@@ -136,8 +190,134 @@
 }
 
 .row-icon {
-  font-size: 40rpx;
+  width: 72rpx;
+  height: 72rpx;
   flex-shrink: 0;
+  border-radius: 28rpx;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 18rpx 36rpx rgba(15, 23, 42, 0.12);
+  border: 1rpx solid rgba(255, 255, 255, 0.4);
+}
+
+.row-icon::after {
+  content: '';
+  position: absolute;
+  inset: 2rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+.row-icon-core,
+.row-icon-spark {
+  position: absolute;
+  border-radius: 999rpx;
+  pointer-events: none;
+}
+
+.row-icon-courses {
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.95), rgba(188, 160, 188, 0.75));
+}
+
+.row-icon-courses .row-icon-core {
+  width: 14rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8rpx;
+  box-shadow: 0 0 20rpx rgba(255, 255, 255, 0.45);
+}
+
+.row-icon-courses .row-icon-spark {
+  width: 34rpx;
+  height: 34rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.75);
+  background: transparent;
+  top: 14rpx;
+  right: 10rpx;
+  transform: translate(4rpx, -4rpx);
+}
+
+.row-icon-tasks {
+  background: linear-gradient(140deg, rgba(224, 142, 121, 0.95), rgba(226, 194, 164, 0.82));
+}
+
+.row-icon-tasks .row-icon-core {
+  width: 46rpx;
+  height: 46rpx;
+  border-radius: 18rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  transform: rotate(-6deg);
+}
+
+.row-icon-tasks .row-icon-core::before,
+.row-icon-tasks .row-icon-core::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999rpx;
+}
+
+.row-icon-tasks .row-icon-core::before {
+  width: 24rpx;
+  height: 6rpx;
+  left: 10rpx;
+  top: 22rpx;
+  transform: rotate(42deg);
+}
+
+.row-icon-tasks .row-icon-core::after {
+  width: 12rpx;
+  height: 6rpx;
+  left: 18rpx;
+  top: 32rpx;
+  transform: rotate(-40deg);
+}
+
+.row-icon-tasks .row-icon-spark {
+  width: 12rpx;
+  height: 32rpx;
+  border-radius: 6rpx;
+  background: rgba(255, 255, 255, 0.8);
+  transform: rotate(48deg) translate(10rpx, -12rpx);
+  box-shadow: 0 0 18rpx rgba(255, 255, 255, 0.35);
+}
+
+.row-icon-resources {
+  background: linear-gradient(135deg, rgba(188, 160, 188, 0.9), rgba(135, 168, 164, 0.7));
+}
+
+.row-icon-resources .row-icon-core {
+  width: 54rpx;
+  height: 42rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.92);
+  bottom: 8rpx;
+  box-shadow: inset 0 -4rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.row-icon-resources .row-icon-core::before {
+  content: '';
+  position: absolute;
+  width: 32rpx;
+  height: 14rpx;
+  border-radius: 10rpx;
+  background: rgba(255, 255, 255, 0.82);
+  top: -10rpx;
+  left: 4rpx;
+}
+
+.row-icon-resources .row-icon-spark {
+  width: 10rpx;
+  height: 28rpx;
+  border-radius: 8rpx;
+  background: rgba(224, 142, 121, 0.45);
+  right: 14rpx;
+  top: 12rpx;
 }
 
 .row-info {
@@ -207,27 +387,326 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 28rpx 16rpx;
-  background: rgba(255, 255, 255, 0.65);
-  border-radius: 32rpx;
+  padding: 32rpx 20rpx;
+  background: rgba(255, 255, 255, 0.62);
+  border-radius: 36rpx;
   position: relative;
   transition: all 0.35s ease;
-  box-shadow: 0 20rpx 50rpx rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24rpx 56rpx rgba(15, 23, 42, 0.12);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
 }
 
 .achievement-item.unlocked {
-  background: rgba(224, 142, 121, 0.15);
-  border: 1px solid rgba(224, 142, 121, 0.4);
+  background: rgba(224, 142, 121, 0.18);
+  border-color: rgba(224, 142, 121, 0.45);
 }
 
 .achievement-item.locked {
-  opacity: 0.5;
-  filter: grayscale(0.8);
+  opacity: 0.7;
+  filter: grayscale(0.6) saturate(0.8);
 }
 
 .achievement-icon {
-  font-size: 48rpx;
-  margin-bottom: 8rpx;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 46rpx;
+  margin-bottom: 12rpx;
+  position: relative;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 28rpx 60rpx rgba(15, 23, 42, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-halo,
+.badge-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 999rpx;
+  pointer-events: none;
+}
+
+.badge-halo {
+  width: 120rpx;
+  height: 120rpx;
+  filter: blur(0.3px);
+}
+
+.badge-core {
+  width: 76rpx;
+  height: 76rpx;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 -8rpx 18rpx rgba(15, 23, 42, 0.08);
+}
+
+.badge-caption {
+  position: absolute;
+  bottom: 18rpx;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 22rpx;
+  letter-spacing: 6rpx;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.35);
+  font-family: 'JetBrains Mono', 'DIN Alternate', 'Roboto Mono', sans-serif;
+}
+
+.badge-default {
+  background: linear-gradient(135deg, rgba(188, 160, 188, 0.9), rgba(129, 140, 248, 0.85));
+}
+
+.badge-default .badge-halo {
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent 70%),
+    radial-gradient(circle at 70% 70%, rgba(224, 142, 121, 0.4), transparent 65%);
+}
+
+.badge-default .badge-core {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.badge-seed {
+  background: linear-gradient(145deg, rgba(135, 168, 164, 0.95), rgba(226, 194, 164, 0.92));
+}
+
+.badge-seed .badge-halo {
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.6), transparent 70%),
+    radial-gradient(circle at 70% 60%, rgba(188, 160, 188, 0.6), transparent 65%);
+}
+
+.badge-seed .badge-core {
+  width: 36rpx;
+  height: 74rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.45));
+  box-shadow: 0 12rpx 24rpx rgba(255, 255, 255, 0.4);
+}
+
+.badge-seed .badge-core::after {
+  content: '';
+  position: absolute;
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 50%;
+  background: rgba(129, 140, 248, 0.6);
+  bottom: -14rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  filter: blur(1px);
+}
+
+.badge-flow {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.95), rgba(135, 168, 164, 0.85));
+}
+
+.badge-flow .badge-halo {
+  background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.35), transparent 65%),
+    radial-gradient(circle at 70% 40%, rgba(224, 142, 121, 0.45), transparent 60%);
+}
+
+.badge-flow .badge-core {
+  width: 90rpx;
+  height: 50rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.8);
+  transform: translate(-50%, -50%) rotate(-18deg);
+}
+
+.badge-flow .badge-core::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 26rpx;
+  border-radius: 999rpx;
+  background: rgba(129, 140, 248, 0.35);
+  bottom: -18rpx;
+  left: -6rpx;
+}
+
+.badge-orbit {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(129, 140, 248, 0.7));
+}
+
+.badge-orbit .badge-halo {
+  background: radial-gradient(circle at 30% 30%, rgba(129, 140, 248, 0.7), transparent 70%);
+}
+
+.badge-orbit .badge-core {
+  width: 54rpx;
+  height: 54rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255, 255, 255, 0.9);
+  background: transparent;
+}
+
+.badge-orbit .badge-core::after {
+  content: '';
+  position: absolute;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  border: 2rpx dashed rgba(255, 255, 255, 0.5);
+  top: -12rpx;
+  left: -12rpx;
+}
+
+.badge-flare {
+  background: linear-gradient(145deg, rgba(224, 142, 121, 0.95), rgba(255, 214, 164, 0.85));
+}
+
+.badge-flare .badge-halo {
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.65), transparent 70%);
+}
+
+.badge-flare .badge-core {
+  width: 58rpx;
+  height: 78rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(224, 142, 121, 0.6));
+  transform: translate(-50%, -50%) rotate(12deg);
+}
+
+.badge-flare .badge-core::after {
+  content: '';
+  position: absolute;
+  width: 32rpx;
+  height: 32rpx;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  bottom: -8rpx;
+  left: 6rpx;
+}
+
+
+.badge-prism {
+  background: linear-gradient(150deg, rgba(129, 140, 248, 0.92), rgba(188, 160, 188, 0.85));
+}
+
+.badge-prism .badge-halo {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5), transparent 70%),
+    radial-gradient(circle at 20% 30%, rgba(224, 142, 121, 0.45), transparent 60%);
+}
+
+.badge-prism .badge-core {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 16rpx;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.4));
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.badge-prism .badge-core::after {
+  content: '';
+  position: absolute;
+  inset: 12rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+}
+
+.badge-checkpoint {
+  background: linear-gradient(145deg, rgba(226, 194, 164, 0.95), rgba(135, 168, 164, 0.85));
+}
+
+.badge-checkpoint .badge-core {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 28rpx;
+  border: 2rpx dashed rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.badge-checkpoint .badge-core::after {
+  content: '';
+  position: absolute;
+  width: 30rpx;
+  height: 30rpx;
+  border-radius: 8rpx;
+  border-bottom: 4rpx solid rgba(129, 140, 248, 0.85);
+  border-left: 4rpx solid rgba(129, 140, 248, 0.85);
+  transform: rotate(-45deg);
+  top: 18rpx;
+  left: 18rpx;
+}
+
+.badge-target {
+  background: linear-gradient(135deg, rgba(224, 142, 121, 0.9), rgba(188, 160, 188, 0.85));
+}
+
+.badge-target .badge-core {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 30%, rgba(224, 142, 121, 0.7) 65%, transparent 70%);
+}
+
+.badge-target .badge-core::after {
+  content: '';
+  position: absolute;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  top: 10rpx;
+  left: 10rpx;
+}
+
+.badge-pulse {
+  background: linear-gradient(145deg, rgba(135, 168, 164, 0.9), rgba(129, 140, 248, 0.85));
+}
+
+.badge-pulse .badge-core {
+  width: 80rpx;
+  height: 40rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+}
+
+.badge-pulse .badge-core::before,
+.badge-pulse .badge-core::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 4rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.9);
+  left: 0;
+}
+
+.badge-pulse .badge-core::before {
+  top: 10rpx;
+}
+
+.badge-pulse .badge-core::after {
+  bottom: 10rpx;
+  box-shadow: 0 0 18rpx rgba(255, 255, 255, 0.45);
+}
+
+.badge-crown {
+  background: linear-gradient(140deg, rgba(224, 142, 121, 0.92), rgba(226, 194, 164, 0.85));
+}
+
+.badge-crown .badge-core {
+  width: 80rpx;
+  height: 36rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, 20%);
+}
+
+.badge-crown .badge-core::before {
+  content: '';
+  position: absolute;
+  width: 64rpx;
+  height: 32rpx;
+  left: 8rpx;
+  top: -28rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
+  clip-path: polygon(6% 100%, 15% 30%, 35% 80%, 50% 20%, 65% 80%, 85% 30%, 94% 100%);
 }
 
 .achievement-name {
@@ -341,7 +820,159 @@
 }
 
 .action-icon {
-  font-size: 48rpx;
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 32rpx;
+  position: relative;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.42);
+  box-shadow: 0 18rpx 38rpx rgba(15, 23, 42, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon::after {
+  content: '';
+  position: absolute;
+  inset: 2rpx;
+  border-radius: 28rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.action-icon-core,
+.action-icon-glow {
+  position: absolute;
+  pointer-events: none;
+}
+
+.action-icon-core {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 22rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.action-icon-glow {
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12rpx 24rpx rgba(255, 255, 255, 0.5);
+  top: 18rpx;
+  right: 18rpx;
+}
+
+.action-icon-neutral {
+  background: linear-gradient(135deg, rgba(188, 160, 188, 0.65), rgba(135, 168, 164, 0.6));
+}
+
+.action-icon-courses {
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.85), rgba(129, 140, 248, 0.7));
+}
+
+.action-icon-courses .action-icon-core {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 10rpx, transparent 10rpx),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.4) 10rpx, transparent 10rpx);
+  background-size: 18rpx 18rpx;
+  border-radius: 24rpx;
+}
+
+.action-icon-resources {
+  background: linear-gradient(135deg, rgba(188, 160, 188, 0.85), rgba(226, 194, 164, 0.85));
+}
+
+.action-icon-resources .action-icon-core {
+  width: 72rpx;
+  height: 48rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.9);
+  bottom: 12rpx;
+  top: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: inset 0 -4rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.action-icon-resources .action-icon-core::before {
+  content: '';
+  position: absolute;
+  width: 48rpx;
+  height: 14rpx;
+  border-radius: 10rpx;
+  background: rgba(255, 255, 255, 0.85);
+  top: -10rpx;
+  left: 6rpx;
+}
+
+.action-icon-focus {
+  background: linear-gradient(150deg, rgba(129, 140, 248, 0.9), rgba(224, 142, 121, 0.8));
+}
+
+.action-icon-focus .action-icon-core {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  border: 3rpx solid rgba(255, 255, 255, 0.85);
+  background: transparent;
+}
+
+.action-icon-focus .action-icon-core::after {
+  content: '';
+  position: absolute;
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  inset: 10rpx;
+}
+
+.action-icon-focus .action-icon-glow {
+  width: 10rpx;
+  height: 36rpx;
+  border-radius: 6rpx;
+  background: rgba(255, 255, 255, 0.9);
+  transform: rotate(45deg);
+}
+
+.action-icon-settings {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(129, 140, 248, 0.7));
+}
+
+.action-icon-settings .action-icon-core {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 20rpx;
+  border: 2rpx dashed rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.action-icon-settings .action-icon-core::before,
+.action-icon-settings .action-icon-core::after {
+  content: '';
+  position: absolute;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+}
+
+.action-icon-settings .action-icon-core::before {
+  width: 50rpx;
+  height: 50rpx;
+  top: 6rpx;
+  left: 6rpx;
+}
+
+.action-icon-settings .action-icon-core::after {
+  width: 18rpx;
+  height: 18rpx;
+  top: 24rpx;
+  left: 24rpx;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .action-name {

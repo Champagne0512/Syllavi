@@ -34,17 +34,90 @@ const DEFAULT_STATS = {
   continuous_days: 0
 };
 
-const DEFAULT_ACHIEVEMENTS = [
-  { id: 'beginner', name: '初出茅庐', desc: '完成首次专注', icon: '🌱', unlocked: false },
-  { id: 'focused_1h', name: '专注达人', desc: '累计专注1小时', icon: '⏰', unlocked: false },
-  { id: 'focused_10h', name: '时间管理大师', desc: '累计专注10小时', icon: '⏳', unlocked: false },
-  { id: 'focused_50h', name: '学霸之光', desc: '累计专注50小时', icon: '🔥', unlocked: false },
-  { id: 'focused_100h', name: '百炼成钢', desc: '累计专注100小时', icon: '💎', unlocked: false },
-  { id: 'task_10', name: '行动派', desc: '完成10个任务', icon: '✅', unlocked: false },
-  { id: 'task_50', name: '执行力MAX', desc: '完成50个任务', icon: '🎯', unlocked: false },
-  { id: 'continuous_7', name: '坚持不懈', desc: '连续学习7天', icon: '📅', unlocked: false },
-  { id: 'continuous_30', name: '习惯养成', desc: '连续学习30天', icon: '🏆', unlocked: false }
+const BADGE_VISUALS = {
+  default: {
+    token: 'default',
+    caption: '流光',
+    legacyIcon: '✦'
+  },
+  beginner: {
+    token: 'seed',
+    caption: '萌芽',
+    legacyIcon: '🌱'
+  },
+  focused_1h: {
+    token: 'flow',
+    caption: '流动',
+    legacyIcon: '⏰'
+  },
+  focused_10h: {
+    token: 'orbit',
+    caption: '轨道',
+    legacyIcon: '⏳'
+  },
+  focused_50h: {
+    token: 'flare',
+    caption: '焰心',
+    legacyIcon: '🔥'
+  },
+  focused_100h: {
+    token: 'prism',
+    caption: '晶核',
+    legacyIcon: '💎'
+  },
+  task_10: {
+    token: 'checkpoint',
+    caption: '践行',
+    legacyIcon: '✅'
+  },
+  task_50: {
+    token: 'target',
+    caption: '靶向',
+    legacyIcon: '🎯'
+  },
+  continuous_7: {
+    token: 'pulse',
+    caption: '律动',
+    legacyIcon: '📅'
+  },
+  continuous_30: {
+    token: 'crown',
+    caption: '冠冕',
+    legacyIcon: '🏆'
+  }
+};
+
+const BASE_ACHIEVEMENTS = [
+  { id: 'beginner', name: '初出茅庐', desc: '完成首次专注' },
+  { id: 'focused_1h', name: '专注达人', desc: '累计专注1小时' },
+  { id: 'focused_10h', name: '时间管理大师', desc: '累计专注10小时' },
+  { id: 'focused_50h', name: '学霸之光', desc: '累计专注50小时' },
+  { id: 'focused_100h', name: '百炼成钢', desc: '累计专注100小时' },
+  { id: 'task_10', name: '行动派', desc: '完成10个任务' },
+  { id: 'task_50', name: '执行力MAX', desc: '完成50个任务' },
+  { id: 'continuous_7', name: '坚持不懈', desc: '连续学习7天' },
+  { id: 'continuous_30', name: '习惯养成', desc: '连续学习30天' }
 ];
+
+const decorateAchievementLogos = (list = []) =>
+  list.map((item, index) => {
+    const derivedId = item.id || item.achievement_id || `legacy_${index}`;
+    const meta = BADGE_VISUALS[derivedId] || BADGE_VISUALS.default;
+    return {
+      ...item,
+      id: derivedId,
+      name: item.name || item.achievement_name || meta.caption || '隐形成就',
+      desc: item.desc || item.achievement_desc || '',
+      icon: item.icon || item.achievement_icon || meta.legacyIcon || '✦',
+      iconToken: meta.token,
+      iconCaption: meta.caption,
+      unlocked: typeof item.unlocked === 'boolean' ? item.unlocked : Boolean(item.unlocked_at)
+    };
+  });
+
+const DEFAULT_ACHIEVEMENTS = decorateAchievementLogos(
+  BASE_ACHIEVEMENTS.map((item) => ({ ...item, unlocked: false }))
+);
 
 const sanitizeGrade = (grade) => {
   if (typeof grade !== 'string') return '';
@@ -68,6 +141,7 @@ const formatGradeForSave = (grade) => {
 Page({
   data: {
     loading: true,
+    isGuest: false,
     profile: {
       nickname: '同学',
       school_name: '',
@@ -79,10 +153,10 @@ Page({
     achievements: DEFAULT_ACHIEVEMENTS,
     heatmap: [],
     quickActions: [
-      { id: 'courses', name: '我的课程', icon: '📚', path: '/pages/hub/index' },
-      { id: 'resources', name: '资源库', icon: '📁', path: '/pages/knowledge/index' },
-      { id: 'focus', name: '专注记录', icon: '⏱️', path: '/pages/focus/index' },
-      { id: 'settings', name: '设置', icon: '⚙️', path: '/pages/settings/index' }
+      { id: 'courses', name: '我的课程', iconToken: 'courses', path: '/pages/hub/index' },
+      { id: 'resources', name: '资源库', iconToken: 'resources', path: '/pages/knowledge/index' },
+      { id: 'focus', name: '专注记录', iconToken: 'focus', path: '/pages/focus/index' },
+      { id: 'settings', name: '设置', iconToken: 'settings', path: '/pages/settings/index' }
     ],
     editModalVisible: false,
     savingProfile: false,
@@ -100,10 +174,15 @@ Page({
   },
 
   onLoad() {
+    this.setData({ isGuest: this.detectGuestMode() });
     this.bootstrap();
   },
 
   onShow() {
+    const guestMode = this.detectGuestMode();
+    if (guestMode !== this.data.isGuest) {
+      this.setData({ isGuest: guestMode });
+    }
     if (this.getTabBar && this.getTabBar()) {
       this.getTabBar().setSelected(3);
     }
@@ -123,6 +202,16 @@ Page({
       this.loadHeatmap()
     ]);
     this.setData({ loading: false });
+  },
+
+  detectGuestMode() {
+    const app = getApp();
+    const supabase = app?.globalData?.supabase || {};
+    const userId = supabase.userId || wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id');
+    const token = supabase.accessToken || wx.getStorageSync('access_token');
+    if (!userId) return true;
+    if (userId === DEMO_USER_ID) return true;
+    return !token;
   },
 
   async loadProfile() {
@@ -209,7 +298,8 @@ Page({
       const dbAchievements = await fetchAchievements(userId).catch(() => null);
 
       if (dbAchievements && Array.isArray(dbAchievements) && dbAchievements.length) {
-        this.setData({ achievements: dbAchievements });
+        const normalized = decorateAchievementLogos(dbAchievements);
+        this.setData({ achievements: normalized });
       } else {
         // 否则根据stats计算成就解锁状态
         this.calculateAchievements();
@@ -353,6 +443,10 @@ Page({
       gradePickerIndex: index,
       'editForm.grade': gradeValue
     });
+  },
+
+  goLogin() {
+    wx.navigateTo({ url: '/pages/login/index' });
   },
 
   stopTouchMove() {
@@ -525,8 +619,10 @@ Page({
   viewAchievement(e) {
     const { achievement } = e.currentTarget.dataset;
     const status = achievement.unlocked ? '已解锁' : '未解锁';
+    const badgeLabel = achievement.iconCaption || achievement.icon || '';
+    const modalTitle = [badgeLabel, achievement.name].filter(Boolean).join(' ');
     wx.showModal({
-      title: `${achievement.icon} ${achievement.name}`,
+      title: modalTitle,
       content: `${achievement.desc}\n\n状态：${status}`,
       showCancel: false
     });

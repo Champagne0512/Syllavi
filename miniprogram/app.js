@@ -14,7 +14,6 @@ const MORANDI = {
 App({
   onLaunch() {
     this.preloadGothamFont();
-    this.loadLXGWWenKaiFont();
     const storedUserId =
       wx.getStorageSync('user_id') ||
       wx.getStorageSync('syllaby_user_id') ||
@@ -71,20 +70,20 @@ App({
     });
   },
 
-  loadLXGWWenKaiFont() {
-    if (!wx.loadFontFace) return;
-    // 1. 加载霞鹜文楷 (中文主力)
-    wx.loadFontFace({
-      family: 'LXGW WenKai',
-      source: 'url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-web/fonts/LXGWWenKaiScreen/LXGWWenKaiScreenR.woff2")',
-      global: true, // 全局生效
-      success: () => {
-        console.log('LXGW WenKai font loaded successfully');
-      },
-      fail: (err) => {
-        console.warn('Failed to load LXGW WenKai font', err);
+  setFontLoadingState(loading) {
+    // 设置全局字体加载状态
+    this.globalData.fontLoading = loading;
+    
+    // 如果页面已经存在，更新页面状态
+    const pages = getCurrentPages();
+    if (pages.length > 0) {
+      const currentPage = pages[pages.length - 1];
+      if (currentPage.setData) {
+        currentPage.setData({
+          fontLoading: loading
+        });
       }
-    });
+    }
   },
   async refreshSession(refreshTok) {
     try {
