@@ -10,9 +10,9 @@
   <custom-navbar title="Syllaby" subtitle="知识库" />
 
   <!-- 顶部留白，解决 custom-navbar 遮挡问题 -->
-  <view style="height: 160rpx;"></view>
+  <view style="height: 80rpx;"></view>
 
-  <scroll-view scroll-y="true" style="height: calc(100vh - 160rpx);" enable-flex="true">
+  <scroll-view scroll-y="true" style="height: calc(100vh - 80rpx);" enable-flex="true">
     
     <!-- 1. 数据概览 (Bento Grid) -->
     <view class="header-section">
@@ -109,7 +109,7 @@
 
     <view class="file-list">
       <block wx:for="{{filteredFiles}}" wx:key="id">
-        <view class="file-card {{selectionMode ? 'selection-mode' : ''}} {{selectedFiles.indexOf(item.id) !== -1 ? 'selected' : ''}}"
+        <view class="file-card {{selectionMode ? 'selection-mode' : ''}} {{item.isSelected ? 'selected' : ''}}"
               data-id="{{item.id}}"
               bindtap="{{selectionMode ? 'toggleFileSelection' : 'previewFile'}}"
               bindlongpress="{{!selectionMode ? 'handleFileLongPress' : ''}}">
@@ -118,8 +118,8 @@
           <view class="file-icon-box icon-box-{{item.uiType || item.type}}">
              {{item.uiType || item.type}}
              <!-- 选择模式下的选择指示器 -->
-             <view wx:if="{{selectionMode}}" class="selection-indicator {{selectedFiles.indexOf(item.id) !== -1 ? 'checked' : ''}}">
-               <text wx:if="{{selectedFiles.indexOf(item.id) !== -1}}" class="selection-check">✓</text>
+             <view wx:if="{{selectionMode}}" class="selection-indicator {{item.isSelected ? 'checked' : ''}}">
+               <text wx:if="{{item.isSelected}}" class="selection-check">✓</text>
              </view>
           </view>
           

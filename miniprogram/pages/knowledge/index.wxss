@@ -93,7 +93,7 @@ page {
 
 /* === 2. 统计区 Bento Grid === */
 .header-section {
-  padding: 24rpx 40rpx 40rpx;
+  padding: 12rpx 40rpx 24rpx;
 }
 
 .bento-grid {
