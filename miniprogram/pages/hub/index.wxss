@@ -1792,8 +1792,7 @@
   display: block;
 }
 
-/* 导入课程详情样式 */
-@import './course-detail-styles.wxss';
+/* 课程详情样式已内联 */
 
 /* 添加课程按钮样式 */
 .week-header-actions {

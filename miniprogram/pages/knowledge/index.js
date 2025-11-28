@@ -6,8 +6,7 @@ const {
   fetchResources,
   summarizeFile,
   uploadToStorage,
-  updateResource,
-  request
+  updateResource
 } = require('../../utils/supabase');
 
 const MOCK_FOLDERS = [
@@ -45,7 +44,10 @@ Page({
       "心无杂念，学有所成", 
       "专注当下，收获永恒",
       "静水流深，厚积薄发"
-    ]
+    ],
+    // 批量操作相关状态
+    selectionMode: false,
+    selectedFiles: []
   },
   onLoad() {
     this.loadResources();
@@ -384,11 +386,15 @@ Page({
     if (!file) return;
     
     wx.showActionSheet({
-      itemList: ['AI 划重点', '删除'],
+      itemList: ['重命名', '更改分类', 'AI 划重点', '删除'],
       success: (res) => {
         if (res.tapIndex === 0) {
-          this.runSummary(file);
+          this.renameFile(file);
         } else if (res.tapIndex === 1) {
+          this.changeFileCategory(file);
+        } else if (res.tapIndex === 2) {
+          this.runSummary(file);
+        } else if (res.tapIndex === 3) {
           this.removeFile(file);
         }
       }
@@ -548,6 +554,346 @@ Page({
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  },
+
+  // 重命名文件功能
+  async renameFile(file) {
+    wx.showModal({
+      title: '重命名文件',
+      editable: true,
+      placeholderText: file.name,
+      success: async (res) => {
+        if (!res.confirm) return;
+        const newName = (res.content || '').trim();
+        if (!newName || newName === file.name) {
+          wx.showToast({ title: '名称未更改', icon: 'none' });
+          return;
+        }
+        
+        wx.showLoading({ title: '重命名中...' });
+        try {
+          // 更新数据库中的文件名
+          await updateResource(file.id, { file_name: newName });
+          
+          // 更新本地数据
+          const files = this.data.files.map((f) =>
+            f.id === file.id ? { ...f, name: newName } : f
+          );
+          const filteredFiles = this.data.filteredFiles.map((f) =>
+            f.id === file.id ? { ...f, name: newName } : f
+          );
+          
+          this.setData({ files, filteredFiles }, () => {
+            wx.hideLoading();
+            wx.showToast({ title: '重命名成功', icon: 'success' });
+          });
+        } catch (err) {
+          console.error('重命名文件失败:', err);
+          wx.hideLoading();
+          wx.showToast({ title: '重命名失败', icon: 'none' });
+        }
+      }
+    });
+  },
+  
+  // 更改文件分类功能
+  async changeFileCategory(file) {
+    const { folders } = this.data;
+    const folderNames = folders.map(f => f.name);
+    
+    // 添加"新建分类"选项
+    const options = [...folderNames, '新建分类'];
+    
+    wx.showActionSheet({
+      itemList: options,
+      success: async (res) => {
+        const selectedOption = options[res.tapIndex];
+        
+        // 如果选择了"新建分类"
+        if (selectedOption === '新建分类') {
+          this.createNewCategory(file);
+          return;
+        }
+        
+        // 如果选择了和当前相同的分类，不做任何操作
+        if (selectedOption === file.subject) {
+          wx.showToast({ title: '分类未更改', icon: 'none' });
+          return;
+        }
+        
+        wx.showLoading({ title: '更新分类中...' });
+        try {
+          // 更新数据库中的文件分类
+          await updateResource(file.id, { subject: selectedOption });
+          
+          // 更新本地数据
+          const files = this.data.files.map((f) =>
+            f.id === file.id ? { ...f, subject: selectedOption } : f
+          );
+          const filteredFiles = this.data.filteredFiles.map((f) =>
+            f.id === file.id ? { ...f, subject: selectedOption } : f
+          );
+          
+          this.setData({ files, filteredFiles }, () => {
+            // 重新加载资源以更新文件夹计数
+            this.loadResources();
+            wx.hideLoading();
+            wx.showToast({ title: '分类更新成功', icon: 'success' });
+          });
+        } catch (err) {
+          console.error('更新文件分类失败:', err);
+          wx.hideLoading();
+          wx.showToast({ title: '更新失败', icon: 'none' });
+        }
+      }
+    });
+  },
+  
+  // 创建新分类功能
+  createNewCategory(file) {
+    wx.showModal({
+      title: '新建分类',
+      editable: true,
+      placeholderText: '输入新分类名称',
+      success: async (res) => {
+        if (!res.confirm) return;
+        const newCategory = (res.content || '').trim();
+        if (!newCategory) {
+          wx.showToast({ title: '分类名称不能为空', icon: 'none' });
+          return;
+        }
+        
+        wx.showLoading({ title: '创建分类中...' });
+        try {
+          // 更新数据库中的文件分类
+          await updateResource(file.id, { subject: newCategory });
+          
+          // 更新本地数据
+          const files = this.data.files.map((f) =>
+            f.id === file.id ? { ...f, subject: newCategory } : f
+          );
+          const filteredFiles = this.data.filteredFiles.map((f) =>
+            f.id === file.id ? { ...f, subject: newCategory } : f
+          );
+          
+          this.setData({ files, filteredFiles }, () => {
+            // 重新加载资源以更新文件夹计数和添加新文件夹
+            this.loadResources();
+            wx.hideLoading();
+            wx.showToast({ title: '新分类创建成功', icon: 'success' });
+          });
+        } catch (err) {
+          console.error('创建新分类失败:', err);
+          wx.hideLoading();
+          wx.showToast({ title: '创建失败', icon: 'none' });
+        }
+      }
+    });
+  },
+
+  // 进入选择模式
+  enterSelectionMode() {
+    this.setData({ 
+      selectionMode: true, 
+      selectedFiles: [] 
+    });
+    wx.showToast({ title: '进入批量操作模式', icon: 'none', duration: 1000 });
+  },
+  
+  // 退出选择模式
+  exitSelectionMode() {
+    this.setData({ 
+      selectionMode: false, 
+      selectedFiles: [] 
+    });
+  },
+  
+  // 切换文件选择状态
+  toggleFileSelection(e) {
+    const { id } = e.currentTarget.dataset;
+    // 确保ID转换为字符串，避免数据类型不一致
+    const fileId = String(id);
+    const { selectedFiles } = this.data;
+    
+    // 确保selectedFiles中的ID都是字符串
+    const stringSelectedFiles = selectedFiles.map(item => String(item));
+    const index = stringSelectedFiles.indexOf(fileId);
+    
+    let newSelectedFiles;
+    if (index === -1) {
+      // 添加到选择列表
+      newSelectedFiles = [...selectedFiles, fileId];
+    } else {
+      // 从选择列表中移除
+      newSelectedFiles = selectedFiles.filter((item) => String(item) !== fileId);
+    }
+    
+    // 强制更新UI，确保选择状态立即反映
+    this.setData({ 
+      selectedFiles: newSelectedFiles,
+      _triggerUpdate: Date.now() // 使用时间戳强制更新
+    }, () => {
+      // 确保UI更新完成
+      console.log('文件选择状态已更新:', newSelectedFiles);
+      console.log('当前选中文件数量:', newSelectedFiles.length);
+      
+      // 使用更可靠的强制更新方法
+      if (this.data.filteredFiles && this.data.filteredFiles.length > 0) {
+        // 为每个文件添加一个随机属性来强制重新渲染
+        const updatedFiles = this.data.filteredFiles.map(file => ({
+          ...file,
+          _renderKey: Math.random()
+        }));
+        this.setData({
+          filteredFiles: updatedFiles
+        });
+      }
+    });
+  },
+  
+  // 批量重命名
+  batchRename() {
+    const { selectedFiles, files } = this.data;
+    if (selectedFiles.length !== 1) {
+      wx.showToast({ title: '请选择一个文件进行重命名', icon: 'none' });
+      return;
+    }
+    
+    const file = files.find((f) => f.id === selectedFiles[0]);
+    if (!file) return;
+    
+    this.exitSelectionMode();
+    setTimeout(() => {
+      this.renameFile(file);
+    }, 300);
+  },
+  
+  // 批量更改分类
+  batchChangeCategory() {
+    const { selectedFiles, files, folders } = this.data;
+    if (selectedFiles.length === 0) {
+      wx.showToast({ title: '请先选择文件', icon: 'none' });
+      return;
+    }
+    
+    const folderNames = folders.map(f => f.name);
+    const options = [...folderNames, '新建分类'];
+    
+    wx.showActionSheet({
+      itemList: options,
+      success: async (res) => {
+        const selectedOption = options[res.tapIndex];
+        
+        // 如果选择了"新建分类"
+        if (selectedOption === '新建分类') {
+          this.createNewCategoryForBatch();
+          return;
+        }
+        
+        wx.showModal({
+          title: '批量更改分类',
+          content: `确认将选中的 ${selectedFiles.length} 个文件分类更改为「${selectedOption}」吗？`,
+          success: async (modalRes) => {
+            if (!modalRes.confirm) return;
+            
+            wx.showLoading({ title: '更新分类中...' });
+            try {
+              // 批量更新数据库中的文件分类
+              await Promise.all(
+                selectedFiles.map(fileId => 
+                  updateResource(fileId, { subject: selectedOption })
+                )
+              );
+              
+              // 更新本地数据
+              const updatedFiles = files.map((f) =>
+                selectedFiles.includes(f.id) ? { ...f, subject: selectedOption } : f
+              );
+              const updatedFilteredFiles = this.data.filteredFiles.map((f) =>
+                selectedFiles.includes(f.id) ? { ...f, subject: selectedOption } : f
+              );
+              
+              this.setData(
+                { 
+                  files: updatedFiles, 
+                  filteredFiles: updatedFilteredFiles 
+                }, () => {
+                  // 重新加载资源以更新文件夹计数
+                  this.loadResources();
+                  this.exitSelectionMode();
+                  wx.hideLoading();
+                  wx.showToast({ title: '批量更新成功', icon: 'success' });
+                }
+              );
+            } catch (err) {
+              console.error('批量更新文件分类失败:', err);
+              wx.hideLoading();
+              wx.showToast({ title: '批量更新失败', icon: 'none' });
+            }
+          }
+        });
+      }
+    });
+  },
+  
+  // 为批量操作创建新分类
+  createNewCategoryForBatch() {
+    wx.showModal({
+      title: '新建分类',
+      editable: true,
+      placeholderText: '输入新分类名称',
+      success: async (res) => {
+        if (!res.confirm) return;
+        const newCategory = (res.content || '').trim();
+        if (!newCategory) {
+          wx.showToast({ title: '分类名称不能为空', icon: 'none' });
+          return;
+        }
+        
+        wx.showModal({
+          title: '批量更改分类',
+          content: `确认将选中的 ${this.data.selectedFiles.length} 个文件分类更改为「${newCategory}」吗？`,
+          success: async (modalRes) => {
+            if (!modalRes.confirm) return;
+            
+            wx.showLoading({ title: '创建分类中...' });
+            try {
+              // 批量更新数据库中的文件分类
+              await Promise.all(
+                this.data.selectedFiles.map(fileId => 
+                  updateResource(fileId, { subject: newCategory })
+                )
+              );
+              
+              // 更新本地数据
+              const updatedFiles = this.data.files.map((f) =>
+                this.data.selectedFiles.includes(f.id) ? { ...f, subject: newCategory } : f
+              );
+              const updatedFilteredFiles = this.data.filteredFiles.map((f) =>
+                this.data.selectedFiles.includes(f.id) ? { ...f, subject: newCategory } : f
+              );
+              
+              this.setData(
+                { 
+                  files: updatedFiles, 
+                  filteredFiles: updatedFilteredFiles 
+                }, () => {
+                  // 重新加载资源以更新文件夹计数和添加新文件夹
+                  this.loadResources();
+                  this.exitSelectionMode();
+                  wx.hideLoading();
+                  wx.showToast({ title: '新分类创建成功', icon: 'success' });
+                }
+              );
+            } catch (err) {
+              console.error('创建新分类失败:', err);
+              wx.hideLoading();
+              wx.showToast({ title: '创建失败', icon: 'none' });
+            }
+          }
+        });
+      }
+    });
   },
 
   // 基础文件管理功能已简化，移除分享相关代码
