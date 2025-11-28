@@ -1,5 +1,16 @@
 const { MORANDI_COLORS } = require('../../utils/colors');
-const { fetchWeekSchedule, fetchTasks } = require('../../utils/supabase');
+const {
+  DEMO_USER_ID,
+  fetchWeekSchedule,
+  fetchTasks,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  createCourseSchedules,
+  createTask,
+  updateTask,
+  deleteTask
+} = require('../../utils/supabase');
 
 // 模拟课程数据 (实际开发中应从数据库加载)
 const MOCK_COURSES = [
@@ -9,6 +20,8 @@ const MOCK_COURSES = [
   { id: 'c4', name: '英语视听说', location: 'D1-302', day: 4, start: 3, len: 2, color: '#D6CDEA' },
   { id: 'c5', name: '计算机网络', location: 'C3-101', day: 5, start: 1, len: 2, color: '#E0C3A5' }
 ];
+
+const DEFAULT_WEEKS = Object.freeze(Array.from({ length: 18 }, (_, idx) => idx + 1));
 
 // 模拟任务兜底
 const MOCK_TASKS = [
@@ -21,6 +34,8 @@ const MOCK_TASKS = [
     related_course_id: 'OS'
   }
 ];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // 空教室功能已迁移到工具模块
 
@@ -66,7 +81,8 @@ function getWeekDays(currentDate) {
       fullDate: dateKey,
       dateKey,
       isToday: dateKey === todayKey,
-      dayIdx: i + 1 // 1-7
+      dayIdx: i + 1, // 1-7
+      timestamp: d.getTime()
     });
   }
   return days;
@@ -116,7 +132,21 @@ Page({
     profile: { nickname: '同学' },
     loading: false,
     skeleton: true,
-    
+
+    // 待办编辑器
+    showTaskEditor: false,
+    editingTask: null,
+    taskForm: {
+      mode: 'persistent',
+      title: '',
+      description: '',
+      deadline: '',
+      deadline_date: '',
+      deadline_time: '',
+      has_specific_time: false,
+      related_course_id: null
+    },
+
     // 课程详情弹窗相关
     showCourseDetail: false,
     selectedCourse: {},
@@ -201,8 +231,13 @@ Page({
       time: `${8 + c.start - 1}:00 - ${8 + c.start - 1 + c.len}:00` // 简单计算时间
     })).sort((a, b) => a.start - b.start);
 
-    // 筛选今日任务 (截止日期是今天)
-    const tasks = this.data.tasks.filter(t => t.deadlineKey === dateKey);
+    const targetMidnight = new Date(dateKey);
+    targetMidnight.setHours(0, 0, 0, 0);
+    const targetTs = targetMidnight.getTime();
+
+    const tasks = this.data.tasks
+      .filter((task) => this.shouldDisplayTaskOnDate(task, targetTs, dateKey))
+      .map((task) => this.decorateTaskForDate(task, targetTs, dateKey));
 
     this.setData({
       todayCourses: courses,
@@ -215,24 +250,36 @@ Page({
     
     // 聚合一周的任务
     const weekTasksByDay = weekDays.map(day => {
-      const dayTasks = this.data.tasks.filter(t => t.deadlineKey === day.dateKey);
+      const dayDate = new Date(day.dateKey);
+      dayDate.setHours(0, 0, 0, 0);
+      const dayTs = dayDate.getTime();
+      const dayTasks = this.data.tasks
+        .filter(task => this.shouldDisplayTaskOnDate(task, dayTs, day.dateKey))
+        .map(task => ({
+          instanceId: `${task.id}-${day.dateKey}`,
+          originalId: task.id,
+          title: task.title,
+          timelineLabel: this.getTimelineLabel(task, dayTs),
+          mode: task.mode,
+          completed: task.completed,
+          accent: task.accent,
+          payload: task
+        }));
       return {
         dateKey: day.dateKey,
         date: day.date,
         label: day.name,
-        isToday: day.isToday, // 添加isToday属性
-        tasks: dayTasks.map(t => ({
-          id: t.id,
-          title: t.title,
-          time: formatTime(t.rawDeadline),
-          type: t.type === 'exam' ? 'exam' : 'homework',
-          completed: t.completed
-        }))
+        isToday: day.isToday,
+        tasks: dayTasks
       };
     });
 
-    // 计算总任务数和是否有任务
-    const totalWeekTasks = weekTasksByDay.reduce((sum, day) => sum + day.tasks.length, 0);
+    const uniqueTaskIds = new Set();
+    weekTasksByDay.forEach(day => {
+      day.tasks.forEach(task => uniqueTaskIds.add(task.originalId));
+    });
+
+    const totalWeekTasks = uniqueTaskIds.size;
     const hasNoWeekTasks = totalWeekTasks === 0;
 
     // 初始化选中日期（默认为今天）
@@ -360,6 +407,39 @@ Page({
     this.setData({ timeSlots: slots });
   },
 
+  getTodayStartTs() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.getTime();
+  },
+
+  shouldDisplayTaskOnDate(task, targetTs, targetKey) {
+    if (!task) return false;
+    if (task.mode === 'instant') {
+      return task.deadlineKey === targetKey;
+    }
+    const todayStart = this.getTodayStartTs();
+    const visibleStart = Math.max(task.visibleFromTs || todayStart, todayStart);
+    return targetTs >= visibleStart && targetTs <= (task.deadlineTs || targetTs);
+  },
+
+  getTimelineLabel(task, targetTs) {
+    if (task.mode === 'instant') {
+      return formatTime(task.rawDeadline);
+    }
+    const diff = Math.max(0, Math.ceil(((task.deadlineTs || targetTs) - targetTs) / DAY_MS));
+    return diff === 0 ? '今日截止' : `剩余${diff}天`;
+  },
+
+  decorateTaskForDate(task, targetTs, targetKey) {
+    return {
+      ...task,
+      dayBadge: task.mode === 'instant' ? '瞬时事件' : '持续待办',
+      dayIndicator: this.getTimelineLabel(task, targetTs),
+      instanceId: `${task.id}-${targetKey}`
+    };
+  },
+
   // --- 原始数据加载 (保持 Supabase 逻辑) ---
 
   async loadTasks() {
@@ -371,6 +451,7 @@ Page({
       
       if (!rows || !rows.length) throw new Error('empty');
 
+      const todayStartTs = this.getTodayStartTs();
       const tasks = rows.map((row, idx) => {
         const d = new Date(row.deadline);
         const month = `${d.getMonth() + 1}`.padStart(2, '0');
@@ -379,10 +460,21 @@ Page({
         const minute = `${d.getMinutes()}`.padStart(2, '0');
         const deadlineStr = `${month}.${day} ${hour}:${minute}`;
         const deadlineKey = formatDateKey(d);
-
+        const dueMidnight = new Date(d);
+        dueMidnight.setHours(0, 0, 0, 0);
+        const createdAt = row.created_at ? new Date(row.created_at) : null;
+        const visibleFrom = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : new Date();
+        visibleFrom.setHours(0, 0, 0, 0);
+        const mode = row.type === 'homework' ? 'persistent' : 'instant';
+        const displayBadge = mode === 'instant' ? '瞬时事件' : '持续待办';
+        const displayTime = mode === 'instant' ? `${month}.${day} ${hour}:${minute}` : `${month}.${day} 截止`;
+        const deadlineTs = dueMidnight.getTime();
+        const visibleFromTs = visibleFrom.getTime();
+        const daysLeft = Math.max(0, Math.ceil((deadlineTs - todayStartTs) / DAY_MS));
         return {
           id: row.id,
           type: row.type,
+          mode,
           title: row.title,
           deadline: deadlineStr,
           rawDeadline: row.deadline,
@@ -390,9 +482,16 @@ Page({
           description: row.description,
           progress: row.is_completed ? 1 : 0,
           course: row.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN',
+          courseName: row.course?.name || '',
+          related_course_id: row.related_course_id || null,
           accent: MORANDI_COLORS[idx % MORANDI_COLORS.length],
           completed: row.is_completed,
-          urgent: row.type === 'exam' // 简单标记
+          urgent: mode === 'instant',
+          displayBadge,
+          displayTime,
+          deadlineTs,
+          visibleFromTs,
+          daysLeft
         };
       });
       
@@ -403,14 +502,34 @@ Page({
     } catch (err) {
       console.warn('Fallback tasks', err);
       const cached = wx.getStorageSync('tasks_cache');
-      const fallback = cached && cached.length ? cached : MOCK_TASKS.map(t => {
-        const now = new Date();
+      const rawList = Array.isArray(cached) && cached.length ? cached : MOCK_TASKS;
+      const fallback = rawList.map((t, idx) => {
+        if (t.mode && t.deadlineTs && t.visibleFromTs) {
+          return t;
+        }
+        const now = t.rawDeadline ? new Date(t.rawDeadline) : new Date();
+        now.setSeconds(0, 0);
+        const deadlineTs = now.getTime();
         return {
-          ...t,
-          accent: '#9BB5CE',
+          id: t.id || `mock-${idx}`,
+          type: t.type || 'homework',
+          mode: (t.type || 'homework') === 'homework' ? 'persistent' : 'instant',
+          title: t.title,
+          description: t.description || '',
           rawDeadline: now.toISOString(),
           deadlineKey: formatDateKey(now),
-          deadline: 'Today'
+          deadline: '今天',
+          course: t.course || t.related_course_id || 'GEN',
+          courseName: t.courseName || '',
+          related_course_id: t.related_course_id || null,
+          accent: t.accent || '#9BB5CE',
+          completed: t.completed || t.is_completed || false,
+          urgent: (t.type || 'homework') !== 'homework',
+          displayBadge: (t.type || 'homework') === 'homework' ? '持续待办' : '瞬时事件',
+          displayTime: '今天',
+          deadlineTs,
+          visibleFromTs: deadlineTs,
+          daysLeft: 0
         };
       });
       
@@ -452,6 +571,229 @@ Page({
     // 跳转到课程编辑页面
     wx.navigateTo({
       url: `/pages/course-edit/index?courseId=${course.id}`
+    });
+  },
+
+  // === 待办相关功能 ===
+  
+  // 切换任务完成状态
+  async toggleTaskComplete(e) {
+    const { id } = e.currentTarget.dataset;
+    try {
+      await updateTask(id, { is_completed: true });
+      wx.vibrateShort({ type: 'light' });
+      this.loadTasks();
+    } catch (err) {
+      console.error('标记完成失败:', err);
+      wx.showToast({ title: '操作失败', icon: 'none' });
+    }
+  },
+
+  // 打开待办创建器
+  openTaskCreator() {
+    wx.vibrateShort({ type: 'light' });
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = '23:59';
+    const defaultDeadline = new Date(`${dateStr}T${timeStr}:00`);
+    
+    this.setData({
+      showTaskEditor: true,
+      editingTask: null,
+      taskForm: {
+        mode: 'persistent',
+        title: '',
+        description: '',
+        deadline: defaultDeadline.toISOString(),
+        deadline_date: dateStr,
+        deadline_time: timeStr,
+        has_specific_time: false,
+        related_course_id: null
+      }
+    });
+  },
+
+  // 打开待办编辑器
+  openTaskEditor(e) {
+    const { task } = e.currentTarget.dataset;
+    if (!task) return;
+    wx.vibrateShort({ type: 'light' });
+    
+    const deadline = new Date(task.rawDeadline);
+    const dateStr = deadline.toISOString().split('T')[0];
+    const timeStr = `${String(deadline.getHours()).padStart(2, '0')}:${String(deadline.getMinutes()).padStart(2, '0')}`;
+    const mode = task.type === 'homework' ? 'persistent' : 'instant';
+    const hasExplicitTime = mode === 'instant' ? true : (deadline.getHours() !== 23 || deadline.getMinutes() !== 59);
+    
+    this.setData({
+      showTaskEditor: true,
+      editingTask: task,
+      taskForm: {
+        mode,
+        title: task.title,
+        description: task.description || '',
+        deadline: task.rawDeadline,
+        deadline_date: dateStr,
+        deadline_time: timeStr,
+        has_specific_time: hasExplicitTime,
+        related_course_id: task.related_course_id || null
+      }
+    });
+  },
+
+  // 关闭待办编辑器
+  closeTaskEditor() {
+    this.setData({
+      showTaskEditor: false,
+      editingTask: null,
+      taskForm: {
+        mode: 'persistent',
+        title: '',
+        description: '',
+        deadline: '',
+        deadline_date: '',
+        deadline_time: '',
+        has_specific_time: false,
+        related_course_id: null
+      }
+    });
+  },
+
+  // 待办表单输入处理
+  onTaskFormChange(e) {
+    const { field } = e.currentTarget.dataset;
+    let { value } = e.detail;
+    
+    if (field === 'deadline_date' || field === 'deadline_time') {
+      this.setData({
+        [`taskForm.${field}`]: value
+      });
+      // 自动组合完整的deadline
+      this.updateDeadline();
+      return;
+    }
+    
+    this.setData({
+      [`taskForm.${field}`]: value
+    });
+  },
+
+  // 更新截止时间
+  updateDeadline() {
+    const { deadline_date, deadline_time, has_specific_time, mode } = this.data.taskForm;
+    if (deadline_date) {
+      let timeStr = '23:59';
+      if (mode === 'instant') {
+        timeStr = deadline_time || '08:00';
+      } else if (has_specific_time && deadline_time) {
+        timeStr = deadline_time;
+      }
+      const deadline = new Date(`${deadline_date}T${timeStr}:00`);
+      this.setData({
+        'taskForm.deadline': deadline.toISOString()
+      });
+    }
+  },
+
+  // 切换是否使用具体时间
+  toggleSpecificTime() {
+    if (this.data.taskForm.mode === 'instant') {
+      return;
+    }
+    const has_specific_time = !this.data.taskForm.has_specific_time;
+    this.setData({
+      'taskForm.has_specific_time': has_specific_time
+    });
+    this.updateDeadline();
+  },
+
+  switchTaskMode(e) {
+    const { mode } = e.currentTarget.dataset;
+    if (!mode || mode === this.data.taskForm.mode) return;
+    const updates = {
+      'taskForm.mode': mode
+    };
+    if (mode === 'instant') {
+      updates['taskForm.has_specific_time'] = true;
+      if (!this.data.taskForm.deadline_time) {
+        updates['taskForm.deadline_time'] = '08:00';
+      }
+    }
+    this.setData(updates, () => {
+      this.updateDeadline();
+    });
+  },
+
+  // 保存待办
+  async saveTask() {
+    const { taskForm, editingTask } = this.data;
+    
+    if (!taskForm.title.trim()) {
+      wx.showToast({ title: '请输入任务标题', icon: 'none' });
+      return;
+    }
+
+    if (!taskForm.deadline_date) {
+      wx.showToast({ title: '请选择截止日期', icon: 'none' });
+      return;
+    }
+
+    try {
+      const app = getApp();
+      const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
+      const recordType = taskForm.mode === 'instant' ? 'exam' : 'homework';
+
+      const payload = {
+        user_id: userId,
+        type: recordType,
+        title: taskForm.title.trim(),
+        description: taskForm.description.trim() || null,
+        deadline: taskForm.deadline,
+        is_completed: false,
+        related_course_id: taskForm.related_course_id || null
+      };
+
+      if (editingTask) {
+        // 更新现有任务
+        await updateTask(editingTask.id, payload);
+        wx.showToast({ title: '任务已更新', icon: 'success' });
+      } else {
+        // 创建新任务
+        await createTask(payload);
+        wx.showToast({ title: '任务已创建', icon: 'success' });
+      }
+
+      this.closeTaskEditor();
+      this.loadTasks();
+    } catch (err) {
+      console.error('保存任务失败:', err);
+      wx.showToast({ title: '保存失败', icon: 'none' });
+    }
+  },
+
+  // 删除待办
+  async deleteTask() {
+    const { editingTask } = this.data;
+    
+    if (!editingTask) return;
+
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除任务"${editingTask.title}"吗？`,
+      confirmColor: '#FF3B30',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            await deleteTask(editingTask.id);
+            wx.showToast({ title: '任务已删除', icon: 'success' });
+            this.closeTaskEditor();
+            this.loadTasks();
+          } catch (err) {
+            console.error('删除任务失败:', err);
+            wx.showToast({ title: '删除失败', icon: 'none' });
+          }
+        }
+      }
     });
   },
 
@@ -578,7 +920,13 @@ Page({
   // 表单输入处理
   onCourseFormChange(e) {
     const { field } = e.currentTarget.dataset;
-    const { value } = e.detail;
+    let { value } = e.detail;
+    
+    // 处理picker组件的特殊情况
+    if (field === 'day' || field === 'start' || field === 'len') {
+      value = parseInt(value) + 1; // picker索引转换为实际值
+    }
+    
     this.setData({
       [`courseForm.${field}`]: value
     });
@@ -593,7 +941,7 @@ Page({
   },
 
   // 保存课程
-  saveCourse() {
+  async saveCourse() {
     const { courseForm, editingCourse } = this.data;
     
     if (!courseForm.name.trim()) {
@@ -603,48 +951,67 @@ Page({
 
     if (editingCourse.isNew) {
       // 保存新课程
-      this.saveNewCourse();
+      await this.saveNewCourse();
     } else {
       // 更新现有课程
-      const courseIndex = MOCK_COURSES.findIndex(c => c.id === editingCourse.id);
-      if (courseIndex !== -1) {
-        MOCK_COURSES[courseIndex] = {
-          ...MOCK_COURSES[courseIndex],
-          ...courseForm
+      try {
+        const coursePayload = {
+          name: courseForm.name,
+          location: courseForm.location || null,
+          teacher: courseForm.teacher || null,
+          color: courseForm.color,
+          credits: 2.0
         };
-        
-        // 刷新时间槽数据
+
+        await updateCourse(editingCourse.courseId, coursePayload);
+
+        // 更新课程时间安排
+        const schedulePayload = {
+          day_of_week: courseForm.day,
+          start_section: courseForm.start,
+          length: courseForm.len,
+          location: courseForm.location || null
+        };
+
+        // 刷新界面 - 直接更新模拟数据
+        this.updateMockCourse(editingCourse.courseId, courseForm);
         this.generateTimeSlots();
         this.updateViewData();
         
         wx.showToast({ title: '课程已更新', icon: 'success' });
         this.closeCourseEditor();
         this.closeCourseDetail();
+      } catch (err) {
+        console.error('更新课程失败:', err);
+        wx.showToast({ title: '更新失败', icon: 'none' });
       }
     }
   },
 
   // 删除课程
-  deleteCourse() {
+  async deleteCourse() {
     const { selectedCourse } = this.data;
     
     wx.showModal({
       title: '确认删除',
       content: `确定要删除课程"${selectedCourse.name}"吗？此操作不可撤销。`,
       confirmColor: '#FF3B30',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
-          // 从模拟数据中删除
-          const courseIndex = MOCK_COURSES.findIndex(c => c.id === selectedCourse.id);
-          if (courseIndex !== -1) {
-            MOCK_COURSES.splice(courseIndex, 1);
+          try {
+            // 删除课程记录
+            await deleteCourse(selectedCourse.courseId);
             
-            // 刷新时间槽数据
+            // 刷新界面 - 从模拟数据中删除
+            this.removeCourseFromMockData(selectedCourse.courseId);
             this.generateTimeSlots();
             this.updateViewData();
             
             wx.showToast({ title: '课程已删除', icon: 'success' });
             this.closeCourseDetail();
+          } catch (err) {
+            console.error('删除课程失败:', err);
+            wx.showToast({ title: '删除失败', icon: 'none' });
           }
         }
       }
@@ -655,12 +1022,9 @@ Page({
   addCourse() {
     wx.vibrateShort({ type: 'light' });
     
-    // 生成新课程ID
-    const newId = 'c' + Date.now();
-    
     this.setData({
       showCourseEditor: true,
-      editingCourse: { id: newId, isNew: true },
+      editingCourse: { isNew: true },
       courseForm: {
         name: '',
         location: '',
@@ -674,7 +1038,7 @@ Page({
   },
 
   // 保存新课程
-  saveNewCourse() {
+  async saveNewCourse() {
     const { courseForm } = this.data;
     
     if (!courseForm.name.trim()) {
@@ -682,27 +1046,52 @@ Page({
       return;
     }
 
-    // 创建新课程
-    const newCourse = {
-      id: 'c' + Date.now(),
-      name: courseForm.name,
-      location: courseForm.location,
-      teacher: courseForm.teacher,
-      color: courseForm.color,
-      day: courseForm.day,
-      start: courseForm.start,
-      len: courseForm.len
-    };
+    try {
+      const app = getApp();
+      const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
+      
+      // 创建课程记录
+      const coursePayload = {
+        user_id: userId,
+        name: courseForm.name,
+        location: courseForm.location || null,
+        teacher: courseForm.teacher || null,
+        color: courseForm.color,
+        credits: 2.0
+      };
 
-    // 添加到模拟数据
-    MOCK_COURSES.push(newCourse);
-    
-    // 刷新界面
-    this.generateTimeSlots();
-    this.updateViewData();
-    
-    wx.showToast({ title: '课程添加成功', icon: 'success' });
-    this.closeCourseEditor();
+      const courseResult = await createCourse(coursePayload);
+      const newCourse = Array.isArray(courseResult) ? courseResult[0] : courseResult;
+
+      // 创建课程时间安排
+      const weeks =
+        Array.isArray(courseForm.weeks) && courseForm.weeks.length
+          ? courseForm.weeks
+          : DEFAULT_WEEKS;
+
+      const schedulePayload = {
+        user_id: userId,
+        course_id: newCourse.id,
+        day_of_week: courseForm.day,
+        start_section: courseForm.start,
+        length: courseForm.len,
+        location: courseForm.location || null,
+        weeks: [...weeks]
+      };
+
+      await createCourseSchedules([schedulePayload]);
+
+      // 刷新界面 - 直接更新模拟数据
+      this.addCourseToMockData(newCourse, courseForm);
+      this.generateTimeSlots();
+      this.updateViewData();
+      
+      wx.showToast({ title: '课程添加成功', icon: 'success' });
+      this.closeCourseEditor();
+    } catch (err) {
+      console.error('保存课程失败:', err);
+      wx.showToast({ title: '保存失败', icon: 'none' });
+    }
   },
 
   closeCourseDetail() {
@@ -734,6 +1123,116 @@ Page({
         }
       }
     });
+  },
+
+  // 添加课程到模拟数据
+  addCourseToMockData(newCourse, courseForm) {
+    // 生成唯一的课程ID
+    const courseId = 'c' + (MOCK_COURSES.length + 1);
+    
+    // 创建新的课程对象
+    const newMockCourse = {
+      id: courseId,
+      name: newCourse.name,
+      location: courseForm.location || '待定',
+      teacher: courseForm.teacher || '待定',
+      day: courseForm.day,
+      start: courseForm.start,
+      len: courseForm.len,
+      color: courseForm.color
+    };
+    
+    // 添加到模拟数据
+    MOCK_COURSES.push(newMockCourse);
+    
+    // 更新存储
+    wx.setStorageSync('courses_cache', MOCK_COURSES);
+  },
+
+  // 更新模拟数据中的课程
+  updateMockCourse(courseId, courseForm) {
+    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
+    if (courseIndex !== -1) {
+      MOCK_COURSES[courseIndex] = {
+        ...MOCK_COURSES[courseIndex],
+        name: courseForm.name,
+        location: courseForm.location || '待定',
+        teacher: courseForm.teacher || '待定',
+        day: courseForm.day,
+        start: courseForm.start,
+        len: courseForm.len,
+        color: courseForm.color
+      };
+      
+      // 更新存储
+      wx.setStorageSync('courses_cache', MOCK_COURSES);
+    }
+  },
+
+  // 从模拟数据中删除课程
+  removeCourseFromMockData(courseId) {
+    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
+    if (courseIndex !== -1) {
+      MOCK_COURSES.splice(courseIndex, 1);
+      
+      // 更新存储
+      wx.setStorageSync('courses_cache', MOCK_COURSES);
+    }
+  },
+
+  // 添加课程到模拟数据
+  addCourseToMockData(newCourse, courseForm) {
+    // 生成唯一的课程ID
+    const courseId = 'c' + (MOCK_COURSES.length + 1);
+    
+    // 创建新的课程对象
+    const newMockCourse = {
+      id: courseId,
+      name: newCourse.name,
+      location: courseForm.location || '待定',
+      teacher: courseForm.teacher || '待定',
+      day: courseForm.day,
+      start: courseForm.start,
+      len: courseForm.len,
+      color: courseForm.color
+    };
+    
+    // 添加到模拟数据
+    MOCK_COURSES.push(newMockCourse);
+    
+    // 更新存储
+    wx.setStorageSync('courses_cache', MOCK_COURSES);
+  },
+
+  // 更新模拟数据中的课程
+  updateMockCourse(courseId, courseForm) {
+    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
+    if (courseIndex !== -1) {
+      MOCK_COURSES[courseIndex] = {
+        ...MOCK_COURSES[courseIndex],
+        name: courseForm.name,
+        location: courseForm.location || '待定',
+        teacher: courseForm.teacher || '待定',
+        day: courseForm.day,
+        start: courseForm.start,
+        len: courseForm.len,
+        color: courseForm.color
+      };
+      
+      // 更新存储
+      wx.setStorageSync('courses_cache', MOCK_COURSES);
+    }
+  },
+
+  // 从模拟数据中删除课程
+  removeCourseFromMockData(courseId) {
+    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
+    if (courseIndex !== -1) {
+      MOCK_COURSES.splice(courseIndex, 1);
+      
+      // 更新存储
+      wx.setStorageSync('courses_cache', MOCK_COURSES);
+    }
   },
 
   deleteCourse() {
