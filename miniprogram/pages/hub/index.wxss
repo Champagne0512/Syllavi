@@ -1792,7 +1792,8 @@
   display: block;
 }
 
-/* 课程详情样式已内联 */
+/* 导入课程详情样式（课程/待办编辑弹窗共用） */
+@import './course-detail-styles.wxss';
 
 /* 添加课程按钮样式 */
 .week-header-actions {
