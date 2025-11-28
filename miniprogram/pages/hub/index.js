@@ -578,15 +578,60 @@ Page({
   
   // 切换任务完成状态
   async toggleTaskComplete(e) {
-    const { id } = e.currentTarget.dataset;
+    const { id, completed } = e.currentTarget.dataset;
     try {
-      await updateTask(id, { is_completed: true });
+      // 切换任务状态：已完成 -> 未完成，未完成 -> 已完成
+      await updateTask(id, { is_completed: !completed });
       wx.vibrateShort({ type: 'light' });
       this.loadTasks();
+      wx.showToast({
+        title: completed ? '已标记为未完成' : '任务已完成',
+        icon: 'success'
+      });
     } catch (err) {
-      console.error('标记完成失败:', err);
+      console.error('切换任务状态失败:', err);
       wx.showToast({ title: '操作失败', icon: 'none' });
     }
+  },
+
+  // 完成所有今日待办
+  async completeAllTasks() {
+    const { todayTasks } = this.data;
+    const incompleteTasks = todayTasks.filter(task => !task.completed);
+    
+    if (incompleteTasks.length === 0) {
+      wx.showToast({ title: '没有待完成的任务', icon: 'none' });
+      return;
+    }
+    
+    wx.showModal({
+      title: '确认完成',
+      content: `确定要完成所有 ${incompleteTasks.length} 个待办任务吗？`,
+      success: async (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '处理中...' });
+          try {
+            // 批量更新任务状态
+            await Promise.all(
+              incompleteTasks.map(task => updateTask(task.id, { is_completed: true }))
+            );
+            
+            wx.hideLoading();
+            wx.showToast({ 
+              title: `已完成 ${incompleteTasks.length} 个任务`, 
+              icon: 'success' 
+            });
+            
+            // 重新加载任务
+            this.loadTasks();
+          } catch (err) {
+            console.error('批量完成任务失败:', err);
+            wx.hideLoading();
+            wx.showToast({ title: '操作失败', icon: 'none' });
+          }
+        }
+      }
+    });
   },
 
   // 打开待办创建器

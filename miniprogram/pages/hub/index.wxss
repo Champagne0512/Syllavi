@@ -156,6 +156,31 @@
   pointer-events: none;
 }
 
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-left: 16rpx;
+}
+
+.complete-btn-mini {
+  padding: 12rpx 20rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #87A8A4, #6B8A9C);
+  color: white;
+  font-size: 24rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 20rpx rgba(135, 168, 164, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8rpx);
+  transition: all 0.3s ease;
+}
+
+.complete-btn-mini:active {
+  transform: scale(0.95);
+  box-shadow: 0 4rpx 12rpx rgba(135, 168, 164, 0.4);
+}
+
 /* === 周视图样式 === */
 .week-grid-container {
   background: rgba(255, 255, 255, 0.7);

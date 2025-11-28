@@ -1,0 +1,89 @@
+<view class="tasks-page">
+  <custom-navbar title="所有待办" subtitle="Task Management" />
+
+  <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
+    <!-- 批量操作工具栏 -->
+    <view class="batch-toolbar" wx:if="{{selectionMode}}">
+      <view class="batch-info">
+        <text class="selected-count">已选择 {{selectedTasks.length}} 项</text>
+      </view>
+      <view class="batch-actions">
+        <button class="batch-action-btn" bindtap="showCompleteConfirm">
+          完成任务
+        </button>
+        <button class="batch-action-btn cancel-btn" bindtap="exitSelectionMode">
+          取消
+        </button>
+      </view>
+    </view>
+
+    <!-- 任务列表 -->
+    <view class="tasks-container">
+      <view class="tasks-list" wx:if="{{tasks.length > 0 && !loading}}">
+        <block wx:for="{{tasks}}" wx:key="id">
+          <view class="task-item {{item.is_completed ? 'completed' : ''}} {{selectionMode ? 'selection-mode' : ''}} {{selectedTasks.indexOf(item.id) !== -1 ? 'selected' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="{{selectionMode ? 'toggleTaskSelection' : ''}}">
+            
+            <!-- 选择模式下的复选框 -->
+            <view class="task-checkbox" wx:if="{{selectionMode}}">
+              <view class="checkbox-inner {{selectedTasks.indexOf(item.id) !== -1 ? 'checked' : ''}}"></view>
+            </view>
+            
+            <view class="task-content">
+              <view class="task-title">{{item.title}}</view>
+              <view class="task-meta">
+                <text class="task-type {{item.type}}">{{item.type === 'exam' ? '考试' : '作业'}}</text>
+                <text class="task-deadline">截止: {{item.formattedDeadline}}</text>
+                <text class="task-course" wx:if="{{item.course && item.course.name}}">{{item.course.name}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <!-- 加载状态 -->
+      <view class="loading-container" wx:if="{{loading}}">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="tasks-empty" wx:if="{{!loading && tasks.length === 0}}">
+        <view class="empty-illustration">
+          <view class="empty-icon-shape"></view>
+          <view class="empty-orbit"></view>
+        </view>
+        <text class="empty-title">暂无待办事项</text>
+        <text class="empty-subtitle">去添加一些学习任务吧</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-toolbar" wx:if="{{!selectionMode && tasks.length > 0}}">
+    <button class="batch-mode-btn" bindtap="enterSelectionMode">
+      <view class="btn-icon"></view>
+      <text class="btn-text">批量操作</text>
+    </button>
+  </view>
+
+  <!-- 完成确认弹窗 -->
+  <view class="confirm-modal" wx:if="{{showCompleteConfirm}}">
+    <view class="confirm-mask" bindtap="hideCompleteConfirm"></view>
+    <view class="confirm-sheet">
+      <view class="sheet-header">
+        <text class="sheet-title">确认完成</text>
+        <text class="sheet-subtitle">确定要完成选中的 {{selectedTasks.length}} 个任务吗？</text>
+      </view>
+      <view class="sheet-actions">
+        <button class="confirm-btn" bindtap="completeSelectedTasks">
+          确认完成
+        </button>
+        <button class="cancel-btn" bindtap="hideCompleteConfirm">
+          取消
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

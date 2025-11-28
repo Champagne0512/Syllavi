@@ -8,7 +8,8 @@
     "pages/profile/index",
     "pages/settings/index",
     "pages/tools/index",
-    "pages/web-view/web-view"
+    "pages/web-view/web-view",
+    "pages/tasks/index"
   ],
   "window": {
     "backgroundColor": "#F7F7F5",

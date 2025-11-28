@@ -27,27 +27,22 @@ Page({
     filteredFiles: [],
     activeFolder: '全部',
     loading: true,
-    // 艺术设计新增状态
-    showQuote: false,
-    currentQuote: { text: '', author: '' },
-    zenMode: false,
     sortOrder: 'asc',
-    quotes: [
-      { text: "Knowledge is the only treasure that increases when shared.", author: "Unknown" },
-      { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
-      { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
-      { text: "Live as if you were to die tomorrow. Learn as if you were to live forever.", author: "Mahatma Gandhi" },
-      { text: "The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.", author: "Brian Herbert" }
-    ],
-    zenQuotes: [
-      "宁静致远，智慧沉淀",
-      "心无杂念，学有所成", 
-      "专注当下，收获永恒",
-      "静水流深，厚积薄发"
-    ],
     // 批量操作相关状态
     selectionMode: false,
     selectedFiles: []
+  },
+
+  // 增加一个辅助函数用于 CSS 类名映射
+  getFileTypeClass(type) {
+    // 简单映射，你可以根据需要扩展
+    const map = {
+      'pdf': 'pdf',
+      'ppt': 'ppt', 'pptx': 'ppt',
+      'doc': 'doc', 'docx': 'doc',
+      'jpg': 'img', 'png': 'img', 'jpeg': 'img'
+    };
+    return map[type] || 'other';
   },
   onLoad() {
     this.loadResources();
@@ -86,6 +81,7 @@ Page({
             id: file.id,
             name: file.file_name,
             type: file.file_type,
+            uiType: this.getFileTypeClass(file.file_type), // 添加UI类型映射
             subject: file.subject || '未分类',
             url: file.file_url,
             size: file.file_size,
@@ -220,8 +216,10 @@ Page({
   },
   selectFolder(e) {
     const { name } = e.currentTarget.dataset;
+    if(this.data.activeFolder === name) return;
+    
     this.setData({ activeFolder: name }, () => this.updateFilteredFiles());
-    wx.vibrateShort({ type: 'light' });
+    wx.vibrateShort({ type: 'light' }); // 加上震动
   },
 
   // 使用浏览器打开文件的替代方案
@@ -348,6 +346,7 @@ Page({
                 id: row.id,
                 name: row.file_name,
                 type: row.file_type,
+                uiType: this.getFileTypeClass(row.file_type), // 添加UI类型映射
                 subject: row.subject || '未分类',
                 url: row.file_url,
                 size: row.file_size,
@@ -359,6 +358,7 @@ Page({
           () => {
             this.updateFilteredFiles();
             this._uploading = false;
+            wx.vibrateShort({ type: 'medium' }); // 成功后震动
           }
         );
       }, 100);
@@ -479,53 +479,14 @@ Page({
     });
   },
 
-  // 艺术设计新增方法
-  showMoodQuote() {
-    const randomIndex = Math.floor(Math.random() * this.data.quotes.length);
-    this.setData({
-      showQuote: true,
-      currentQuote: this.data.quotes[randomIndex]
-    });
-    
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
-    
-    // 5秒后自动隐藏
-    setTimeout(() => {
-      this.setData({ showQuote: false });
-    }, 5000);
-  },
-
-  toggleZenMode() {
-    const zenMode = !this.data.zenMode;
-    const randomIndex = Math.floor(Math.random() * this.data.zenQuotes.length);
-    
-    this.setData({
-      zenMode,
-      zenQuote: this.data.zenQuotes[randomIndex]
-    });
-
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
-    
-    if (zenMode) {
-      // 进入专注模式
-      wx.showToast({
-        title: '进入专注模式',
-        icon: 'none',
-        duration: 1000
-      });
-    }
-  },
+  
 
   toggleSort() {
     const sortOrder = this.data.sortOrder === 'asc' ? 'desc' : 'asc';
     this.setData({ sortOrder }, () => {
       this.sortFiles();
+      wx.vibrateShort({ type: 'light' }); // 震动反馈
     });
-    
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
   },
 
   sortFiles() {
@@ -541,13 +502,7 @@ Page({
     this.setData({ filteredFiles: sortedFiles });
   },
 
-  playAmbientSound() {
-    wx.showToast({
-      title: '环境音效功能开发中',
-      icon: 'none',
-      duration: 2000
-    });
-  },
+  
 
   formatSize(bytes) {
     if (!bytes) return '';
@@ -698,6 +653,7 @@ Page({
       selectedFiles: [] 
     });
     wx.showToast({ title: '进入批量操作模式', icon: 'none', duration: 1000 });
+    wx.vibrateShort({ type: 'light' }); // 添加震动反馈
   },
   
   // 退出选择模式
@@ -706,48 +662,32 @@ Page({
       selectionMode: false, 
       selectedFiles: [] 
     });
+    wx.vibrateShort({ type: 'light' }); // 添加震动反馈
   },
   
   // 切换文件选择状态
   toggleFileSelection(e) {
     const { id } = e.currentTarget.dataset;
-    // 确保ID转换为字符串，避免数据类型不一致
-    const fileId = String(id);
     const { selectedFiles } = this.data;
     
-    // 确保selectedFiles中的ID都是字符串
-    const stringSelectedFiles = selectedFiles.map(item => String(item));
-    const index = stringSelectedFiles.indexOf(fileId);
+    // 使用indexOf来检查是否已选中，与WXML保持一致
+    const index = selectedFiles.indexOf(id);
     
     let newSelectedFiles;
     if (index === -1) {
       // 添加到选择列表
-      newSelectedFiles = [...selectedFiles, fileId];
+      newSelectedFiles = [...selectedFiles, id];
     } else {
       // 从选择列表中移除
-      newSelectedFiles = selectedFiles.filter((item) => String(item) !== fileId);
+      newSelectedFiles = selectedFiles.filter((item) => item !== id);
     }
     
-    // 强制更新UI，确保选择状态立即反映
+    // 更新选中状态
     this.setData({ 
-      selectedFiles: newSelectedFiles,
-      _triggerUpdate: Date.now() // 使用时间戳强制更新
+      selectedFiles: newSelectedFiles
     }, () => {
-      // 确保UI更新完成
-      console.log('文件选择状态已更新:', newSelectedFiles);
-      console.log('当前选中文件数量:', newSelectedFiles.length);
-      
-      // 使用更可靠的强制更新方法
-      if (this.data.filteredFiles && this.data.filteredFiles.length > 0) {
-        // 为每个文件添加一个随机属性来强制重新渲染
-        const updatedFiles = this.data.filteredFiles.map(file => ({
-          ...file,
-          _renderKey: Math.random()
-        }));
-        this.setData({
-          filteredFiles: updatedFiles
-        });
-      }
+      // 添加触感反馈
+      wx.vibrateShort({ type: 'light' });
     });
   },
   

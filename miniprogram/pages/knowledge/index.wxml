@@ -1,199 +1,150 @@
 <view class="knowledge-page">
-  <!-- 弥散背景 -->
-  <view class="background-blob blob-1"></view>
-  <view class="background-blob blob-2"></view>
-  <view class="background-blob blob-3"></view>
+  <!-- 0. 弥散背景 -->
+  <view class="ambient-container">
+    <view class="orb orb-1"></view>
+    <view class="orb orb-2"></view>
+    <view class="orb orb-3"></view>
+    <view class="orb orb-4"></view>
+  </view>
 
-  <custom-navbar title="Syllaby" subtitle="知识星图" />
+  <custom-navbar title="Syllaby" subtitle="知识库" />
 
-  <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
+  <!-- 顶部留白，解决 custom-navbar 遮挡问题 -->
+  <view style="height: 160rpx;"></view>
 
-    <!-- 卡片式数据概览 -->
-    <view class="data-overview">
-      <view class="overview-card glass-card" bindtap="toggleZenMode">
-        <view class="overview-icon">
-          <view class="icon-shape library-icon"></view>
-        </view>
-        <view class="overview-content">
-          <text class="overview-number">{{folders.length || 0}}</text>
-          <text class="overview-label">知识分类</text>
-        </view>
-      </view>
-      
-      <view class="overview-card glass-card">
-        <view class="overview-icon">
-          <view class="icon-shape file-icon"></view>
-        </view>
-        <view class="overview-content">
-          <text class="overview-number">{{files.length || 0}}</text>
-          <text class="overview-label">文件资源</text>
-        </view>
-      </view>
-      
-      <view class="overview-card glass-card" bindtap="showMoodQuote">
-        <view class="overview-icon">
-          <view class="icon-shape ai-icon"></view>
-        </view>
-        <view class="overview-content">
-          <text class="overview-number">AI</text>
-          <text class="overview-label">智能划重点</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 心情日签 -->
-    <view class="mood-quote" wx:if="{{showQuote}}">
-      <text class="quote-text">{{currentQuote.text}}</text>
-      <text class="quote-author">— {{currentQuote.author}}</text>
-      <view class="quote-ornament"></view>
-    </view>
-
-    <!-- 文件夹网格 - 超级椭圆设计 -->
-    <view class="folder-grid">
-      <block wx:for="{{folders}}" wx:key="id">
-        <view class="folder-card {{activeFolder === item.name ? 'active' : ''}}"
-          style="--tone: {{item.tone}};"
-          data-name="{{item.name}}"
-          bindtap="selectFolder"
-          bindlongpress="handleFolderLongPress">
-          <view class="folder-gradient"></view>
-      <view class="folder-content">
-        <view class="folder-icon">
-          <view class="icon-shape folder-icon-shape"></view>
-        </view>
-        <text class="folder-name">{{item.name}}</text>
-        <text class="folder-count">{{item.count}} 项</text>
-      </view>
-          <view class="folder-hint">
-            <text class="hint-text">点击探索</text>
-            <view class="hint-arrow">→</view>
+  <scroll-view scroll-y="true" style="height: calc(100vh - 160rpx);" enable-flex="true">
+    
+    <!-- 1. 数据概览 (Bento Grid) -->
+    <view class="header-section">
+      <view class="bento-grid">
+        <!-- 主卡片：总文件数 -->
+        <view class="bento-card main">
+          <view class="stat-icon-bg">📂</view>
+          <view>
+            <view class="stat-num">{{files.length || 0}}</view>
+            <view class="stat-label">Total Files</view>
+          </view>
+          <view style="margin-top:20rpx;">
+            <text style="font-size:22rpx; opacity:0.6;">最近更新: {{files[0].subject || '刚刚'}}</text>
           </view>
         </view>
+
+        <!-- 副卡片：分类数 -->
+        <view class="bento-card sub">
+          <view class="stat-num">{{folders.length || 0}}</view>
+          <view class="stat-label">Subjects</view>
+        </view>
+
+        <!-- 副卡片：AI 摘要 -->
+        <view class="bento-card ai">
+          <view class="ai-badge">BETA</view>
+          <view class="stat-num" style="font-size: 48rpx;">AI</view>
+          <view class="stat-label">Summary</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 2. 文件夹横向滚动 (Chips) -->
+    <view class="section-title">
+      <text>分类</text>
+      <view class="count-badge">{{folders.length}}</view>
+      <view class="title-actions" wx:if="{{!selectionMode}}">
+        <view class="upload-btn" bindtap="uploadResource">
+          <text class="upload-icon">+</text>
+          <text class="upload-text">上传</text>
+        </view>
+        <view class="batch-toggle-btn" bindtap="enterSelectionMode">
+          <text>⋮</text>
+        </view>
+      </view>
+    </view>
+    
+    <scroll-view class="folder-scroll" scroll-x="true" enable-flex="true" show-scrollbar="false">
+      <view class="folder-chip {{activeFolder === '全部' ? 'active' : ''}}" 
+            bindtap="selectFolder" data-name="全部">
+        <text>全部</text>
+      </view>
+      
+      <block wx:for="{{folders}}" wx:key="id">
+        <view class="folder-chip {{activeFolder === item.name ? 'active' : ''}}"
+              data-name="{{item.name}}"
+              bindtap="selectFolder"
+              bindlongpress="handleFolderLongPress">
+          <view class="chip-dot" style="background: {{item.tone}};"></view>
+          <text>{{item.name}}</text>
+          <text class="chip-count">{{item.count}}</text>
+        </view>
       </block>
+      <!-- 占位符，保证最后一个能滑出来 -->
+      <view style="width: 40rpx; display:inline-block;"></view>
+    </scroll-view>
+
+    <!-- 3. 文件列表 -->
+    <view class="section-title" style="margin-top: 20rpx;">
+      <text>{{activeFolder}}</text>
+      <text style="font-size: 24rpx; opacity: 0.4; font-weight: normal; margin-left: auto;">按时间排序</text>
     </view>
 
     <!-- 批量操作工具栏 -->
-    <view class="batch-toolbar" wx:if="{{selectionMode}}">
+    <view class="batch-dock" wx:if="{{selectionMode}}">
       <view class="batch-info">
-        <text class="selected-count">已选择 {{selectedFiles.length}} 项</text>
+        <text class="batch-count">{{selectedFiles.length}}</text>
+        <text class="batch-label">已选择</text>
       </view>
       <view class="batch-actions">
-        <button class="batch-action-btn" bindtap="batchRename" disabled="{{selectedFiles.length !== 1}}">
-          重命名
-        </button>
-        <button class="batch-action-btn" bindtap="batchChangeCategory">
-          更改分类
-        </button>
-        <button class="batch-action-btn cancel-btn" bindtap="exitSelectionMode">
-          取消
-        </button>
+        <view class="batch-btn {{selectedFiles.length !== 1 ? 'disabled' : ''}}" bindtap="batchRename">
+          <text class="batch-icon">✏️</text>
+          <text class="batch-text">重命名</text>
+        </view>
+        <view class="batch-btn" bindtap="batchChangeCategory">
+          <text class="batch-icon">📁</text>
+          <text class="batch-text">移动</text>
+        </view>
+        <view class="batch-btn close-btn" bindtap="exitSelectionMode">
+          <text class="batch-icon">✕</text>
+          <text class="batch-text">取消</text>
+        </view>
       </view>
     </view>
 
-    <!-- 文件面板 - 玻璃拟态 -->
-    <view class="file-panel glass-card">
-      <view class="panel-header">
-        <text class="panel-title">{{activeFolder}} 的文件</text>
-        <view class="header-actions">
-          <button class="action-btn upload-btn" bindtap="uploadResource" wx:if="{{!selectionMode}}">
-            <view class="btn-icon-shape upload-icon"></view>
-            <text class="btn-text">上传</text>
-          </button>
-          <button class="action-btn batch-mode-btn" bindtap="enterSelectionMode" wx:if="{{!selectionMode && filteredFiles.length > 0}}">
-            <text class="btn-text">批量操作</text>
-          </button>
-          <view class="action-btn sort-btn" bindtap="toggleSort" wx:if="{{!selectionMode}}">
-            <view class="btn-icon-shape sort-icon"></view>
-            <text class="btn-text">{{sortOrder === 'asc' ? '升序' : '降序'}}</text>
-          </view>
-        </view>
-      </view>
-
+    <view class="file-list">
       <block wx:for="{{filteredFiles}}" wx:key="id">
         <view class="file-card {{selectionMode ? 'selection-mode' : ''}} {{selectedFiles.indexOf(item.id) !== -1 ? 'selected' : ''}}"
-          data-id="{{item.id}}"
-          bindtap="{{selectionMode ? 'toggleFileSelection' : 'previewFile'}}"
-          bindlongpress="{{!selectionMode ? 'handleFileLongPress' : ''}}">
+              data-id="{{item.id}}"
+              bindtap="{{selectionMode ? 'toggleFileSelection' : 'previewFile'}}"
+              bindlongpress="{{!selectionMode ? 'handleFileLongPress' : ''}}">
           
-          <!-- 选择模式下的复选框 -->
-          <view class="file-checkbox" wx:if="{{selectionMode}}">
-            <view class="checkbox-inner {{selectedFiles.indexOf(item.id) !== -1 ? 'checked' : ''}}"></view>
+          <!-- 文件类型图标 -->
+          <view class="file-icon-box icon-box-{{item.uiType || item.type}}">
+             {{item.uiType || item.type}}
+             <!-- 选择模式下的选择指示器 -->
+             <view wx:if="{{selectionMode}}" class="selection-indicator {{selectedFiles.indexOf(item.id) !== -1 ? 'checked' : ''}}">
+               <text wx:if="{{selectedFiles.indexOf(item.id) !== -1}}" class="selection-check">✓</text>
+             </view>
           </view>
           
-          <view class="file-icon {{item.type}}">
-            <view class="file-icon-shape {{item.type}}"></view>
-            <view class="file-glow"></view>
-          </view>
-          <view class="file-content">
-            <view class="file-header">
-              <text class="file-name">{{item.name}}</text>
-              <view class="file-codes">
-                <text class="file-type-badge">{{item.type.toUpperCase()}}</text>
+          <!-- 文件信息 -->
+          <view class="file-info">
+            <view class="file-name">{{item.name}}</view>
+            <view class="file-meta-row">
+              <view class="meta-tag">{{item.size ? formatSize(item.size) : '未知大小'}}</view>
+              
+              <!-- AI 摘要标签 -->
+              <view class="meta-tag ai-summary-tag" wx:if="{{item.aiSummary}}">
+                 <text>✨ 已划重点</text>
               </view>
             </view>
-            <view class="file-meta">
-              <text class="file-subject">{{item.subject}}</text>
-              <text class="file-size" wx:if="{{item.size}}">{{formatSize(item.size)}}</text>
-            </view>
-            <view class="file-tags">
-              <text class="tag-chip" wx:if="{{item.aiSummary}}">
-                <view class="tag-icon ai-tag-icon"></view>
-                AI 摘要
-              </text>
-              <text class="tag-chip previewable" wx:if="{{item.previewable}}">
-                <view class="tag-icon preview-tag-icon"></view>
-                可预览
-              </text>
-              <text class="tag-chip longpress-hint" wx:if="{{!selectionMode}}">
-                <view class="tag-icon longpress-icon"></view>
-                长按操作
-              </text>
-            </view>
-          </view>
-          <view class="file-action" wx:if="{{!selectionMode}}">
-            <text class="action-text">查看</text>
-            <view class="action-arrow">→</view>
           </view>
         </view>
       </block>
 
-      <!-- 空状态艺术化 -->
-      <view wx:if="{{!filteredFiles.length}}" class="empty-art">
-        <view class="empty-illustration">
-          <view class="empty-icon-shape"></view>
-          <view class="empty-orbit"></view>
-        </view>
-        <text class="empty-title">知识星图等待探索</text>
-        <text class="empty-subtitle">上传第一份资料，开始构建你的知识宇宙</text>
-        <button class="empty-action" bindtap="uploadResource">
-          <view class="empty-action-icon"></view>
-          上传资料
-        </button>
+      <!-- 空状态 -->
+      <view wx:if="{{!filteredFiles.length}}" style="text-align:center; padding: 100rpx 0; opacity: 0.5;">
+        <view style="font-size: 80rpx; margin-bottom: 20rpx;">🌫️</view>
+        <view>这里像外太空一样安静</view>
       </view>
-    </view>
-
-    <!-- 专注模式按钮 -->
-    <view class="zen-mode-btn" bindtap="toggleZenMode">
-      <view class="zen-icon-shape {{zenMode ? 'moon-icon' : 'sun-icon'}}"></view>
-      <text class="zen-text">{{zenMode ? '退出专注' : '专注模式'}}</text>
     </view>
   </scroll-view>
 
-  <!-- 专注模式遮罩 -->
-  <view class="zen-overlay" wx:if="{{zenMode}}">
-    <view class="zen-content">
-      <text class="zen-title">专注知识探索</text>
-      <text class="zen-quote">{{zenQuote}}</text>
-      <view class="zen-controls">
-        <button class="zen-btn" bindtap="playAmbientSound">
-          <view class="zen-btn-icon music-icon"></view>
-          环境音
-        </button>
-        <button class="zen-btn" bindtap="toggleZenMode">
-          <view class="zen-btn-icon exit-icon"></view>
-          退出
-        </button>
-      </view>
-    </view>
-  </view>
+  
 </view>

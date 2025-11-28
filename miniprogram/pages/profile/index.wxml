@@ -108,6 +108,39 @@
       </view>
     </view>
 
+    <!-- 所有待办入口 -->
+    <view class="card tasks-entry-card">
+      <view class="section-head">
+        <text>任务管理</text>
+        <text class="muted mono">Task Management</text>
+      </view>
+      
+      <view class="tasks-entry-content">
+        <view class="tasks-stats">
+          <view class="task-stat-item">
+            <view class="task-stat-value">{{stats.total_tasks}}</view>
+            <view class="task-stat-label">总任务</view>
+          </view>
+          <view class="task-stat-item">
+            <view class="task-stat-value">{{stats.completed_tasks}}</view>
+            <view class="task-stat-label">已完成</view>
+          </view>
+          <view class="task-stat-item">
+            <view class="task-stat-value">{{stats.total_tasks - stats.completed_tasks}}</view>
+            <view class="task-stat-label">待完成</view>
+          </view>
+        </view>
+        
+        <view class="tasks-entry-btn" bindtap="navigateToTasks">
+          <view class="btn-icon">
+            <view class="btn-icon-shape"></view>
+          </view>
+          <text class="btn-text">查看所有待办</text>
+          <view class="btn-arrow">→</view>
+        </view>
+      </view>
+    </view>
+
     <!-- 成就系统 -->
     <view class="card achievements-card">
       <view class="section-head">
@@ -189,6 +222,8 @@
         </block>
       </view>
     </view>
+
+    
   </scroll-view>
 
   <view wx:if="{{editModalVisible}}" class="edit-mask" catchtouchmove="stopTouchMove">

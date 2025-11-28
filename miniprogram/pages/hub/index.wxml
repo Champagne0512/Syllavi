@@ -60,14 +60,17 @@
       <!-- 今日待办 -->
       <view class="section-head mt-40">
         <text class="head-title">今日待办</text>
-        <view class="add-btn-mini" bindtap="openTaskCreator">＋</view>
+        <view class="head-actions">
+          <view class="complete-btn-mini" wx:if="{{todayTasks.length > 0}}" bindtap="completeAllTasks">全部完成！</view>
+          <view class="add-btn-mini" bindtap="openTaskCreator">＋</view>
+        </view>
         <view class="head-sub">{{todayTasks.length}} 项</view>
       </view>
 
       <view class="task-stack">
         <block wx:for="{{todayTasks}}" wx:key="instanceId">
           <view class="task-row {{item.completed ? 'done' : ''}}" bindtap="openTaskEditor" data-task="{{item}}">
-            <view class="task-check" catchtap="toggleTaskComplete" data-id="{{item.id}}">
+            <view class="task-check" catchtap="toggleTaskComplete" data-id="{{item.id}}" data-completed="{{item.completed}}">
               <view class="check-circle {{item.completed ? 'checked' : ''}}"></view>
             </view>
             <view class="task-body">

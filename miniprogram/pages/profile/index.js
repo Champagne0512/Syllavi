@@ -403,6 +403,13 @@ Page({
     }
   },
 
+  navigateToTasks() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({
+      url: '/pages/tasks/index'
+    });
+  },
+
   editProfile() {
     const { profile } = this.data;
     const grade = sanitizeGrade(profile.grade || '');
