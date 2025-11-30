@@ -92,25 +92,28 @@ page {
 }
 
 /* === 2. 统计区 Bento Grid === */
+
 .header-section {
-  padding: 12rpx 40rpx 24rpx;
+  padding: 12rpx 32rpx 8rpx;
+  margin-bottom: 12rpx;
 }
 
 .bento-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  grid-template-rows: 160rpx 160rpx;
-  gap: 24rpx;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-auto-rows: auto;
+  gap: 20rpx;
+  align-items: stretch;
 }
 
 .bento-card {
   background: var(--glass-bg);
   box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(12px); /* 核心：背景模糊 */
+  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-radius: 24rpx;
+  border-radius: 22rpx;
   border: 1px solid var(--glass-border);
-  padding: 30rpx;
+  padding: 24rpx;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -118,11 +121,124 @@ page {
   overflow: hidden;
 }
 
-/* 占据左侧两行的大卡片 */
+/* === Bento Grid 重构：极简符号风 === */
+.interactable {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.interactable:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* 左侧 Continuum 卡片 */
 .bento-card.main {
-  grid-row: 1 / 3;
-  background: linear-gradient(145deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
-  border-left: 4px solid var(--sage-green); /* 左侧色条 */
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  position: relative;
+  overflow: hidden;
+  min-height: 210rpx;
+  padding: 28rpx;
+}
+
+.watermark-icon {
+  position: absolute;
+  top: -12rpx;
+  right: -12rpx;
+  font-size: 150rpx;
+  color: #2D3436;
+  opacity: 0.05;
+  font-family: var(--font-num);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.card-content-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  gap: 10rpx;
+}
+
+.mini-tag {
+  display: inline-block;
+  font-size: 18rpx;
+  font-weight: bold;
+  letter-spacing: 2rpx;
+  text-transform: uppercase;
+  padding: 4rpx 12rpx;
+  background: #2D3436;
+  color: #fff;
+  border-radius: 10rpx;
+  opacity: 0.85;
+}
+
+.hero-filename {
+  display: -webkit-box;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #2D3436;
+  line-height: 1.32;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero-filename.placeholder {
+  opacity: 0.5;
+}
+
+.ai-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  position: relative;
+  overflow: hidden;
+  min-height: 210rpx;
+}
+
+.ai-entry-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  z-index: 2;
+}
+
+.ai-glyph {
+  font-size: 68rpx;
+  color: #1f2225;
+  text-shadow: 0 8rpx 24rpx rgba(31, 34, 37, 0.25);
+}
+
+.ai-caption {
+  font-size: 24rpx;
+  letter-spacing: 6rpx;
+  text-transform: uppercase;
+  color: rgba(31, 34, 37, 0.8);
+}
+
+.ai-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(226, 194, 164, 0.5) 0%, transparent 70%);
+  animation: breathe 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(0.85);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
 }
 
 .stat-num {
@@ -149,24 +265,6 @@ page {
   font-size: 120rpx;
   opacity: 0.05;
   transform: rotate(-15deg);
-}
-
-/* AI 卡片的高亮 */
-.bento-card.ai {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(226, 194, 164, 0.1));
-  border-left: 4px solid var(--warm-sand); /* 左侧色条 */
-}
-
-.ai-badge {
-  position: absolute;
-  top: 24rpx;
-  right: 24rpx;
-  background: #2D3436;
-  color: #fff;
-  font-size: 18rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 20rpx;
-  font-weight: bold;
 }
 
 /* === 3. 文件夹水平滚动 (Horizontal Scroll) === */

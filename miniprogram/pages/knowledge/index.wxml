@@ -17,29 +17,27 @@
     <!-- 1. 数据概览 (Bento Grid) -->
     <view class="header-section">
       <view class="bento-grid">
-        <!-- 主卡片：总文件数 -->
-        <view class="bento-card main">
-          <view class="stat-icon-bg">📂</view>
-          <view>
-            <view class="stat-num">{{files.length || 0}}</view>
-            <view class="stat-label">Total Files</view>
-          </view>
-          <view style="margin-top:20rpx;">
-            <text style="font-size:22rpx; opacity:0.6;">最近更新: {{files[0].subject || '刚刚'}}</text>
+        <!-- Continuum: 专辑封面感 -->
+        <view class="bento-card main interactable" bindtap="openLastFile">
+          <view class="watermark-icon">▶</view>
+          <view class="card-content-bottom">
+            <block wx:if="{{lastOpenedFile}}">
+              <view class="mini-tag">{{lastOpenedFile.type || 'FILE'}}</view>
+              <text class="hero-filename">{{lastOpenedFile.name}}</text>
+            </block>
+            <block wx:else>
+              <text class="hero-filename placeholder" decode="true">Start\nLearning</text>
+            </block>
           </view>
         </view>
 
-        <!-- 副卡片：分类数 -->
-        <view class="bento-card sub">
-          <view class="stat-num">{{folders.length || 0}}</view>
-          <view class="stat-label">Subjects</view>
-        </view>
-
-        <!-- 副卡片：AI 摘要 -->
-        <view class="bento-card ai">
-          <view class="ai-badge">BETA</view>
-          <view class="stat-num" style="font-size: 48rpx;">AI</view>
-          <view class="stat-label">Summary</view>
+        <!-- AI 划重点入口 -->
+        <view class="bento-card ai-entry-card interactable" bindtap="enterAiMode">
+          <view class="ai-glow"></view>
+          <view class="ai-entry-body">
+            <text class="ai-glyph">✹</text>
+            <text class="ai-caption">{{(actionableInsight && actionableInsight.cta) || 'AI 划重点'}}</text>
+          </view>
         </view>
       </view>
     </view>
