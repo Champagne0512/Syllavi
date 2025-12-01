@@ -474,30 +474,7 @@ function fetchFocusSessions(userId = DEMO_USER_ID) {
   return request('focus_sessions', { query });
 }
 
-// --- Room reports (空教室众包, P2) ---
-function fetchRoomReports() {
-  // 空教室信息对所有用户可见，这里不按用户过滤
-  const query = [
-    'select=id,building,room_name,floor,status,features,expires_at',
-    'order=expires_at.asc'
-  ].join('&');
-  return request('room_reports', { query });
-}
 
-function createRoomReport(payload) {
-  return request('room_reports', {
-    method: 'POST',
-    headers: { Prefer: 'return=representation' },
-    data: payload
-  });
-}
-
-function deleteRoomReport(id) {
-  return request('room_reports', {
-    method: 'DELETE',
-    query: `id=eq.${id}`
-  });
-}
 
 // --- User profile ---
 function fetchProfile(userId = DEMO_USER_ID) {
@@ -993,9 +970,6 @@ module.exports = {
   createFocusSession,
   fetchFocusStats,
   fetchFocusSessions,
-  fetchRoomReports,
-  createRoomReport,
-  deleteRoomReport,
   fetchProfile,
   updateProfile,
   uploadToStorage,

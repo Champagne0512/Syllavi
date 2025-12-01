@@ -1,0 +1,47 @@
+<view class="heatmap-container {{variant}}">
+  <!-- 月份标签 -->
+  <view class="heatmap-months" wx:if="{{showMonths}}">
+    <view class="month-cell" wx:for="{{months}}" wx:key="*this">
+      {{item}}
+    </view>
+  </view>
+
+  <!-- 热力图主体 -->
+  <view class="heatmap-content">
+    <!-- 星期标签 -->
+    <view class="heatmap-weekdays" wx:if="{{showWeekdays}}">
+      <view class="weekday-cell" wx:for="{{weekdays}}" wx:key="*this">
+        {{item}}
+      </view>
+    </view>
+
+    <!-- 热力图格子 -->
+    <scroll-view class="heatmap-scroll" scroll-x="true" scroll-into-view="{{'week-' + (weeks.length - 1)}}">
+      <view class="heatmap-grid">
+        <view class="week-row" wx:for="{{weeks}}" wx:key="index" id="week-{{index}}">
+          <view 
+            class="day-cell {{item.isEmpty ? 'empty' : ''}}" 
+            wx:for="{{item}}" 
+            wx:for-item="day" 
+            wx:key="day.date"
+            style="background-color: {{getColor(day.minutes)}}; animation-delay: {{index * 50 + day_index * 10}}ms"
+            bindtap="onDayTap"
+            data-day="{{day}}"
+          >
+            <view class="day-tooltip" wx:if="{{!day.isEmpty}}">
+              <view class="tooltip-date">{{day.date}}</view>
+              <view class="tooltip-minutes">专注 {{formatMinutes(day.minutes)}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 图例 -->
+  <view class="heatmap-legend">
+    <text class="legend-text">少</text>
+    <view class="legend-item" wx:for="{{colorLevels}}" wx:key="min" style="background-color: {{item.color}}"></view>
+    <text class="legend-text">多</text>
+  </view>
+</view>

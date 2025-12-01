@@ -1,113 +1,191 @@
-const { fetchRoomReports, createRoomReport, fetchFocusStats } = require('../../utils/supabase');
+const { fetchFocusStats } = require('../../utils/supabase');
+const focusService = require('../../utils/focusService');
 
-// 模拟空教室数据
-const DEFAULT_ROOMS = [
-  { building: '图书馆 4F', tag: '静音区', status: '空闲 (1.5h)' },
-  { building: '信息楼 203', tag: '插座丰富', status: '空闲 (2h)' },
-  { building: '教学楼 A301', tag: '小教室', status: '空闲 (3h)' },
-  { building: '实验楼 105', tag: '设备齐全', status: '空闲 (1h)' }
+const FOCUS_PRESETS = [
+  { id: 'warmup', label: '暖身 15′', desc: '进入状态', minutes: 15 },
+  { id: 'flow', label: '经典 45′', desc: '番茄节奏', minutes: 45 },
+  { id: 'deep', label: '深潜 75′', desc: '单段冲刺', minutes: 75 }
 ];
 
 Page({
   data: {
-    emptyRooms: [],
     focusStats: {
       todayFocus: 0,
       totalSessions: 0,
       streakDays: 0
     },
-    loading: false
+    heatmapData: [],
+    distributionData: [],
+    achievements: [],
+    achievementsMeta: {
+      unlocked: 0,
+      total: 0
+    },
+    insightList: [],
+    focusPills: FOCUS_PRESETS,
+    showStats: false
   },
 
   onLoad() {
-    this.loadRoomReports();
-    this.loadFocusStats();
+    this.loadFocusData();
   },
 
   onShow() {
     if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(2); // 工具模块在导航栏的索引
+      this.getTabBar().setSelected(2);
     }
+    this.loadFocusData();
   },
 
-  // 加载空教室数据
-  async loadRoomReports() {
-    this.setData({ loading: true });
+  // 加载专注数据
+  async loadFocusData() {
     try {
-      const reports = await fetchRoomReports();
-      this.setData({ 
-        emptyRooms: reports.length > 0 ? reports.slice(0, 4) : DEFAULT_ROOMS,
-        loading: false 
+      // 从本地服务获取数据
+      const stats = focusService.getStats();
+      const achievements = this.normalizeAchievements(focusService.getAchievements());
+      const heatmapData = focusService.getHeatmapData();
+      const distributionData = focusService.getHourlyDistribution();
+      const insightList = this.buildInsights(stats);
+      const achievementsMeta = {
+        unlocked: achievements.filter(item => item.unlocked).length,
+        total: achievements.length
+      };
+      
+      this.setData({
+        focusStats: {
+          todayFocus: stats.todayMinutes,
+          totalSessions: stats.totalSessions,
+          streakDays: stats.streakDays
+        },
+        achievements,
+        achievementsMeta,
+        insightList,
+        heatmapData: heatmapData,
+        distributionData: distributionData,
+        showStats: true
       });
-    } catch (error) {
-      console.error('Load room reports failed:', error);
-      this.setData({ 
-        emptyRooms: DEFAULT_ROOMS,
-        loading: false 
-      });
-    }
-  },
 
-  // 加载专注统计数据
-  async loadFocusStats() {
-    try {
+      // 同时尝试从远程获取数据
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
       if (userId) {
-        const stats = await fetchFocusStats(userId);
-        this.setData({
-          focusStats: {
-            todayFocus: stats.today_minutes || 0,
-            totalSessions: stats.total_sessions || 0,
-            streakDays: stats.streak_days || 0
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Load focus stats failed:', error);
-    }
-  },
-
-  // 标记空教室
-  async markRoom() {
-    wx.showActionSheet({
-      itemList: ['图书馆', '教学楼', '实验楼', '其他'],
-      success: async (res) => {
-        const buildings = ['图书馆', '教学楼', '实验楼', '其他'];
-        const building = buildings[res.tapIndex];
-        
-        try {
-          await createRoomReport({
-            building,
-            room_name: `自主标记`,
-            floor: 1,
-            status: 'available'
-          });
-          
-          wx.showToast({
-            title: '标记成功',
-            icon: 'success'
-          });
-          
-          // 刷新空教室列表
-          this.loadRoomReports();
-        } catch (error) {
-          wx.showToast({
-            title: '标记失败',
-            icon: 'none'
+        const remoteStats = await fetchFocusStats(userId);
+        // 如果远程数据更新，则使用远程数据
+        if (remoteStats && remoteStats.today_minutes !== undefined) {
+          this.setData({
+            focusStats: {
+              todayFocus: remoteStats.today_minutes,
+              totalSessions: remoteStats.total_sessions,
+              streakDays: remoteStats.streak_days
+            }
           });
         }
       }
-    });
+    } catch (error) {
+      console.error('Load focus data failed:', error);
+      // 即使远程失败，本地数据仍然可用
+      const stats = focusService.getStats();
+      const achievements = this.normalizeAchievements(focusService.getAchievements());
+      const heatmapData = focusService.getHeatmapData();
+      const distributionData = focusService.getHourlyDistribution();
+      const insightList = this.buildInsights(stats);
+      const achievementsMeta = {
+        unlocked: achievements.filter(item => item.unlocked).length,
+        total: achievements.length
+      };
+      
+      this.setData({
+        focusStats: {
+          todayFocus: stats.todayMinutes,
+          totalSessions: stats.totalSessions,
+          streakDays: stats.streakDays
+        },
+        achievements,
+        achievementsMeta,
+        insightList,
+        heatmapData: heatmapData,
+        distributionData: distributionData,
+        showStats: true
+      });
+    }
   },
 
-  // 刷新教室列表
-  refreshRooms() {
+  normalizeAchievements(map = {}) {
+    return Object.keys(map).map(key => ({
+      key,
+      ...map[key],
+      info: focusService.getAchievementInfo(key)
+    }));
+  },
+
+  buildInsights(stats = {}) {
+    const totalMinutes = stats.totalMinutes || 0;
+    const totalSessions = stats.totalSessions || 0;
+    const longestSession = stats.longestSession || 0;
+    const streakDays = stats.streakDays || 0;
+    const todayMinutes = stats.todayMinutes || 0;
+    const remainingToHour = Math.max(60 - todayMinutes, 0);
+
+    return [
+      {
+        id: 'total',
+        label: '累计专注',
+        value: focusService.formatMinutes(totalMinutes),
+        hint: `${totalSessions} 次记录`
+      },
+      {
+        id: 'streak',
+        label: '连续天数',
+        value: `${streakDays} 天`,
+        hint: streakDays >= 7 ? '周战士养成中' : '向 7 天挑战'
+      },
+      {
+        id: 'longest',
+        label: '最长单次',
+        value: focusService.formatMinutes(longestSession),
+        hint: longestSession >= 60 ? '保持深度' : '尝试 60+ 分钟'
+      },
+      {
+        id: 'today',
+        label: '今日状态',
+        value: focusService.formatMinutes(todayMinutes),
+        hint: remainingToHour > 0 ? `距 1 小时差 ${focusService.formatMinutes(remainingToHour)}` : '今日已满 1 小时'
+      }
+    ];
+  },
+
+  // 热力图日期点击
+  onHeatmapDayTap(e) {
+    const { date, minutes } = e.detail;
+    if (minutes > 0) {
+      wx.showModal({
+        title: '专注记录',
+        content: `${date}\n专注时长：${focusService.formatMinutes(minutes)}`,
+        showCancel: false
+      });
+    }
+  },
+
+  // 时段分布点击
+  onDistributionHourTap(e) {
+    const { hour, data } = e.detail;
+    if (data.minutes > 0) {
+      wx.showModal({
+        title: '时段统计',
+        content: `${data.label}\n专注时长：${focusService.formatMinutes(data.minutes)}`,
+        showCancel: false
+      });
+    }
+  },
+
+  // 徽章点击
+  onBadgeTap(e) {
+    const { achievement, info } = e.detail;
     wx.vibrateShort({ type: 'light' });
-    this.loadRoomReports();
-    wx.showToast({
-      title: '刷新成功',
-      icon: 'success'
+    wx.showModal({
+      title: info.name,
+      content: `${info.desc}\n${achievement.unlocked ? '已解锁' : '未解锁'}`,
+      showCancel: false
     });
   },
 
@@ -119,16 +197,16 @@ Page({
     });
   },
 
-  // 跳转到教室详情
-  goToRoomDetail(e) {
-    const room = e.currentTarget.dataset.room;
+  goToPresetFocus(e) {
+    const minutes = Number(e?.currentTarget?.dataset?.minutes);
     wx.vibrateShort({ type: 'light' });
-    wx.showModal({
-      title: room.building,
-      content: `标签：${room.tag}\\n状态：${room.status}\\n\\n详细功能开发中...`,
-      showCancel: false
+    const query = Number.isFinite(minutes) && minutes > 0 ? `?minutes=${minutes}` : '';
+    wx.navigateTo({
+      url: `/pages/focus/index${query}`
     });
   },
+
+  
 
   // 开发中提示
   comingSoon() {

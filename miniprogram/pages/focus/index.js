@@ -1,4 +1,5 @@
 const { createFocusSession, fetchFocusStats } = require('../../utils/supabase');
+const focusService = require('../../utils/focusService');
 
 const gradients = [
   ['#92B4EC', '#F7F7F5'],
@@ -30,13 +31,34 @@ Page({
     courseName: '',
     summaryCard: null,
     customMinutes: 45,
-    customMinutesDraft: '45'
+    customMinutesDraft: '45',
+    stats: {
+      totalMinutes: 0,
+      streakDays: 0,
+      todayMinutes: 0,
+      totalSessions: 0
+    },
+    achievements: {},
+    newAchievements: []
   },
   onLoad(query) {
     if (query.course) {
       this.setData({ courseName: decodeURIComponent(query.course) });
     }
+    if (query.minutes) {
+      const preset = this.normalizeMinutes(query.minutes);
+      this.setFocusMinutes(preset);
+      this.setData({
+        customMinutes: preset,
+        customMinutesDraft: String(preset)
+      });
+    }
+    this.loadFocusData();
     this.rollGradient();
+  },
+
+  onShow() {
+    this.loadFocusData();
   },
   onUnload() {
     clearInterval(this.timer);
@@ -65,38 +87,44 @@ Page({
     clearInterval(this.gradientTicker);
     const usedSeconds = this.data.minutes * 60 - this.data.remaining;
     const usedMinutes = Math.max(1, Math.round(usedSeconds / 60));
+    const subject = this.data.courseName || '专注学习';
 
     try {
-      const app = getApp();
-      const userId = app?.globalData?.supabase?.userId;
-      const endedAt = new Date();
-      const startedAt = new Date(endedAt.getTime() - usedMinutes * 60000);
-      await createFocusSession({
-        user_id: userId,
-        duration: usedMinutes,
-        started_at: startedAt.toISOString(),
-        ended_at: endedAt.toISOString(),
-        related_course_id: null,
-        completed: true
-      });
-      const stats = await fetchFocusStats(userId);
-      const streak = stats?.streak_days || 1;
+      // 使用 FocusService 保存记录（包含本地存储、成就检查和远程同步）
+      const result = await focusService.saveRecord(usedMinutes, subject, true);
+      
+      // 更新页面数据
+      this.loadFocusData();
+
+      // 显示完成卡片
       this.setData({
         running: false,
         summaryCard: {
           focus: (usedMinutes / 60).toFixed(1),
-          streak
+          streak: result.stats.streakDays
         },
+        newAchievements: result.newAchievements || [],
         remaining: this.data.minutes * 60,
         displayTime: formatTime(this.data.minutes * 60)
       });
+
+      // 如果有新成就，显示提示
+      if (result.newAchievements && result.newAchievements.length > 0) {
+        setTimeout(() => {
+          this.showAchievementNotifications(result.newAchievements);
+        }, 1000);
+      }
     } catch (err) {
       console.warn('record focus failed', err);
+      // 降级到本地保存
+      const result = await focusService.saveRecord(usedMinutes, subject, false);
+      this.loadFocusData();
+      
       this.setData({
         running: false,
         summaryCard: {
           focus: (usedMinutes / 60).toFixed(1),
-          streak: Math.floor(Math.random() * 4) + 1
+          streak: result.stats.streakDays
         },
         remaining: this.data.minutes * 60,
         displayTime: formatTime(this.data.minutes * 60)
@@ -153,6 +181,43 @@ Page({
     wx.vibrateShort({ type: 'light' });
     wx.navigateBack();
   },
+  // 加载专注数据
+  loadFocusData() {
+    const stats = focusService.getStats();
+    const achievements = focusService.getAchievements();
+    
+    this.setData({
+      stats: stats,
+      achievements: achievements
+    });
+  },
+
+  // 显示成就通知
+  showAchievementNotifications(achievementKeys) {
+    achievementKeys.forEach((key, index) => {
+      setTimeout(() => {
+        const info = focusService.getAchievementInfo(key);
+        wx.showModal({
+          title: '🎉 成就解锁',
+          content: `${info.name}\n${info.desc}`,
+          showCancel: false,
+          confirmText: '太棒了',
+          success: () => {
+            wx.vibrateShort({ type: 'heavy' });
+          }
+        });
+      }, index * 2000);
+    });
+  },
+
+  // 跳转到统计页面
+  goToStats() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({
+      url: '/pages/tools/index'
+    });
+  },
+
   saveCard() {
     if (!this.data.summaryCard) {
       wx.showToast({ title: '暂无专注记录', icon: 'none' });
@@ -166,40 +231,53 @@ Page({
     const width = 600;
     const height = 800;
 
-    // 背景
-    ctx.setFillStyle('#1C1C1E');
+    // 背景 - 使用设计规范的颜色
+    ctx.setFillStyle('#F2F4F6');
+    ctx.fillRect(0, 0, width, height);
+
+    // 添加弥散背景效果
+    const gradient1 = ctx.createRadialGradient(150, 200, 50, 150, 200, 200);
+    gradient1.addColorStop(0, 'rgba(135, 168, 164, 0.3)');
+    gradient1.addColorStop(1, 'rgba(135, 168, 164, 0)');
+    ctx.setFillStyle(gradient1);
+    ctx.fillRect(0, 0, width, height);
+
+    const gradient2 = ctx.createRadialGradient(450, 600, 50, 450, 600, 200);
+    gradient2.addColorStop(0, 'rgba(224, 142, 121, 0.3)');
+    gradient2.addColorStop(1, 'rgba(224, 142, 121, 0)');
+    ctx.setFillStyle(gradient2);
     ctx.fillRect(0, 0, width, height);
 
     // 标题
-    ctx.setFillStyle('#F7F7F5');
+    ctx.setFillStyle('#2D3436');
     ctx.setFontSize(32);
     ctx.setTextAlign('left');
     ctx.fillText('Syllaby · Focus', 40, 80);
 
     // 课程/主题
     ctx.setFontSize(28);
-    ctx.setFillStyle('#9BB5CE');
+    ctx.setFillStyle('#87A8A4');
     ctx.fillText(courseName, 40, 140);
 
     // 时长 & 连续天数
-    ctx.setFillStyle('#F7F7F5');
+    ctx.setFillStyle('#2D3436');
     ctx.setFontSize(80);
     ctx.fillText(`${focus}h`, 40, 260);
     ctx.setFontSize(28);
-    ctx.setFillStyle('#C9A5A0');
+    ctx.setFillStyle('#BCA0BC');
     ctx.fillText('专注时长', 40, 310);
 
-    ctx.setFillStyle('#F7F7F5');
+    ctx.setFillStyle('#2D3436');
     ctx.setFontSize(80);
     ctx.fillText(`${streak}`, 40, 430);
     ctx.setFontSize(28);
-    ctx.setFillStyle('#C9A5A0');
+    ctx.setFillStyle('#BCA0BC');
     ctx.fillText('连续专注天数', 40, 480);
 
     // 底部文案
-    ctx.setFillStyle('#B0A1BA');
+    ctx.setFillStyle('#87A8A4');
     ctx.setFontSize(24);
-    ctx.fillText('Academic Zen · 学术禅意', 40, 560);
+    ctx.fillText('流动的秩序 · 学术禅意', 40, 560);
 
     ctx.draw(false, () => {
       wx.canvasToTempFilePath(
