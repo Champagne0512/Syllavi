@@ -78,20 +78,29 @@ Component({
       wx.vibrateShort({ type: 'light' });
       this.closeMenu();
       
-      // 导航到AI导入页面
-      wx.navigateTo({ 
-        url: '/pages/ai-import/index',
-        success: () => {
-          console.log('导航到AI导入页面');
-        },
-        fail: (err) => {
-          console.error('导航失败:', err);
-          wx.showToast({
-            title: '导航失败',
-            icon: 'error'
-          });
-        }
-      });
+      // 获取当前页面实例，调用扫描功能
+      const pages = getCurrentPages();
+      const currentPage = pages[pages.length - 1];
+      
+      if (currentPage && currentPage.handleScanImage) {
+        // 如果当前页面有扫描功能，直接调用
+        currentPage.handleScanImage();
+      } else {
+        // 否则导航到AI导入页面
+        wx.navigateTo({ 
+          url: '/pages/ai-import/index',
+          success: () => {
+            console.log('导航到AI导入页面');
+          },
+          fail: (err) => {
+            console.error('导航失败:', err);
+            wx.showToast({
+              title: '导航失败',
+              icon: 'error'
+            });
+          }
+        });
+      }
     }
   }
 });

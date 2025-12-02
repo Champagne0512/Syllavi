@@ -120,9 +120,6 @@ Page({
     selectedCourseTasks: [],
     showCourseEditor: false,
     editingCourse: {},
-    
-    // AI 扫描状态
-    isScanning: false, // 控制扫描动画显隐
     courseForm: {
       name: '',
       location: '',
