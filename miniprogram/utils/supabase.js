@@ -474,6 +474,48 @@ function fetchFocusSessions(userId = DEMO_USER_ID) {
   return request('focus_sessions', { query });
 }
 
+function fetchFocusHeatmapRemote(userId, days = 365) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/rest/v1/rpc/get_focus_heatmap`,
+      method: 'POST',
+      data: { p_user_id: userId, p_days: days },
+      header: buildHeaders(),
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data || []);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+function fetchFocusDistributionRemote(userId) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/rest/v1/rpc/get_focus_distribution`,
+      method: 'POST',
+      data: { p_user_id: userId },
+      header: buildHeaders(),
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data || []);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
 
 
 // --- User profile ---
@@ -885,6 +927,27 @@ function fetchAchievements(userId = DEMO_USER_ID) {
   return request('achievements', { query });
 }
 
+function fetchRemoteAchievementsSnapshot(userId) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/rest/v1/rpc/get_focus_achievements`,
+      method: 'POST',
+      data: { p_user_id: userId },
+      header: buildHeaders(),
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data || []);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
 function checkAndUnlockAchievements(userId = DEMO_USER_ID) {
   return new Promise((resolve, reject) => {
     wx.request({
@@ -970,6 +1033,8 @@ module.exports = {
   createFocusSession,
   fetchFocusStats,
   fetchFocusSessions,
+  fetchFocusHeatmapRemote,
+  fetchFocusDistributionRemote,
   fetchProfile,
   updateProfile,
   uploadToStorage,
@@ -978,6 +1043,7 @@ module.exports = {
   parseImageWithAI,
   getUserStats,
   fetchAchievements,
+  fetchRemoteAchievementsSnapshot,
   checkAndUnlockAchievements,
   fetchLearningHeatmap,
   updateLearningHeatmap

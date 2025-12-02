@@ -1,42 +1,45 @@
 <view class="focus-distribution-container {{size}} {{variant}}">
   <view class="chart-header">
-    <text class="chart-title">专注时段分布</text>
-    <text class="chart-subtitle">24小时环形图</text>
+    <text class="chart-title">全天节奏</text>
+    <text class="chart-subtitle">24小时专注分布</text>
   </view>
   
   <view class="chart-wrapper">
     <canvas 
       canvas-id="focusChart" 
-      class="focus-chart"
+      class="focus-chart {{isAnimating ? 'animating' : ''}}"
       style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
       bindtap="onCanvasTap"
     ></canvas>
-    
-    <!-- 中心信息 -->
-    <view class="chart-center">
-      <text class="center-value">{{totalMinutes}}</text>
-      <text class="center-label">总分钟</text>
+  </view>
+  
+  <!-- 洞察信息 -->
+  <view class="insights-container" wx:if="{{showInsights && insights.length > 0}}">
+    <view class="insight-item {{item.type}}" wx:for="{{insights}}" wx:key="type">
+      <text class="insight-text">{{item.text}}</text>
     </view>
+  </view>
+  
+  <!-- 选中时段详情 -->
+  <view class="hour-detail" wx:if="{{selectedHour !== null && data[selectedHour]}}">
+    <text class="detail-time">{{selectedHour}}:00 - {{selectedHour + 1}}:00</text>
+    <text class="detail-minutes">{{data[selectedHour].minutes}} 分钟</text>
   </view>
   
   <!-- 图例 -->
   <view class="chart-legend">
     <view class="legend-item">
-      <view class="legend-color low"></view>
-      <text class="legend-text">低强度</text>
+      <view class="legend-color normal"></view>
+      <text class="legend-text">常规时段</text>
     </view>
     <view class="legend-item">
-      <view class="legend-color medium"></view>
-      <text class="legend-text">中强度</text>
-    </view>
-    <view class="legend-item">
-      <view class="legend-color high"></view>
-      <text class="legend-text">高强度</text>
+      <view class="legend-color peak"></view>
+      <text class="legend-text">高峰时段</text>
     </view>
   </view>
   
   <!-- 时间提示 -->
   <view class="time-hint">
-    <text class="hint-text">点击环形图查看具体时段</text>
+    <text class="hint-text">点击环形图查看时段详情</text>
   </view>
 </view>

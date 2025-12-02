@@ -6,48 +6,147 @@
   align-items: center;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 2rpx;
+  flex-shrink: 0;
 }
 
 /* 尺寸变体 */
 .holo-badge-container.small {
-  width: 120rpx;
-  height: 120rpx;
+  width: 100rpx;
+  height: 100rpx;
 }
 
 .holo-badge-container.medium {
-  width: 160rpx;
-  height: 160rpx;
+  width: 140rpx;
+  height: 140rpx;
 }
 
 .holo-badge-container.large {
-  width: 200rpx;
-  height: 200rpx;
+  width: 180rpx;
+  height: 180rpx;
 }
 
-/* 徽章主体 */
+/* 紧凑模式 */
+.holo-badge-container.compact {
+  width: auto;
+  height: auto;
+  min-width: 200rpx;
+}
+
+.holo-badge-container.compact .badge-main {
+  width: 80rpx;
+  height: 80rpx;
+}
+
+/* 徽章主体 - 超级椭圆设计 */
 .badge-main {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: 32rpx;
+  border-radius: 40rpx;
   overflow: hidden;
   backdrop-filter: blur(12rpx);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
-/* 解锁状态样式 */
+/* 稀有度光晕 */
+.rarity-glow {
+  position: absolute;
+  top: -4rpx;
+  left: -4rpx;
+  right: -4rpx;
+  bottom: -4rpx;
+  border-radius: 42rpx;
+  opacity: 0.7;
+  animation: rarityPulse 3s infinite ease-in-out;
+}
+
+.rarity-glow.rarity-common {
+  background: linear-gradient(45deg, rgba(135, 168, 164, 0.3), rgba(162, 177, 138, 0.3));
+}
+
+.rarity-glow.rarity-uncommon {
+  background: linear-gradient(45deg, rgba(107, 138, 156, 0.4), rgba(140, 168, 188, 0.4));
+}
+
+.rarity-glow.rarity-rare {
+  background: linear-gradient(45deg, rgba(135, 168, 164, 0.6), rgba(168, 196, 192, 0.6));
+}
+
+.rarity-glow.rarity-epic {
+  background: linear-gradient(45deg, rgba(188, 160, 188, 0.7), rgba(212, 192, 212, 0.7));
+}
+
+.rarity-glow.rarity-legendary {
+  background: linear-gradient(45deg, rgba(231, 76, 60, 0.8), rgba(255, 107, 107, 0.8));
+  animation: legendaryPulse 2s infinite ease-in-out;
+}
+
+/* 动态光晕 */
+.dynamic-glow {
+  position: absolute;
+  top: -8rpx;
+  left: -8rpx;
+  right: -8rpx;
+  bottom: -8rpx;
+  border-radius: 45rpx;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8), transparent);
+  transition: opacity 0.3s ease;
+}
+
+/* 进度环 */
+.progress-ring {
+  position: absolute;
+  top: -4rpx;
+  left: -4rpx;
+  right: -4rpx;
+  bottom: -4rpx;
+  border-radius: 42rpx;
+}
+
+.progress-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 42rpx;
+  padding: 4rpx;
+  background: rgba(135, 168, 164, 0.2);
+}
+
+/* 简洁模式信息 */
+.compact-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: 16rpx;
+  min-width: 120rpx;
+}
+
+.compact-name {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 4rpx;
+}
+
+.compact-progress {
+  font-size: 20rpx;
+  color: rgba(45, 52, 54, 0.7);
+}
+
+/* 解锁状态样式 - 玻璃拟态 */
 .holo-badge-container.unlocked .badge-main {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
-  border: 2rpx solid rgba(255, 255, 255, 0.3);
-  box-shadow: 
-    0 8rpx 32rpx rgba(135, 168, 164, 0.15),
-    inset 0 2rpx 4rpx rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  box-shadow: 0 8rpx 32rpx 0 rgba(31, 38, 135, 0.07);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
 }
 
 /* 锁定状态样式 */
 .holo-badge-container.locked .badge-main {
   background: rgba(45, 52, 54, 0.1);
-  border: 2rpx solid rgba(45, 52, 54, 0.2);
+  border: 1rpx solid rgba(45, 52, 54, 0.2);
   box-shadow: 
     0 4rpx 16rpx rgba(15, 23, 42, 0.08),
     inset 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
@@ -107,6 +206,30 @@
   }
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes rarityPulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes legendaryPulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+    box-shadow: 0 0 20rpx rgba(231, 76, 60, 0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+    box-shadow: 0 0 30rpx rgba(231, 76, 60, 0.8);
   }
 }
 
@@ -213,12 +336,67 @@
   }
 }
 
+/* 稀有度标签 */
+.rarity-badge {
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: white;
+}
+
+.rarity-badge.rarity-common {
+  background: rgba(135, 168, 164, 0.8);
+}
+
+.rarity-badge.rarity-uncommon {
+  background: rgba(107, 138, 156, 0.8);
+}
+
+.rarity-badge.rarity-rare {
+  background: rgba(135, 168, 164, 0.9);
+}
+
+.rarity-badge.rarity-epic {
+  background: rgba(188, 160, 188, 0.9);
+}
+
+.rarity-badge.rarity-legendary {
+  background: rgba(231, 76, 60, 0.9);
+}
+
+/* 进度条 */
+.tooltip-progress {
+  margin: 12rpx 0;
+  width: 100%;
+}
+
+.progress-bar {
+  height: 6rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3rpx;
+  overflow: hidden;
+  margin-bottom: 8rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
 /* 工具提示 */
 .badge-tooltip {
-  position: absolute;
-  bottom: 100%;
+  position: fixed;
+  bottom: auto;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   background: rgba(15, 23, 42, 0.95);
   color: white;
   padding: 24rpx 28rpx;
@@ -228,7 +406,7 @@
   opacity: 0;
   pointer-events: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 100;
+  z-index: 1000;
   backdrop-filter: blur(20rpx);
   box-shadow: 
     0 16rpx 32rpx rgba(15, 23, 42, 0.3),
@@ -251,13 +429,19 @@
 
 .holo-badge-container:hover .badge-tooltip {
   opacity: 1;
-  transform: translateX(-50%) translateY(-8rpx);
+  transform: translate(-50%, -50%);
+}
+
+.tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
 }
 
 .tooltip-title {
   font-weight: 600;
   font-size: 28rpx;
-  margin-bottom: 8rpx;
   color: #ffffff;
 }
 

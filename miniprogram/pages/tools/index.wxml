@@ -1,5 +1,5 @@
 <view class="tools-page">
-  <custom-navbar title="Syllaby" subtitle="Toolbox" />
+  <custom-navbar title="Syllaby" subtitle="专注" />
 
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
     <view class="hero-card">
@@ -79,6 +79,7 @@
           data="{{distributionData}}"
           size="large"
           variant="embedded"
+          showInsights="{{true}}"
           bind:hourtap="onDistributionHourTap"
         ></focus-distribution>
       </view>
@@ -92,7 +93,9 @@
         </view>
         <heatmap-chart 
           data="{{heatmapData}}"
+          summary="{{heatmapSummary}}"
           variant="embedded"
+          showInsights="{{true}}"
           bind:daytap="onHeatmapDayTap"
         ></heatmap-chart>
       </view>
@@ -105,57 +108,67 @@
           <view class="section-desc">已点亮 {{achievementsMeta.unlocked}} / {{achievementsMeta.total}}</view>
         </view>
       </view>
-      <scroll-view class="achievements-scroll" scroll-x="true">
+      <view class="achievements-container">
         <view class="achievements-list">
           <holo-badge 
             wx:for="{{achievements}}" 
             wx:key="key"
             achievement="{{item}}"
             size="medium"
+            showProgress="{{true}}"
             bind:badgeTap="onBadgeTap"
           ></holo-badge>
         </view>
-      </scroll-view>
-    </view>
-
-    <view class="tool-section toolkit-section">
-      <view class="section-header">
-        <view>
-          <view class="section-title">其他工具</view>
-          <view class="section-desc">资料、提醒与目标都在这里</view>
-        </view>
-      </view>
-
-      <view class="tools-grid">
-        <view class="tool-item" bindtap="comingSoon">
-          <view class="tool-icon">
-            <view class="icon-shape note-icon"></view>
-          </view>
-          <view class="tool-name">笔记</view>
-          <view class="tool-desc">整理灵感</view>
-        </view>
-        <view class="tool-item" bindtap="comingSoon">
-          <view class="tool-icon">
-            <view class="icon-shape stats-icon"></view>
-          </view>
-          <view class="tool-name">学习统计</view>
-          <view class="tool-desc">复盘曲线</view>
-        </view>
-        <view class="tool-item" bindtap="comingSoon">
-          <view class="tool-icon">
-            <view class="icon-shape reminder-icon"></view>
-          </view>
-          <view class="tool-name">提醒</view>
-          <view class="tool-desc">关键待办</view>
-        </view>
-        <view class="tool-item" bindtap="comingSoon">
-          <view class="tool-icon">
-            <view class="icon-shape goal-icon"></view>
-          </view>
-          <view class="tool-name">学习目标</view>
-          <view class="tool-desc">规划阶段</view>
-        </view>
       </view>
     </view>
+
+    <!-- 成就详情弹窗 -->
+    <view class="achievement-modal" wx:if="{{showAchievementModal}}" bindtap="closeAchievementModal">
+      <view class="modal-content" catchtap="">
+        <view class="modal-header">
+          <view class="modal-badge">
+            <text class="modal-icon" style="color: {{selectedAchievement.info.color}}">{{selectedAchievement.info.icon}}</text>
+            <view class="modal-rarity rarity-{{selectedAchievement.info.rarity}}" wx:if="{{selectedAchievement.achievement.unlocked}}"></view>
+          </view>
+          <view class="modal-title-section">
+            <text class="modal-title">{{selectedAchievement.info.name}}</text>
+            <view class="modal-rarity-tag rarity-{{selectedAchievement.info.rarity}}">{{getRarityText(selectedAchievement.info.rarity)}}</view>
+          </view>
+          <button class="modal-close" bindtap="closeAchievementModal">✕</button>
+        </view>
+        
+        <view class="modal-body">
+          <text class="modal-desc">{{selectedAchievement.info.desc}}</text>
+          
+          <!-- 进度信息 -->
+          <view class="modal-progress" wx:if="{{!selectedAchievement.achievement.unlocked && selectedAchievement.progress > 0}}">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{selectedAchievement.progress}}%; background: {{selectedAchievement.info.color}}"></view>
+            </view>
+            <text class="progress-text">{{selectedAchievement.nextMilestone}}</text>
+            <text class="progress-percent">{{Math.round(selectedAchievement.progress)}}%</text>
+          </view>
+          
+          <!-- 解锁状态 -->
+          <view class="modal-status">
+            <view wx:if="{{selectedAchievement.achievement.unlocked}}" class="status-unlocked">
+              <text class="status-icon">✨</text>
+              <text class="status-text">已解锁</text>
+            </view>
+            <view wx:else class="status-locked">
+              <text class="status-icon">🔒</text>
+              <text class="status-text">未解锁</text>
+            </view>
+          </view>
+          
+          <!-- 解锁时间 -->
+          <view class="modal-time" wx:if="{{selectedAchievement.achievement.unlocked && selectedAchievement.achievement.unlockedAt}}">
+            <text class="time-label">解锁时间：</text>
+            <text class="time-value">{{formatUnlockTime(selectedAchievement.achievement.unlockedAt)}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
   </scroll-view>
 </view>

@@ -1,4 +1,4 @@
-<view class="holo-badge-container {{size}} {{achievement.unlocked ? 'unlocked' : 'locked'}} {{isAnimating ? 'animating' : ''}}" bindtap="onBadgeTap">
+<view class="holo-badge-container {{size}} {{achievement.unlocked ? 'unlocked' : 'locked'}} {{isAnimating ? 'animating' : ''}} {{compact ? 'compact' : ''}}" bindtap="onBadgeTap">
   <!-- 徽章主体 -->
   <view class="badge-main">
     <!-- 全息玻璃背景 -->
@@ -10,6 +10,12 @@
     <!-- 彩虹渐变层 -->
     <view class="rainbow-layer" wx:if="{{achievement.unlocked}}"></view>
     
+    <!-- 稀有度光晕 -->
+    <view class="rarity-glow rarity-{{achievementInfo.rarity}}" wx:if="{{achievement.unlocked}}"></view>
+    
+    <!-- 动态光晕 -->
+    <view class="dynamic-glow" wx:if="{{glowIntensity > 0}}" style="opacity: {{glowIntensity}}"></view>
+    
     <!-- 徽章内容 -->
     <view class="badge-content">
       <!-- 图标 -->
@@ -19,16 +25,39 @@
       
       <!-- 锁定状态图标 -->
       <view class="lock-icon" wx:if="{{!achievement.unlocked}}">🔒</view>
+      
+      <!-- 进度环 -->
+      <view class="progress-ring" wx:if="{{showProgress && !achievement.unlocked && progress > 0}}">
+        <view class="progress-circle" style="background: conic-gradient({{achievementInfo.color}} {{progress * 3.6}}deg, rgba(135, 168, 164, 0.2) {{progress * 3.6}}deg)"></view>
+      </view>
     </view>
     
     <!-- 边框光晕 -->
     <view class="border-glow" wx:if="{{achievement.unlocked}}"></view>
   </view>
   
+  <!-- 简洁模式信息 -->
+  <view class="compact-info" wx:if="{{compact && achievementInfo}}">
+    <text class="compact-name">{{achievementInfo.name}}</text>
+    <text class="compact-progress" wx:if="{{!achievement.unlocked && nextMilestone}}">{{nextMilestone}}</text>
+  </view>
+  
   <!-- 工具提示 -->
-  <view class="badge-tooltip" wx:if="{{showTooltip && achievementInfo}}">
-    <view class="tooltip-title">{{achievementInfo.name}}</view>
+  <view class="badge-tooltip" wx:if="{{showTooltip && !compact && achievementInfo}}">
+    <view class="tooltip-header">
+      <text class="tooltip-title">{{achievementInfo.name}}</text>
+      <view class="rarity-badge rarity-{{achievementInfo.rarity}}">{{getRarityText(achievementInfo.rarity)}}</view>
+    </view>
     <view class="tooltip-desc">{{achievementInfo.desc}}</view>
+    
+    <!-- 进度信息 -->
+    <view class="tooltip-progress" wx:if="{{!achievement.unlocked && progress > 0}}">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{progress}}%; background: {{achievementInfo.color}}"></view>
+      </view>
+      <text class="progress-text">{{nextMilestone}}</text>
+    </view>
+    
     <view class="tooltip-time" wx:if="{{achievement.unlocked && achievement.unlockedAt}}">
       解锁于 {{formatUnlockTime(achievement.unlockedAt)}}
     </view>

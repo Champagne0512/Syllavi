@@ -1,4 +1,4 @@
-const { fetchFocusStats } = require('../../utils/supabase');
+const { fetchFocusStats, fetchFocusHeatmapRemote, fetchFocusDistributionRemote, fetchRemoteAchievementsSnapshot } = require('../../utils/supabase');
 const focusService = require('../../utils/focusService');
 
 const FOCUS_PRESETS = [
@@ -23,7 +23,9 @@ Page({
     },
     insightList: [],
     focusPills: FOCUS_PRESETS,
-    showStats: false
+    showStats: false,
+    showAchievementModal: false,
+    selectedAchievement: null
   },
 
   onLoad() {
@@ -46,6 +48,7 @@ Page({
       const heatmapData = focusService.getHeatmapData();
       const distributionData = focusService.getHourlyDistribution();
       const insightList = this.buildInsights(stats);
+      const heatmapSummary = this.buildHeatmapSummary(heatmapData);
       const achievementsMeta = {
         unlocked: achievements.filter(item => item.unlocked).length,
         total: achievements.length
@@ -62,6 +65,7 @@ Page({
         insightList,
         heatmapData: heatmapData,
         distributionData: distributionData,
+        heatmapSummary,
         showStats: true
       });
 
@@ -69,17 +73,44 @@ Page({
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
       if (userId) {
-        const remoteStats = await fetchFocusStats(userId);
-        // 如果远程数据更新，则使用远程数据
-        if (remoteStats && remoteStats.today_minutes !== undefined) {
-          this.setData({
-            focusStats: {
-              todayFocus: remoteStats.today_minutes,
-              totalSessions: remoteStats.total_sessions,
-              streakDays: remoteStats.streak_days
-            }
-          });
-        }
+        const [remoteStats, heatmapRows, distributionRows, achievementRows] = await Promise.all([
+          fetchFocusStats(userId),
+          fetchFocusHeatmapRemote(userId, 365),
+          fetchFocusDistributionRemote(userId),
+          fetchRemoteAchievementsSnapshot(userId)
+        ]);
+
+        const nextAchievements = this.mergeRemoteAchievements(achievementRows);
+        const achievementsMeta = {
+          unlocked: nextAchievements.filter(item => item.unlocked).length,
+          total: nextAchievements.length
+        };
+
+        const mergedStats = {
+          totalMinutes: remoteStats?.total_minutes ?? stats.totalMinutes,
+          totalSessions: remoteStats?.total_sessions ?? stats.totalSessions,
+          longestSession: remoteStats?.longest_session ?? stats.longestSession ?? 0,
+          streakDays: remoteStats?.streak_days ?? stats.streakDays,
+          todayMinutes: remoteStats?.today_minutes ?? stats.todayMinutes
+        };
+
+        const remoteHeatmap = heatmapRows && heatmapRows.length ? this.normalizeHeatmapFromRemote(heatmapRows) : this.data.heatmapData;
+        const remoteDistribution = distributionRows && distributionRows.length ? this.normalizeDistributionFromRemote(distributionRows) : this.data.distributionData;
+        const heatmapSummary = this.buildHeatmapSummary(remoteHeatmap);
+
+        this.setData({
+          focusStats: {
+            todayFocus: mergedStats.todayMinutes,
+            totalSessions: mergedStats.totalSessions,
+            streakDays: mergedStats.streakDays
+          },
+          heatmapData: remoteHeatmap,
+          distributionData: remoteDistribution,
+          heatmapSummary,
+          achievements: nextAchievements,
+          achievementsMeta,
+          insightList: this.buildInsights(mergedStats)
+        });
       }
     } catch (error) {
       console.error('Load focus data failed:', error);
@@ -105,6 +136,7 @@ Page({
         insightList,
         heatmapData: heatmapData,
         distributionData: distributionData,
+        heatmapSummary,
         showStats: true
       });
     }
@@ -154,6 +186,69 @@ Page({
     ];
   },
 
+  normalizeHeatmapFromRemote(rows = []) {
+    return rows.map(row => ({
+      date: row.focus_date || row.date,
+      minutes: row.focus_minutes || 0,
+      level: row.level ?? 0
+    }));
+  },
+
+  normalizeDistributionFromRemote(rows = []) {
+    const base = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      minutes: 0,
+      label: `${hour.toString().padStart(2, '0')}:00`
+    }));
+    rows.forEach(item => {
+      const hour = Number(item.hour);
+      if (!Number.isNaN(hour) && base[hour]) {
+        base[hour].minutes = Number(item.minutes) || 0;
+      }
+    });
+    return base;
+  },
+
+  mergeRemoteAchievements(remoteList = []) {
+    const merged = this.normalizeAchievements(focusService.getAchievements());
+    const map = merged.reduce((acc, item) => {
+      acc[item.key] = item;
+      return acc;
+    }, {});
+
+    remoteList.forEach(row => {
+      const key = row.achievement_id;
+      if (map[key]) {
+        map[key].unlocked = true;
+        map[key].unlockedAt = row.unlocked_at;
+      }
+    });
+
+    return Object.values(map);
+  },
+
+  buildHeatmapSummary(rows = []) {
+    if (!Array.isArray(rows) || !rows.length) {
+      return {
+        rangeDays: 0,
+        activeDays: 0,
+        totalMinutes: 0,
+        avgMinutes: 0
+      };
+    }
+
+    const totalMinutes = rows.reduce((sum, item) => sum + (Number(item.minutes || item.focus_minutes || 0)), 0);
+    const activeDays = rows.filter(item => (item.minutes || item.focus_minutes || 0) > 0).length;
+    const avgMinutes = activeDays ? Math.round(totalMinutes / activeDays) : 0;
+
+    return {
+      rangeDays: rows.length,
+      activeDays,
+      totalMinutes,
+      avgMinutes
+    };
+  },
+
   // 热力图日期点击
   onHeatmapDayTap(e) {
     const { date, minutes } = e.detail;
@@ -180,12 +275,26 @@ Page({
 
   // 徽章点击
   onBadgeTap(e) {
-    const { achievement, info } = e.detail;
+    const { achievement, info, progress, nextMilestone } = e.detail;
     wx.vibrateShort({ type: 'light' });
-    wx.showModal({
-      title: info.name,
-      content: `${info.desc}\n${achievement.unlocked ? '已解锁' : '未解锁'}`,
-      showCancel: false
+    
+    // 显示自定义成就弹窗
+    this.setData({
+      showAchievementModal: true,
+      selectedAchievement: {
+        achievement,
+        info,
+        progress,
+        nextMilestone
+      }
+    });
+  },
+
+  // 关闭成就弹窗
+  closeAchievementModal() {
+    this.setData({
+      showAchievementModal: false,
+      selectedAchievement: null
     });
   },
 
@@ -207,6 +316,29 @@ Page({
   },
 
   
+
+  // 获取稀有度文本
+  getRarityText(rarity) {
+    const rarityMap = {
+      common: '普通',
+      uncommon: '稀有', 
+      rare: '珍稀',
+      epic: '史诗',
+      legendary: '传说'
+    };
+    return rarityMap[rarity] || '未知';
+  },
+
+  // 格式化解锁时间
+  formatUnlockTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  },
 
   // 开发中提示
   comingSoon() {

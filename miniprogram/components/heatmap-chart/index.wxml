@@ -1,4 +1,23 @@
-<view class="heatmap-container {{variant}}">
+<view class="heatmap-container {{variant}}" wx:if="{{weeks.length > 0}}">
+  <!-- 洞察信息 -->
+  <view class="insights-container" wx:if="{{showInsights && insights.length > 0}}">
+    <view class="insight-item {{item.type}}" wx:for="{{insights}}" wx:key="type">
+      <text class="insight-text">{{item.text}}</text>
+    </view>
+  </view>
+
+  <!-- 连续天数展示 -->
+  <view class="streak-container" wx:if="{{maxStreak > 0}}">
+    <view class="streak-item">
+      <text class="streak-label">当前连续</text>
+      <text class="streak-value">{{currentStreak}} 天</text>
+    </view>
+    <view class="streak-item">
+      <text class="streak-label">最长连续</text>
+      <text class="streak-value">{{maxStreak}} 天</text>
+    </view>
+  </view>
+
   <!-- 月份标签 -->
   <view class="heatmap-months" wx:if="{{showMonths}}">
     <view class="month-cell" wx:for="{{months}}" wx:key="*this">
@@ -20,10 +39,10 @@
       <view class="heatmap-grid">
         <view class="week-row" wx:for="{{weeks}}" wx:key="index" id="week-{{index}}">
           <view 
-            class="day-cell {{item.isEmpty ? 'empty' : ''}}" 
+            class="day-cell {{item.isEmpty ? 'empty' : ''}} {{selectedDate && selectedDate.date === item.date ? 'selected' : ''}}" 
             wx:for="{{item}}" 
             wx:for-item="day" 
-            wx:key="day.date"
+            wx:key="date"
             style="background-color: {{getColor(day.minutes)}}; animation-delay: {{index * 50 + day_index * 10}}ms"
             bindtap="onDayTap"
             data-day="{{day}}"
@@ -38,10 +57,25 @@
     </scroll-view>
   </view>
 
+  <!-- 选中日期详情 -->
+  <view class="selected-detail" wx:if="{{selectedDate}}">
+    <text class="detail-date">{{selectedDate.date}}</text>
+    <text class="detail-minutes">专注 {{formatMinutes(selectedDate.minutes)}}</text>
+  </view>
+
   <!-- 图例 -->
   <view class="heatmap-legend">
     <text class="legend-text">少</text>
     <view class="legend-item" wx:for="{{colorLevels}}" wx:key="min" style="background-color: {{item.color}}"></view>
     <text class="legend-text">多</text>
+  </view>
+</view>
+
+<view class="heatmap-container empty-state" wx:else>
+  <view class="empty-inner">
+    <view class="empty-orb orb-left"></view>
+    <view class="empty-orb orb-right"></view>
+    <text class="empty-title">投入日历</text>
+    <text class="empty-desc">开始专注后会生成你的学习投入地图</text>
   </view>
 </view>

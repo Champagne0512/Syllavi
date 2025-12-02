@@ -1,18 +1,121 @@
 /* 热力图组件 - 流动的秩序设计 */
+/* 投入日历模块 - 玻璃拟态设计 */
 .heatmap-container {
   padding: 32rpx;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
   border-radius: 40rpx;
-  box-shadow: 0 30rpx 60rpx rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(18rpx);
+  box-shadow: 0 8rpx 32rpx 0 rgba(31, 38, 135, 0.07);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
   margin-bottom: 32rpx;
+  position: relative;
+  overflow: hidden;
 }
 
 .heatmap-container.embedded {
-  padding: 0;
+  padding: 16rpx;
   margin-bottom: 0;
-  background: transparent;
-  box-shadow: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.90));
+  box-shadow: 
+    0 8rpx 24rpx rgba(15, 23, 42, 0.08),
+    inset 0 1rpx 4rpx rgba(255, 255, 255, 0.6);
+  border: 1rpx solid rgba(135, 168, 164, 0.2);
+  max-height: 400rpx;
+  overflow: hidden;
+}
+
+/* 洞察信息容器 */
+.insights-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.insight-item {
+  padding: 12rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #2D3436;
+  background: rgba(135, 168, 164, 0.1);
+  border: 1rpx solid rgba(135, 168, 164, 0.2);
+  transition: all 0.3s ease;
+}
+
+.insight-item.total {
+  background: rgba(135, 168, 164, 0.15);
+  border-color: rgba(135, 168, 164, 0.3);
+}
+
+.insight-item.active {
+  background: rgba(162, 177, 138, 0.15);
+  border-color: rgba(162, 177, 138, 0.3);
+}
+
+.insight-item.average {
+  background: rgba(224, 142, 121, 0.15);
+  border-color: rgba(224, 142, 121, 0.3);
+  color: #E08E79;
+}
+
+.insight-item.peak {
+  background: rgba(188, 160, 188, 0.15);
+  border-color: rgba(188, 160, 188, 0.3);
+  color: #BCA0BC;
+}
+
+/* 连续天数展示 */
+.streak-container {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 16rpx;
+  padding: 12rpx;
+  background: rgba(135, 168, 164, 0.08);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(135, 168, 164, 0.15);
+}
+
+.streak-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.streak-label {
+  font-size: 22rpx;
+  color: rgba(45, 52, 54, 0.7);
+  margin-bottom: 4rpx;
+}
+
+.streak-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+/* 选中日期详情 */
+.selected-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx;
+  margin: 12rpx 0;
+  background: rgba(135, 168, 164, 0.08);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(135, 168, 164, 0.15);
+}
+
+.detail-date {
+  font-size: 24rpx;
+  color: rgba(45, 52, 54, 0.8);
+}
+
+.detail-minutes {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2D3436;
 }
 
 /* 月份标签 */
@@ -43,6 +146,37 @@
 .heatmap-container.embedded .heatmap-legend {
   justify-content: flex-end;
   margin-top: 12rpx;
+}
+
+.heatmap-summary {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+  flex-wrap: wrap;
+}
+
+.summary-chip {
+  flex: 1;
+  min-width: 160rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1rpx solid rgba(135, 168, 164, 0.25);
+  box-shadow: inset 0 1rpx 6rpx rgba(255, 255, 255, 0.5);
+}
+
+.chip-label {
+  font-size: 22rpx;
+  color: rgba(45, 52, 54, 0.6);
+}
+
+.chip-value {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2D3436;
+  font-family: 'JetBrains Mono', 'DIN Alternate', sans-serif;
 }
 
 /* 星期标签 */
@@ -81,25 +215,34 @@
   gap: 8rpx;
 }
 
-/* 日期格子 */
+/* 日期格子 - 超级椭圆设计 */
 .day-cell {
   width: 24rpx;
   height: 24rpx;
-  border-radius: 6rpx;
+  border-radius: 8rpx;
   position: relative;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: dayFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
 .day-cell:not(.empty):hover {
-  transform: scale(1.2);
+  transform: scale(1.3);
   box-shadow: 0 8rpx 16rpx rgba(135, 168, 164, 0.4);
   z-index: 10;
 }
 
+.day-cell.selected {
+  border: 2rpx solid rgba(224, 142, 121, 0.8);
+  box-shadow: 0 0 0 4rpx rgba(224, 142, 121, 0.2);
+  transform: scale(1.2);
+  z-index: 5;
+}
+
 .day-cell.empty {
-  background-color: rgba(135, 168, 164, 0.05) !important;
+  background-color: rgba(135, 168, 164, 0.1) !important;
+  border: 1rpx solid rgba(135, 168, 164, 0.15);
 }
 
 /* 弹簧动画 */
@@ -180,6 +323,57 @@
   width: 24rpx;
   height: 24rpx;
   border-radius: 6rpx;
+}
+
+.heatmap-container.empty-state {
+  padding: 60rpx 32rpx;
+  border-radius: 40rpx;
+  background: rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  border: 1rpx dashed rgba(135, 168, 164, 0.4);
+  backdrop-filter: blur(15rpx);
+}
+
+.empty-inner {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.empty-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: rgba(45, 52, 54, 0.6);
+}
+
+.empty-orb {
+  position: absolute;
+  width: 220rpx;
+  height: 220rpx;
+  border-radius: 50%;
+  filter: blur(60rpx);
+  opacity: 0.4;
+  z-index: 0;
+}
+
+.empty-orb.orb-left {
+  top: -40rpx;
+  left: -20rpx;
+  background: rgba(135, 168, 164, 0.45);
+}
+
+.empty-orb.orb-right {
+  bottom: -60rpx;
+  right: -10rpx;
+  background: rgba(224, 142, 121, 0.4);
 }
 
 /* 滚动条样式 */

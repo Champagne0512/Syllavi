@@ -11,6 +11,14 @@ Component({
     variant: {
       type: String,
       value: 'card' // card, embedded
+    },
+    showInsights: {
+      type: Boolean,
+      value: true
+    },
+    peakHours: {
+      type: Array,
+      value: []
     }
   },
 
@@ -22,12 +30,19 @@ Component({
     radius: 100,
     innerRadius: 60,
     maxValue: 0,
-    totalMinutes: 0
+    totalMinutes: 0,
+    insights: [],
+    selectedHour: null,
+    animationProgress: 0,
+    isAnimating: false
   },
 
   observers: {
     'data, size': function() {
       this.initCanvas();
+    },
+    'data': function() {
+      this.generateInsights();
     }
   },
 
@@ -53,6 +68,9 @@ Component({
       const rawMaxValue = minutesList.length ? Math.max.apply(null, minutesList) : 0;
       const maxValue = rawMaxValue > 0 ? rawMaxValue : 1;
 
+      // 找出高峰时段
+      const peakHours = this.findPeakHours(dataset);
+
       const applyLayout = (availableWidth) => {
         const minSize = config.width * 0.8;
         const maxSize = config.width * 1.2;
@@ -72,12 +90,12 @@ Component({
           radius: config.radius * scale,
           innerRadius: config.innerRadius * scale,
           maxValue: maxValue,
-          totalMinutes: totalMinutes
+          totalMinutes: totalMinutes,
+          peakHours: peakHours
         });
 
-        setTimeout(() => {
-          this.drawChart();
-        }, 30);
+        // 启动动画
+        this.startAnimation();
       };
 
       wx.nextTick(() => {
@@ -93,7 +111,7 @@ Component({
 
     drawChart() {
       const ctx = wx.createCanvasContext('focusChart', this);
-      const { centerX, centerY, radius, innerRadius, maxValue, data } = this.data;
+      const { centerX, centerY, radius, innerRadius, maxValue, data, animationProgress } = this.data;
       
       // 清空画布
       ctx.clearRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
@@ -114,7 +132,7 @@ Component({
           
           // 计算外半径（根据数据值动态调整）
           const normalizedValue = item.minutes / maxValue;
-          const dynamicRadius = innerRadius + (radius - innerRadius) * normalizedValue;
+          const dynamicRadius = innerRadius + (radius - innerRadius) * normalizedValue * animationProgress;
           
           // 绘制扇形
           ctx.beginPath();
@@ -123,8 +141,15 @@ Component({
           ctx.closePath();
           
           // 设置颜色和透明度
-          const opacity = 0.3 + normalizedValue * 0.7; // 0.3-1.0的透明度
-          ctx.setFillStyle(`rgba(135, 168, 164, ${opacity})`);
+          const opacity = (0.3 + normalizedValue * 0.7) * animationProgress; // 0.3-1.0的透明度
+          
+          // 高峰时段使用特殊颜色
+          const isPeakHour = this.data.peakHours.includes(index);
+          if (isPeakHour) {
+            ctx.setFillStyle(`rgba(224, 142, 121, ${opacity})`);
+          } else {
+            ctx.setFillStyle(`rgba(135, 168, 164, ${opacity})`);
+          }
           ctx.fill();
           
           // 添加边框
@@ -161,6 +186,20 @@ Component({
       ctx.setFillStyle('rgba(135, 168, 164, 0.8)');
       ctx.fill();
       
+      // 绘制中心统计信息
+      if (animationProgress > 0.5) {
+        const centerOpacity = (animationProgress - 0.5) * 2;
+        ctx.setFontSize(24);
+        ctx.setFillStyle(`rgba(45, 52, 54, ${centerOpacity})`);
+        ctx.setTextAlign('center');
+        ctx.setTextBaseline('middle');
+        ctx.fillText(`${this.data.totalMinutes}分`, centerX, centerY - 10);
+        
+        ctx.setFontSize(16);
+        ctx.setFillStyle(`rgba(45, 52, 54, ${centerOpacity * 0.7})`);
+        ctx.fillText('今日总计', centerX, centerY + 15);
+      }
+      
       ctx.draw();
     },
 
@@ -180,12 +219,78 @@ Component({
         const hour = Math.floor(degrees / 15);
         
         if (hour >= 0 && hour < 24 && data[hour]) {
+          this.setData({ selectedHour: hour });
           this.triggerEvent('hourtap', {
             hour: hour,
             data: data[hour]
           });
         }
       }
+    },
+
+    // 找出高峰时段
+    findPeakHours(data) {
+      if (!data || data.length === 0) return [];
+      
+      const avgMinutes = data.reduce((sum, item) => sum + (item.minutes || 0), 0) / data.length;
+      const threshold = avgMinutes * 1.5; // 高于平均值1.5倍算高峰
+      
+      return data
+        .map((item, index) => ({ hour: index, minutes: item.minutes || 0 }))
+        .filter(item => item.minutes > threshold)
+        .sort((a, b) => b.minutes - a.minutes)
+        .slice(0, 3)
+        .map(item => item.hour);
+    },
+
+    // 生成洞察
+    generateInsights() {
+      const data = this.data.data || [];
+      const insights = [];
+      
+      if (data.length === 0) {
+        insights.push({ type: 'empty', text: '暂无数据，开始专注后会显示全天节奏' });
+      } else {
+        const totalMinutes = data.reduce((sum, item) => sum + (item.minutes || 0), 0);
+        const activeHours = data.filter(item => item.minutes > 0).length;
+        const peakHours = this.findPeakHours(data);
+        
+        if (totalMinutes > 0) {
+          insights.push({ type: 'total', text: `今日专注 ${totalMinutes} 分钟` });
+        }
+        
+        if (activeHours > 0) {
+          insights.push({ type: 'active', text: `活跃时段 ${activeHours} 个` });
+        }
+        
+        if (peakHours.length > 0) {
+          const peakLabels = peakHours.map(h => `${h}:00`).join('、');
+          insights.push({ type: 'peak', text: `高峰时段 ${peakLabels}` });
+        }
+      }
+      
+      this.setData({ insights });
+    },
+
+    // 启动动画
+    startAnimation() {
+      this.setData({ isAnimating: true, animationProgress: 0 });
+      
+      const animate = () => {
+        if (this.data.animationProgress < 1) {
+          const newProgress = Math.min(this.data.animationProgress + 0.05, 1);
+          this.setData({ animationProgress: newProgress });
+          this.drawChart();
+          
+          if (newProgress < 1) {
+            setTimeout(animate, 16); // 约60fps
+          } else {
+            this.setData({ isAnimating: false });
+          }
+        }
+      };
+      
+      setTimeout(animate, 100);
     },
 
     // 格式化时间
