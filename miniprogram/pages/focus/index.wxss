@@ -6,7 +6,7 @@
   overflow: hidden;
   display: flex;
   justify-content: center;
-  background: radial-gradient(circle at 20% 20%, rgba(129, 140, 248, 0.25), transparent 45%),
+  background: radial-gradient(circle at 20% 20%, rgba(135, 168, 164, 0.25), transparent 45%),
     radial-gradient(circle at 80% 0%, rgba(224, 142, 121, 0.2), transparent 50%),
     linear-gradient(135deg, #0f172a, #111827 40%, #1e1b4b 100%);
 }
@@ -438,6 +438,135 @@
 
 .mono {
   font-family: 'JetBrains Mono', 'DIN Alternate', 'Roboto Mono', sans-serif;
+}
+
+/* 数据概览 */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+  padding: 24rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 32rpx;
+  backdrop-filter: blur(20rpx);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-item:last-child {
+  background: rgba(135, 168, 164, 0.2);
+  border: 1px solid rgba(135, 168, 164, 0.3);
+}
+
+.stat-item:last-child:active {
+  transform: scale(0.95);
+  background: rgba(135, 168, 164, 0.3);
+}
+
+.stat-value {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4rpx;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-item:last-child .stat-value {
+  font-size: 28rpx;
+}
+
+.stat-label {
+  font-size: 20rpx;
+  color: rgba(245, 246, 251, 0.7);
+  text-align: center;
+}
+
+/* 成就展示区 */
+.achievements-section {
+  margin-bottom: 32rpx;
+}
+
+.section-header {
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.section-desc {
+  font-size: 22rpx;
+  color: rgba(245, 246, 251, 0.6);
+  display: block;
+}
+
+.achievements-scroll {
+  white-space: nowrap;
+}
+
+.achievements-list {
+  display: flex;
+  gap: 20rpx;
+  padding: 8rpx 0;
+}
+
+/* 新成就展示 */
+.new-achievements {
+  margin-top: 24rpx;
+  padding: 20rpx;
+  background: rgba(135, 168, 164, 0.15);
+  border-radius: 24rpx;
+  border: 1px solid rgba(135, 168, 164, 0.3);
+}
+
+.new-achievements-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 12rpx;
+  display: block;
+  text-align: center;
+}
+
+.new-achievements-list {
+  display: flex;
+  gap: 16rpx;
+  justify-content: center;
+}
+
+.new-achievement-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 16rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.achievement-icon {
+  font-size: 32rpx;
+  margin-bottom: 4rpx;
+}
+
+.achievement-name {
+  font-size: 18rpx;
+  color: rgba(245, 246, 251, 0.9);
+  text-align: center;
 }
 
 .focus-canvas {

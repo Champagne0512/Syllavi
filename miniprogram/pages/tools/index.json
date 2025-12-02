@@ -1,6 +1,9 @@
 {
   "usingComponents": {
-    "custom-navbar": "/components/custom-navbar/index"
+    "custom-navbar": "/components/custom-navbar/index",
+    "heatmap-chart": "/components/heatmap-chart/index",
+    "focus-distribution": "/components/focus-distribution/index",
+    "holo-badge": "/components/holo-badge/index"
   },
   "navigationStyle": "custom"
 }

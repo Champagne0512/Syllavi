@@ -371,425 +371,6 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* 成就系统 */
-.achievements-card {
-  margin-bottom: 24rpx;
-}
-
-.achievements-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20rpx;
-  margin-top: 24rpx;
-}
-
-.achievement-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 32rpx 20rpx;
-  background: rgba(255, 255, 255, 0.62);
-  border-radius: 36rpx;
-  position: relative;
-  transition: all 0.35s ease;
-  box-shadow: 0 24rpx 56rpx rgba(15, 23, 42, 0.12);
-  border: 1rpx solid rgba(255, 255, 255, 0.45);
-}
-
-.achievement-item.unlocked {
-  background: rgba(224, 142, 121, 0.18);
-  border-color: rgba(224, 142, 121, 0.45);
-}
-
-.achievement-item.locked {
-  opacity: 0.7;
-  filter: grayscale(0.6) saturate(0.8);
-}
-
-.achievement-icon {
-  width: 140rpx;
-  height: 140rpx;
-  border-radius: 46rpx;
-  margin-bottom: 12rpx;
-  position: relative;
-  overflow: hidden;
-  border: 1rpx solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 28rpx 60rpx rgba(15, 23, 42, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.badge-halo,
-.badge-core {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 999rpx;
-  pointer-events: none;
-}
-
-.badge-halo {
-  width: 120rpx;
-  height: 120rpx;
-  filter: blur(0.3px);
-}
-
-.badge-core {
-  width: 76rpx;
-  height: 76rpx;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: inset 0 -8rpx 18rpx rgba(15, 23, 42, 0.08);
-}
-
-.badge-caption {
-  position: absolute;
-  bottom: 18rpx;
-  left: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 22rpx;
-  letter-spacing: 6rpx;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.35);
-  font-family: 'JetBrains Mono', 'DIN Alternate', 'Roboto Mono', sans-serif;
-}
-
-.badge-default {
-  background: linear-gradient(135deg, rgba(188, 160, 188, 0.9), rgba(129, 140, 248, 0.85));
-}
-
-.badge-default .badge-halo {
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent 70%),
-    radial-gradient(circle at 70% 70%, rgba(224, 142, 121, 0.4), transparent 65%);
-}
-
-.badge-default .badge-core {
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.badge-seed {
-  background: linear-gradient(145deg, rgba(135, 168, 164, 0.95), rgba(226, 194, 164, 0.92));
-}
-
-.badge-seed .badge-halo {
-  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.6), transparent 70%),
-    radial-gradient(circle at 70% 60%, rgba(188, 160, 188, 0.6), transparent 65%);
-}
-
-.badge-seed .badge-core {
-  width: 36rpx;
-  height: 74rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.45));
-  box-shadow: 0 12rpx 24rpx rgba(255, 255, 255, 0.4);
-}
-
-.badge-seed .badge-core::after {
-  content: '';
-  position: absolute;
-  width: 22rpx;
-  height: 22rpx;
-  border-radius: 50%;
-  background: rgba(129, 140, 248, 0.6);
-  bottom: -14rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  filter: blur(1px);
-}
-
-.badge-flow {
-  background: linear-gradient(135deg, rgba(129, 140, 248, 0.95), rgba(135, 168, 164, 0.85));
-}
-
-.badge-flow .badge-halo {
-  background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.35), transparent 65%),
-    radial-gradient(circle at 70% 40%, rgba(224, 142, 121, 0.45), transparent 60%);
-}
-
-.badge-flow .badge-core {
-  width: 90rpx;
-  height: 50rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.8);
-  transform: translate(-50%, -50%) rotate(-18deg);
-}
-
-.badge-flow .badge-core::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 26rpx;
-  border-radius: 999rpx;
-  background: rgba(129, 140, 248, 0.35);
-  bottom: -18rpx;
-  left: -6rpx;
-}
-
-.badge-orbit {
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(129, 140, 248, 0.7));
-}
-
-.badge-orbit .badge-halo {
-  background: radial-gradient(circle at 30% 30%, rgba(129, 140, 248, 0.7), transparent 70%);
-}
-
-.badge-orbit .badge-core {
-  width: 54rpx;
-  height: 54rpx;
-  border-radius: 50%;
-  border: 4rpx solid rgba(255, 255, 255, 0.9);
-  background: transparent;
-}
-
-.badge-orbit .badge-core::after {
-  content: '';
-  position: absolute;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  border: 2rpx dashed rgba(255, 255, 255, 0.5);
-  top: -12rpx;
-  left: -12rpx;
-}
-
-.badge-flare {
-  background: linear-gradient(145deg, rgba(224, 142, 121, 0.95), rgba(255, 214, 164, 0.85));
-}
-
-.badge-flare .badge-halo {
-  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.65), transparent 70%);
-}
-
-.badge-flare .badge-core {
-  width: 58rpx;
-  height: 78rpx;
-  border-radius: 28rpx;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(224, 142, 121, 0.6));
-  transform: translate(-50%, -50%) rotate(12deg);
-}
-
-.badge-flare .badge-core::after {
-  content: '';
-  position: absolute;
-  width: 32rpx;
-  height: 32rpx;
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 50%;
-  bottom: -8rpx;
-  left: 6rpx;
-}
-
-
-.badge-prism {
-  background: linear-gradient(150deg, rgba(129, 140, 248, 0.92), rgba(188, 160, 188, 0.85));
-}
-
-.badge-prism .badge-halo {
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5), transparent 70%),
-    radial-gradient(circle at 20% 30%, rgba(224, 142, 121, 0.45), transparent 60%);
-}
-
-.badge-prism .badge-core {
-  width: 60rpx;
-  height: 60rpx;
-  border-radius: 16rpx;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.4));
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.badge-prism .badge-core::after {
-  content: '';
-  position: absolute;
-  inset: 12rpx;
-  border-radius: 8rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.8);
-}
-
-.badge-checkpoint {
-  background: linear-gradient(145deg, rgba(226, 194, 164, 0.95), rgba(135, 168, 164, 0.85));
-}
-
-.badge-checkpoint .badge-core {
-  width: 70rpx;
-  height: 70rpx;
-  border-radius: 28rpx;
-  border: 2rpx dashed rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.badge-checkpoint .badge-core::after {
-  content: '';
-  position: absolute;
-  width: 30rpx;
-  height: 30rpx;
-  border-radius: 8rpx;
-  border-bottom: 4rpx solid rgba(129, 140, 248, 0.85);
-  border-left: 4rpx solid rgba(129, 140, 248, 0.85);
-  transform: rotate(-45deg);
-  top: 18rpx;
-  left: 18rpx;
-}
-
-.badge-target {
-  background: linear-gradient(135deg, rgba(224, 142, 121, 0.9), rgba(188, 160, 188, 0.85));
-}
-
-.badge-target .badge-core {
-  width: 70rpx;
-  height: 70rpx;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 30%, rgba(224, 142, 121, 0.7) 65%, transparent 70%);
-}
-
-.badge-target .badge-core::after {
-  content: '';
-  position: absolute;
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: 50%;
-  border: 2rpx solid rgba(255, 255, 255, 0.8);
-  top: 10rpx;
-  left: 10rpx;
-}
-
-.badge-pulse {
-  background: linear-gradient(145deg, rgba(135, 168, 164, 0.9), rgba(129, 140, 248, 0.85));
-}
-
-.badge-pulse .badge-core {
-  width: 80rpx;
-  height: 40rpx;
-  border-radius: 18rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1rpx solid rgba(255, 255, 255, 0.6);
-}
-
-.badge-pulse .badge-core::before,
-.badge-pulse .badge-core::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 4rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.9);
-  left: 0;
-}
-
-.badge-pulse .badge-core::before {
-  top: 10rpx;
-}
-
-.badge-pulse .badge-core::after {
-  bottom: 10rpx;
-  box-shadow: 0 0 18rpx rgba(255, 255, 255, 0.45);
-}
-
-.badge-crown {
-  background: linear-gradient(140deg, rgba(224, 142, 121, 0.92), rgba(226, 194, 164, 0.85));
-}
-
-.badge-crown .badge-core {
-  width: 80rpx;
-  height: 36rpx;
-  border-radius: 18rpx;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, 20%);
-}
-
-.badge-crown .badge-core::before {
-  content: '';
-  position: absolute;
-  width: 64rpx;
-  height: 32rpx;
-  left: 8rpx;
-  top: -28rpx;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
-  clip-path: polygon(6% 100%, 15% 30%, 35% 80%, 50% 20%, 65% 80%, 85% 30%, 94% 100%);
-}
-
-.achievement-name {
-  font-size: 22rpx;
-  font-weight: 600;
-  margin-bottom: 4rpx;
-  text-align: center;
-  color: var(--day-text);
-}
-
-.achievement-desc {
-  font-size: 20rpx;
-  text-align: center;
-  line-height: 1.4;
-}
-
-.achievement-status {
-  position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  font-size: 20rpx;
-}
-
-/* 学习热力图 */
-.heatmap-card {
-  margin-bottom: 24rpx;
-}
-
-.heatmap-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 8rpx;
-  margin-top: 24rpx;
-}
-
-.heatmap-cell {
-  width: 100%;
-  padding-bottom: 100%;
-  border-radius: 4rpx;
-  background: rgba(28, 28, 30, 0.04);
-  transition: all 0.2s ease;
-}
-
-.heatmap-cell.level-0 {
-  background: rgba(28, 28, 30, 0.04);
-}
-
-.heatmap-cell.level-1 {
-  background: rgba(155, 181, 206, 0.3);
-}
-
-.heatmap-cell.level-2 {
-  background: rgba(155, 181, 206, 0.5);
-}
-
-.heatmap-cell.level-3 {
-  background: rgba(17, 72, 196, 0.6);
-}
-
-.heatmap-cell.level-4 {
-  background: rgba(17, 72, 196, 0.85);
-}
-
-.heatmap-legend {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8rpx;
-  margin-top: 16rpx;
-  font-size: 22rpx;
-}
-
-.legend-cells {
-  display: flex;
-  gap: 6rpx;
-}
-
-.legend-cell {
-  width: 20rpx;
-  height: 20rpx;
-  border-radius: 4rpx;
-}
-
 /* 快捷操作 */
 .actions-card {
   margin-bottom: 24rpx;
@@ -1147,4 +728,158 @@
   background: transparent;
   border: 1px solid rgba(28, 28, 30, 0.2);
   color: rgba(28, 28, 30, 0.8);
+}
+
+
+
+/* 任务入口卡片样式 */
+.tasks-entry-card {
+  margin: 0 32rpx 32rpx;
+}
+
+.tasks-entry-content {
+  padding: 32rpx;
+}
+
+.tasks-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 32rpx;
+}
+
+.task-stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.task-stat-value {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #1C1C1E;
+  margin-bottom: 8rpx;
+  font-family: 'WeChat Number', monospace;
+}
+
+.task-stat-label {
+  font-size: 24rpx;
+  color: rgba(28, 28, 30, 0.6);
+  font-weight: 500;
+}
+
+.tasks-entry-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 32rpx;
+  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
+  border-radius: 32rpx;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8rpx 32rpx rgba(135, 168, 164, 0.3);
+}
+
+.tasks-entry-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(135, 168, 164, 0.4);
+}
+
+.btn-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon-shape {
+  width: 32rpx;
+  height: 32rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8rpx;
+  position: relative;
+}
+
+.btn-icon-shape::before {
+  content: '';
+  position: absolute;
+  top: 8rpx;
+  left: 8rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border: 2rpx solid #87A8A4;
+  border-radius: 2rpx;
+}
+
+.btn-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: white;
+}
+
+.btn-arrow {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+  transition: transform 0.3s ease;
+}
+
+.tasks-entry-btn:active .btn-arrow {
+  transform: translateX(4rpx);
+}
+
+
+/* 专注工具入口卡片 */
+.focus-redirect-card {
+  margin-bottom: 24rpx;
+}
+
+.focus-redirect-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+  align-items: stretch;
+}
+
+.focus-redirect-metric {
+  flex: 1;
+  min-width: 200rpx;
+  padding: 28rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 0 0 1rpx rgba(28, 28, 30, 0.05);
+}
+
+.redirect-value {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: var(--day-text);
+  font-family: 'JetBrains Mono', 'Gotham', sans-serif;
+}
+
+.redirect-label {
+  font-size: 24rpx;
+  margin-top: 12rpx;
+}
+
+.focus-redirect-cta {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.18), rgba(224, 142, 121, 0.18));
+  border: 1rpx solid rgba(135, 168, 164, 0.3);
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--day-text);
+}
+
+.cta-arrow {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.focus-redirect-tip {
+  margin-top: 20rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
 }

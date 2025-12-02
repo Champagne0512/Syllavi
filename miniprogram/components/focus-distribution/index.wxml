@@ -1,0 +1,42 @@
+<view class="focus-distribution-container {{size}} {{variant}}">
+  <view class="chart-header">
+    <text class="chart-title">专注时段分布</text>
+    <text class="chart-subtitle">24小时环形图</text>
+  </view>
+  
+  <view class="chart-wrapper">
+    <canvas 
+      canvas-id="focusChart" 
+      class="focus-chart"
+      style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+      bindtap="onCanvasTap"
+    ></canvas>
+    
+    <!-- 中心信息 -->
+    <view class="chart-center">
+      <text class="center-value">{{totalMinutes}}</text>
+      <text class="center-label">总分钟</text>
+    </view>
+  </view>
+  
+  <!-- 图例 -->
+  <view class="chart-legend">
+    <view class="legend-item">
+      <view class="legend-color low"></view>
+      <text class="legend-text">低强度</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-color medium"></view>
+      <text class="legend-text">中强度</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-color high"></view>
+      <text class="legend-text">高强度</text>
+    </view>
+  </view>
+  
+  <!-- 时间提示 -->
+  <view class="time-hint">
+    <text class="hint-text">点击环形图查看具体时段</text>
+  </view>
+</view>

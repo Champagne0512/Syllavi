@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "所有待办",
+  "navigationStyle": "custom",
+  "backgroundColor": "#F2F4F6",
+  "enablePullDownRefresh": false
+}

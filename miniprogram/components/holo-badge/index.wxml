@@ -1,0 +1,37 @@
+<view class="holo-badge-container {{size}} {{achievement.unlocked ? 'unlocked' : 'locked'}} {{isAnimating ? 'animating' : ''}}" bindtap="onBadgeTap">
+  <!-- 徽章主体 -->
+  <view class="badge-main">
+    <!-- 全息玻璃背景 -->
+    <view class="glass-background"></view>
+    
+    <!-- 流动光泽层 -->
+    <view class="shimmer-layer" wx:if="{{achievement.unlocked}}"></view>
+    
+    <!-- 彩虹渐变层 -->
+    <view class="rainbow-layer" wx:if="{{achievement.unlocked}}"></view>
+    
+    <!-- 徽章内容 -->
+    <view class="badge-content">
+      <!-- 图标 -->
+      <view class="badge-icon" style="color: {{achievementInfo.color}}">
+        {{achievementInfo.icon}}
+      </view>
+      
+      <!-- 锁定状态图标 -->
+      <view class="lock-icon" wx:if="{{!achievement.unlocked}}">🔒</view>
+    </view>
+    
+    <!-- 边框光晕 -->
+    <view class="border-glow" wx:if="{{achievement.unlocked}}"></view>
+  </view>
+  
+  <!-- 工具提示 -->
+  <view class="badge-tooltip" wx:if="{{showTooltip && achievementInfo}}">
+    <view class="tooltip-title">{{achievementInfo.name}}</view>
+    <view class="tooltip-desc">{{achievementInfo.desc}}</view>
+    <view class="tooltip-time" wx:if="{{achievement.unlocked && achievement.unlockedAt}}">
+      解锁于 {{formatUnlockTime(achievement.unlockedAt)}}
+    </view>
+    <view class="tooltip-time" wx:else>未解锁</view>
+  </view>
+</view>

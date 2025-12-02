@@ -108,62 +108,60 @@
       </view>
     </view>
 
-    <!-- 成就系统 -->
-    <view class="card achievements-card">
+    <!-- 所有待办入口 -->
+    <view class="card tasks-entry-card">
       <view class="section-head">
-        <text>成就徽章</text>
-        <text class="muted mono">Achievements</text>
+        <text>任务管理</text>
+        <text class="muted mono">Task Management</text>
       </view>
-
-      <view class="achievements-grid">
-        <block wx:for="{{achievements}}" wx:key="id">
-          <view
-            class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}"
-            data-achievement="{{item}}"
-            bindtap="viewAchievement"
-          >
-            <view class="achievement-icon badge-{{item.iconToken || 'default'}}">
-              <view class="badge-halo"></view>
-              <view class="badge-core"></view>
-              <text class="badge-caption">{{item.iconCaption}}</text>
-            </view>
-            <view class="achievement-name">{{item.name}}</view>
-            <view class="achievement-desc muted">{{item.desc}}</view>
-            <view class="achievement-status" wx:if="{{!item.unlocked}}">🔒</view>
+      
+      <view class="tasks-entry-content">
+        <view class="tasks-stats">
+          <view class="task-stat-item">
+            <view class="task-stat-value">{{stats.total_tasks}}</view>
+            <view class="task-stat-label">总任务</view>
           </view>
-        </block>
+          <view class="task-stat-item">
+            <view class="task-stat-value">{{stats.completed_tasks}}</view>
+            <view class="task-stat-label">已完成</view>
+          </view>
+          <view class="task-stat-item">
+            <view class="task-stat-value">{{stats.total_tasks - stats.completed_tasks}}</view>
+            <view class="task-stat-label">待完成</view>
+          </view>
+        </view>
+        
+        <view class="tasks-entry-btn" bindtap="navigateToTasks">
+          <view class="btn-icon">
+            <view class="btn-icon-shape"></view>
+          </view>
+          <text class="btn-text">查看所有待办</text>
+          <view class="btn-arrow">→</view>
+        </view>
       </view>
     </view>
 
-    <!-- 学习热力图 -->
-    <view class="card heatmap-card">
+    <!-- 专注工具入口提示 -->
+    <view class="card focus-redirect-card">
       <view class="section-head">
-        <text>学习热力图</text>
-        <text class="muted mono">Last 30 Days</text>
+        <text>专注工具入口</text>
+        <text class="muted mono">Focus Suite</text>
       </view>
-
-      <view class="heatmap-grid">
-        <block wx:for="{{heatmap}}" wx:key="date">
-          <view
-            class="heatmap-cell level-{{item.level}}"
-            data-date="{{item.date}}"
-            data-minutes="{{item.minutes}}"
-          >
-          </view>
-        </block>
-      </view>
-
-      <view class="heatmap-legend">
-        <text class="muted">少</text>
-        <view class="legend-cells">
-          <view class="legend-cell level-0"></view>
-          <view class="legend-cell level-1"></view>
-          <view class="legend-cell level-2"></view>
-          <view class="legend-cell level-3"></view>
-          <view class="legend-cell level-4"></view>
+      <view class="focus-redirect-content">
+        <view class="focus-redirect-metric">
+          <text class="redirect-value">{{stats.total_focus_minutes}}</text>
+          <text class="redirect-label muted">累计专注(分钟)</text>
         </view>
-        <text class="muted">多</text>
+        <view class="focus-redirect-metric">
+          <text class="redirect-value">{{stats.continuous_days}}</text>
+          <text class="redirect-label muted">连续天数</text>
+        </view>
+        <view class="focus-redirect-cta" bindtap="goToTools">
+          <text>前往工具模块</text>
+          <text class="cta-arrow">→</text>
+        </view>
       </view>
+      <view class="focus-redirect-tip muted">专注徽章、热力图等功能已集中到「工具」页面。</view>
     </view>
 
     <!-- 快捷操作 -->
@@ -189,6 +187,8 @@
         </block>
       </view>
     </view>
+
+    
   </scroll-view>
 
   <view wx:if="{{editModalVisible}}" class="edit-mask" catchtouchmove="stopTouchMove">

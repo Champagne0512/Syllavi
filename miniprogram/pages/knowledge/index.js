@@ -20,6 +20,8 @@ const MOCK_FILES = [
   { id: 12, name: 'Lab-Guideline.pptx', type: 'ppt', subject: 'AI 工程', previewable: true }
 ];
 
+const CONTINUUM_STORAGE_KEY = 'knowledge_last_open';
+
 Page({
   data: {
     folders: [],
@@ -27,29 +29,28 @@ Page({
     filteredFiles: [],
     activeFolder: '全部',
     loading: true,
-    // 艺术设计新增状态
-    showQuote: false,
-    currentQuote: { text: '', author: '' },
-    zenMode: false,
     sortOrder: 'asc',
-    quotes: [
-      { text: "Knowledge is the only treasure that increases when shared.", author: "Unknown" },
-      { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
-      { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
-      { text: "Live as if you were to die tomorrow. Learn as if you were to live forever.", author: "Mahatma Gandhi" },
-      { text: "The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.", author: "Brian Herbert" }
-    ],
-    zenQuotes: [
-      "宁静致远，智慧沉淀",
-      "心无杂念，学有所成", 
-      "专注当下，收获永恒",
-      "静水流深，厚积薄发"
-    ],
     // 批量操作相关状态
     selectionMode: false,
-    selectedFiles: []
+    selectedFiles: [],
+    lastOpenedFile: null,
+    actionableInsight: null
+  },
+
+  // 增加一个辅助函数用于 CSS 类名映射
+  getFileTypeClass(type) {
+    // 简单映射，你可以根据需要扩展
+    const map = {
+      'pdf': 'pdf',
+      'ppt': 'ppt', 'pptx': 'ppt',
+      'doc': 'doc', 'docx': 'doc',
+      'jpg': 'img', 'png': 'img', 'jpeg': 'img'
+    };
+    return map[type] || 'other';
   },
   onLoad() {
+    this.hydrateLastOpenedFile();
+    this.refreshActionableInsight([]);
     this.loadResources();
   },
   onShow() {
@@ -78,23 +79,32 @@ Page({
         tone: MORANDI_COLORS[idx % MORANDI_COLORS.length]
       }));
 
+      const baseFiles = rows.map((file) => ({
+        id: file.id,
+        name: file.file_name,
+        type: file.file_type,
+        uiType: this.getFileTypeClass(file.file_type),
+        subject: file.subject || '未分类',
+        url: file.file_url,
+        size: file.file_size,
+        aiSummary: file.ai_summary || '',
+        isSelected: false
+      }));
+
       const activeFolder = folders[0]?.name || '全部';
+      const decoratedFiles = this.decorateFilesWithSelection(baseFiles, this.data.selectedFiles);
       this.setData(
         {
           folders,
-          files: rows.map((file) => ({
-            id: file.id,
-            name: file.file_name,
-            type: file.file_type,
-            subject: file.subject || '未分类',
-            url: file.file_url,
-            size: file.file_size,
-            aiSummary: file.ai_summary || ''
-          })),
+          files: decoratedFiles,
           activeFolder,
           loading: false
         },
-        () => this.updateFilteredFiles()
+        () => {
+          this.updateFilteredFiles();
+          this.refreshActionableInsight();
+          this.hydrateLastOpenedFile();
+        }
       );
       wx.setStorageSync('resources_cache', {
         folders,
@@ -104,26 +114,46 @@ Page({
       console.warn('Supabase resources fallback', err);
       const cached = wx.getStorageSync('resources_cache');
       if (cached && cached.files && cached.files.length) {
+        const cachedFiles = cached.files.map((file) => ({
+          ...file,
+          uiType: file.uiType || this.getFileTypeClass(file.type || file.file_type || ''),
+          isSelected: false
+        }));
+        const decoratedCached = this.decorateFilesWithSelection(cachedFiles, this.data.selectedFiles);
         this.setData(
           {
             folders: cached.folders || MOCK_FOLDERS,
-            files: cached.files,
+            files: decoratedCached,
             activeFolder:
               (cached.folders && cached.folders[0] && cached.folders[0].name) ||
               '全部',
             loading: false
           },
-          () => this.updateFilteredFiles()
+          () => {
+            this.updateFilteredFiles();
+            this.refreshActionableInsight();
+            this.hydrateLastOpenedFile();
+          }
         );
       } else {
+        const mockFiles = MOCK_FILES.map((file) => ({
+          ...file,
+          uiType: this.getFileTypeClass(file.type || ''),
+          isSelected: false
+        }));
+        const decoratedMocks = this.decorateFilesWithSelection(mockFiles, this.data.selectedFiles);
         this.setData(
           {
             folders: MOCK_FOLDERS,
-            files: MOCK_FILES,
+            files: decoratedMocks,
             activeFolder: MOCK_FOLDERS[0].name,
             loading: false
           },
-          () => this.updateFilteredFiles()
+          () => {
+            this.updateFilteredFiles();
+            this.refreshActionableInsight();
+            this.hydrateLastOpenedFile();
+          }
         );
       }
     }
@@ -220,8 +250,10 @@ Page({
   },
   selectFolder(e) {
     const { name } = e.currentTarget.dataset;
+    if(this.data.activeFolder === name) return;
+    
     this.setData({ activeFolder: name }, () => this.updateFilteredFiles());
-    wx.vibrateShort({ type: 'light' });
+    wx.vibrateShort({ type: 'light' }); // 加上震动
   },
 
   // 使用浏览器打开文件的替代方案
@@ -278,16 +310,63 @@ Page({
       wx.showToast({ title: '操作失败，请重试', icon: 'none' });
     }
   },
-  previewFile(e) {
+  async openPdfInline(file) {
+    if (!file || !file.url) return false;
+    wx.showLoading({ title: '打开 PDF...' });
+    try {
+      const tempFilePath = await this.downloadRemoteFile(file.url);
+      await this.openDocumentWithWx(tempFilePath, 'pdf');
+      return true;
+    } catch (err) {
+      console.warn('inline pdf failed', err);
+      return false;
+    } finally {
+      wx.hideLoading();
+    }
+  },
+  downloadRemoteFile(url) {
+    return new Promise((resolve, reject) => {
+      wx.downloadFile({
+        url,
+        success: (res) => {
+          if (res.statusCode === 200 && res.tempFilePath) {
+            resolve(res.tempFilePath);
+          } else {
+            reject(new Error('download failed'));
+          }
+        },
+        fail: reject
+      });
+    });
+  },
+  openDocumentWithWx(filePath, fileType = 'pdf') {
+    return new Promise((resolve, reject) => {
+      wx.openDocument({
+        filePath,
+        fileType,
+        showMenu: true,
+        success: resolve,
+        fail: reject
+      });
+    });
+  },
+  async previewFile(e) {
     const { id } = e.currentTarget.dataset;
     const file = this.data.files.find((f) => f.id === id);
     if (!file || !file.url) {
       wx.showToast({ title: '暂无文件 URL', icon: 'none' });
       return;
     }
-    
+
     console.log('预览文件:', file.url, '文件名:', file.name, '文件类型:', file.type);
-    
+
+    this.persistLastOpenedFile(file);
+
+    if ((file.type || '').toLowerCase() === 'pdf') {
+      const opened = await this.openPdfInline(file);
+      if (opened) return;
+    }
+
     // 直接使用浏览器打开方案，避免400错误
     this.openFileInBrowser(file.url, file.name);
   },
@@ -348,6 +427,7 @@ Page({
                 id: row.id,
                 name: row.file_name,
                 type: row.file_type,
+                uiType: this.getFileTypeClass(row.file_type), // 添加UI类型映射
                 subject: row.subject || '未分类',
                 url: row.file_url,
                 size: row.file_size,
@@ -358,7 +438,9 @@ Page({
           },
           () => {
             this.updateFilteredFiles();
+            this.refreshActionableInsight();
             this._uploading = false;
+            wx.vibrateShort({ type: 'medium' }); // 成功后震动
           }
         );
       }, 100);
@@ -435,7 +517,10 @@ Page({
       const files = this.data.files.map((f) =>
         f.id === file.id ? { ...f, aiSummary: summary } : f
       );
-      this.setData({ files }, () => this.updateFilteredFiles());
+      this.setData({ files }, () => {
+        this.updateFilteredFiles();
+        this.refreshActionableInsight();
+      });
       wx.hideLoading();
       wx.showModal({
         title: 'AI 划重点',
@@ -467,7 +552,10 @@ Page({
             }
           }
           const files = this.data.files.filter((f) => f.id !== file.id);
-          this.setData({ files }, () => this.updateFilteredFiles());
+          this.setData({ files }, () => {
+            this.updateFilteredFiles();
+            this.refreshActionableInsight();
+          });
           wx.hideLoading();
           wx.showToast({ title: '已删除', icon: 'success' });
         } catch (err) {
@@ -479,53 +567,14 @@ Page({
     });
   },
 
-  // 艺术设计新增方法
-  showMoodQuote() {
-    const randomIndex = Math.floor(Math.random() * this.data.quotes.length);
-    this.setData({
-      showQuote: true,
-      currentQuote: this.data.quotes[randomIndex]
-    });
-    
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
-    
-    // 5秒后自动隐藏
-    setTimeout(() => {
-      this.setData({ showQuote: false });
-    }, 5000);
-  },
-
-  toggleZenMode() {
-    const zenMode = !this.data.zenMode;
-    const randomIndex = Math.floor(Math.random() * this.data.zenQuotes.length);
-    
-    this.setData({
-      zenMode,
-      zenQuote: this.data.zenQuotes[randomIndex]
-    });
-
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
-    
-    if (zenMode) {
-      // 进入专注模式
-      wx.showToast({
-        title: '进入专注模式',
-        icon: 'none',
-        duration: 1000
-      });
-    }
-  },
+  
 
   toggleSort() {
     const sortOrder = this.data.sortOrder === 'asc' ? 'desc' : 'asc';
     this.setData({ sortOrder }, () => {
       this.sortFiles();
+      wx.vibrateShort({ type: 'light' }); // 震动反馈
     });
-    
-    // 震动反馈
-    wx.vibrateShort({ type: 'light' });
   },
 
   sortFiles() {
@@ -541,13 +590,7 @@ Page({
     this.setData({ filteredFiles: sortedFiles });
   },
 
-  playAmbientSound() {
-    wx.showToast({
-      title: '环境音效功能开发中',
-      icon: 'none',
-      duration: 2000
-    });
-  },
+  
 
   formatSize(bytes) {
     if (!bytes) return '';
@@ -693,62 +736,32 @@ Page({
 
   // 进入选择模式
   enterSelectionMode() {
-    this.setData({ 
-      selectionMode: true, 
-      selectedFiles: [] 
-    });
     wx.showToast({ title: '进入批量操作模式', icon: 'none', duration: 1000 });
+    wx.vibrateShort({ type: 'light' });
+    this.setData({ selectionMode: true }, () => {
+      this.applySelectionState([]);
+    });
   },
   
   // 退出选择模式
   exitSelectionMode() {
-    this.setData({ 
-      selectionMode: false, 
-      selectedFiles: [] 
+    wx.vibrateShort({ type: 'light' });
+    this.setData({ selectionMode: false }, () => {
+      this.applySelectionState([]);
     });
   },
   
   // 切换文件选择状态
   toggleFileSelection(e) {
-    const { id } = e.currentTarget.dataset;
-    // 确保ID转换为字符串，避免数据类型不一致
-    const fileId = String(id);
-    const { selectedFiles } = this.data;
-    
-    // 确保selectedFiles中的ID都是字符串
-    const stringSelectedFiles = selectedFiles.map(item => String(item));
-    const index = stringSelectedFiles.indexOf(fileId);
-    
-    let newSelectedFiles;
-    if (index === -1) {
-      // 添加到选择列表
-      newSelectedFiles = [...selectedFiles, fileId];
-    } else {
-      // 从选择列表中移除
-      newSelectedFiles = selectedFiles.filter((item) => String(item) !== fileId);
-    }
-    
-    // 强制更新UI，确保选择状态立即反映
-    this.setData({ 
-      selectedFiles: newSelectedFiles,
-      _triggerUpdate: Date.now() // 使用时间戳强制更新
-    }, () => {
-      // 确保UI更新完成
-      console.log('文件选择状态已更新:', newSelectedFiles);
-      console.log('当前选中文件数量:', newSelectedFiles.length);
-      
-      // 使用更可靠的强制更新方法
-      if (this.data.filteredFiles && this.data.filteredFiles.length > 0) {
-        // 为每个文件添加一个随机属性来强制重新渲染
-        const updatedFiles = this.data.filteredFiles.map(file => ({
-          ...file,
-          _renderKey: Math.random()
-        }));
-        this.setData({
-          filteredFiles: updatedFiles
-        });
-      }
-    });
+    const fileId = String(e.currentTarget.dataset.id || '');
+    if (!fileId) return;
+    const selectedFiles = this.data.selectedFiles || [];
+    const index = selectedFiles.indexOf(fileId);
+    const newSelectedFiles = index === -1
+      ? [...selectedFiles, fileId]
+      : selectedFiles.filter((item) => item !== fileId);
+    this.applySelectionState(newSelectedFiles);
+    wx.vibrateShort({ type: 'light' });
   },
   
   // 批量重命名
@@ -895,6 +908,136 @@ Page({
       }
     });
   },
+
+  decorateFilesWithSelection(files = [], selectedList = []) {
+    const normalized = (selectedList || []).map((id) => String(id));
+    const selectedSet = new Set(normalized);
+    return files.map((file) => ({
+      ...file,
+      isSelected: selectedSet.has(String(file.id))
+    }));
+  },
+
+  applySelectionState(nextSelected = []) {
+    const normalized = (nextSelected || []).map((id) => String(id));
+    const currentFiles = Array.isArray(this.data.files) ? this.data.files : [];
+    const files = this.decorateFilesWithSelection(currentFiles, normalized);
+    this.setData(
+      {
+        selectedFiles: normalized,
+        files
+      },
+      () => this.updateFilteredFiles()
+    );
+  },
+
+  persistLastOpenedFile(file) {
+    if (!file) return;
+    const entry = {
+      id: file.id,
+      name: file.name,
+      subject: file.subject,
+      url: file.url,
+      type: file.type,
+      updatedAt: Date.now()
+    };
+    try {
+      wx.setStorageSync(CONTINUUM_STORAGE_KEY, entry);
+    } catch (err) {
+      console.warn('persist last opened failed', err);
+    }
+    this.setData({
+      lastOpenedFile: entry
+    });
+  },
+
+  hydrateLastOpenedFile() {
+    try {
+      const cached = wx.getStorageSync(CONTINUUM_STORAGE_KEY);
+      if (!cached || !cached.updatedAt) {
+        this.setData({ lastOpenedFile: null });
+        return;
+      }
+      this.setData({ lastOpenedFile: cached });
+    } catch (err) {
+      console.warn('hydrate last opened failed', err);
+    }
+  },
+
+  buildActionableInsight(files = []) {
+    if (!files.length) {
+      return {
+        type: 'upload',
+        headline: '创建你的第一份资料库',
+        description: '2 分钟内即可完成一次上传',
+        cta: '立即上传'
+      };
+    }
+
+    const unsummarized = files.filter((file) => !file.aiSummary);
+    if (unsummarized.length) {
+      const target = unsummarized[0];
+      return {
+        type: 'aiSummary',
+        fileId: target.id,
+        headline: `${unsummarized.length} 个文件等待划重点`,
+        description: `从「${target.name}」开始，帮你提炼重点`,
+        cta: 'AI 划重点'
+      };
+    }
+
+    const uncategorized = files.filter((file) => (file.subject || '未分类') === '未分类');
+    if (uncategorized.length) {
+      return {
+        type: 'organize',
+        targetFolder: '未分类',
+        headline: `${uncategorized.length} 个文件待整理`,
+        description: '集中清空「未分类」分组',
+        cta: '去整理'
+      };
+    }
+
+    return {
+      type: 'celebrate',
+      headline: '所有文件都井井有条',
+      description: '随时添加新的灵感或上传资料',
+      cta: '继续保持'
+    };
+  },
+
+  refreshActionableInsight(nextFiles) {
+    const files = Array.isArray(nextFiles) ? nextFiles : this.data.files;
+    const normalizedFiles = Array.isArray(files) ? files : [];
+    const insight = this.buildActionableInsight(normalizedFiles);
+    this.setData({ actionableInsight: insight });
+  },
+
+  openLastFile() {
+    const entry = this.data.lastOpenedFile;
+    if (!entry || !entry.url) {
+      wx.showToast({ title: '先打开任意文件', icon: 'none' });
+      return;
+    }
+    this.openFileInBrowser(entry.url, entry.name);
+  },
+
+  enterAiMode() {
+    const { lastOpenedFile, files } = this.data;
+    let target = null;
+    if (lastOpenedFile) {
+      target = files.find((file) => file.id === lastOpenedFile.id);
+    }
+    if (!target && files.length) {
+      target = files[0];
+    }
+
+    if (!target) {
+      wx.showToast({ title: '上传文件以体验 AI', icon: 'none' });
+      return;
+    }
+
+    this.runSummary(target);
+  }
 
   // 基础文件管理功能已简化，移除分享相关代码
 });

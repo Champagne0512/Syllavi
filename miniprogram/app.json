@@ -14,7 +14,8 @@
     "pages/groups/detail",
     "pages/groups/members",
     "pages/groups/tasks",
-    "pages/groups/batch-tasks"
+    "pages/groups/batch-tasks",
+    "pages/tasks/index"
   ],
   "window": {
     "backgroundColor": "#F2F4F6",

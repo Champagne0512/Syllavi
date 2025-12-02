@@ -45,7 +45,10 @@
             </view>
             <view class="course-card glass-card" style="border-left: 8rpx solid {{item.color}}">
               <text class="card-title">{{item.name}}</text>
-              <text class="card-sub">{{item.location}}</text>
+              <view class="card-meta">
+                <text class="card-time">{{item.time}}</text>
+                <text class="card-location">{{item.location}}</text>
+              </view>
             </view>
           </view>
         </block>
@@ -57,22 +60,32 @@
       <!-- 今日待办 -->
       <view class="section-head mt-40">
         <text class="head-title">今日待办</text>
+        <view class="head-actions">
+          <view class="complete-btn-mini" wx:if="{{todayTasks.length > 0}}" bindtap="completeAllTasks">全部完成！</view>
+          <view class="add-btn-mini" bindtap="openTaskCreator">＋</view>
+        </view>
         <view class="head-sub">{{todayTasks.length}} 项</view>
       </view>
 
       <view class="task-stack">
-        <block wx:for="{{todayTasks}}" wx:key="id">
-          <view class="task-row glass-card {{item.completed ? 'done' : ''}}">
-            <view class="check-circle {{item.completed ? 'checked' : ''}}"></view>
-            <view class="task-info">
-              <text class="task-text">{{item.title}}</text>
+        <block wx:for="{{todayTasks}}" wx:key="instanceId">
+          <view class="task-row glass-card {{item.completed ? 'done' : ''}}" bindtap="openTaskEditor" data-task="{{item}}">
+            <view class="task-check" catchtap="toggleTaskComplete" data-id="{{item.id}}" data-completed="{{item.completed}}">
+              <view class="check-circle {{item.completed ? 'checked' : ''}}"></view>
+            </view>
+            <view class="task-body">
+              <view class="task-headline">
+                <view class="task-chip {{item.mode === 'instant' ? 'chip-event' : 'chip-homework'}}">{{item.dayBadge || '持续待办'}}</view>
+                <text class="task-text">{{item.title}}</text>
+              </view>
               <view class="task-meta-row">
-                <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadline}}</text>
-                <view class="task-source-tag" wx:if="{{item.groupDetails}}">
-                  <image class="group-avatar-small" src="{{item.groupDetails.groupAvatar || '/images/default-group.png'}}"></image>
-                  <text class="group-name-small">{{item.groupDetails.groupName}}</text>
-                  <text class="from-text">来自: {{item.groupDetails.createdBy}}</text>
-                </view>
+                <text class="task-time">{{item.dayIndicator || item.deadline}}</text>
+                <text class="task-course">{{item.courseName || item.course}}</text>
+              </view>
+              <view class="task-source-tag" wx:if="{{item.groupDetails}}">
+                <image class="group-avatar-small" src="{{item.groupDetails.groupAvatar || '/images/default-group.png'}}"></image>
+                <text class="group-name-small">{{item.groupDetails.groupName}}</text>
+                <text class="from-text">来自: {{item.groupDetails.groupName}}</text>
               </view>
             </view>
           </view>
@@ -211,26 +224,26 @@
               
               <!-- 任务流 -->
               <view class="river-task-flow">
-                <block wx:for="{{day.tasks}}" wx:key="id" wx:for-item="task">
+                <block wx:for="{{day.tasks}}" wx:key="instanceId" wx:for-item="task">
                   <view class="river-task-item {{task.completed ? 'completed-flow' : ''}}" 
-                        data-task="{{task}}">
+                        data-task="{{task.payload}}" bindtap="openTaskEditor">
                     <!-- 连接线 -->
                     <view class="river-flow-line"></view>
                     
                     <!-- 任务节点 -->
                     <view class="river-task-node">
-                      <view class="river-node-core {{task.type === 'exam' ? 'urgent-node' : ''}}">
+                      <view class="river-node-core {{task.mode === 'instant' ? 'urgent-node' : ''}}">
                         <view class="river-node-inner"></view>
                       </view>
                       
                       <!-- 任务卡片 -->
-                      <view class="river-task-bubble {{task.type === 'exam' ? 'exam' : ''}}">
+                      <view class="river-task-bubble {{task.mode === 'instant' ? 'exam' : ''}}">
                         <view class="river-bubble-content">
                           <text class="river-bubble-title">{{task.title}}</text>
-                          <text class="river-bubble-subtitle">{{task.time}}</text>
+                          <text class="river-bubble-subtitle">{{task.timelineLabel}}</text>
                         </view>
                         <view class="river-bubble-type-indicator">
-                          <text class="river-type-text">{{task.type === 'exam' ? '考' : '业'}}</text>
+                          <text class="river-type-text">{{task.mode === 'instant' ? '即' : '截'}}</text>
                         </view>
                       </view>
                     </view>
@@ -334,12 +347,11 @@
   <view class="course-detail-modal" wx:if="{{showCourseDetail}}">
     <view class="modal-mask" catchtap="closeCourseDetail"></view>
     <view class="modal-content">
-      <!-- 课程头部 -->
+      <!-- 课程英雄区域 -->
       <view class="course-hero" style="background: linear-gradient(135deg, {{selectedCourse.color}}20, {{selectedCourse.color}}10);">
         <view class="course-hero-content">
           <view class="course-color-badge" style="background: {{selectedCourse.color}};"></view>
           <text class="course-name">{{selectedCourse.name || '未知课程'}}</text>
-          <text class="course-location">{{selectedCourse.location || '未设置地点'}}</text>
           <view class="course-time-badge">{{selectedCourse.time || '时间未知'}}</view>
         </view>
         
@@ -376,6 +388,10 @@
             <view class="detail-item" wx:if="{{selectedCourse.teacher}}">
               <text class="detail-label">教师</text>
               <text class="detail-value">{{selectedCourse.teacher}}</text>
+            </view>
+            <view class="detail-item" wx:if="{{selectedCourse.location}}">
+              <text class="detail-label">教室</text>
+              <text class="detail-value">{{selectedCourse.location}}</text>
             </view>
           </view>
         </view>
@@ -487,6 +503,85 @@
       <view class="editor-actions">
         <view class="action-btn cancel-btn" catchtap="closeCourseEditor">取消</view>
         <view class="action-btn save-btn" catchtap="saveCourse">保存</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 待办编辑弹窗 -->
+  <view class="task-editor-modal" wx:if="{{showTaskEditor}}">
+    <view class="modal-mask" catchtap="closeTaskEditor"></view>
+    <view class="editor-content task-editor-shell">
+      <view class="editor-header">
+        <text class="editor-title">{{editingTask ? '编辑待办' : '新建待办'}}</text>
+        <view class="close-btn" catchtap="closeTaskEditor">✕</view>
+      </view>
+      
+      <scroll-view class="editor-body" scroll-y="true">
+        <view class="task-mode-grid">
+          <view class="mode-card {{taskForm.mode === 'persistent' ? 'active' : ''}}" data-mode="persistent" bindtap="switchTaskMode">
+            <text class="mode-eyebrow">持续类</text>
+            <text class="mode-title">作业 / 项目</text>
+            <text class="mode-desc">截止日前的每一天都会显示</text>
+            <view class="mode-chip">Deadline</view>
+          </view>
+          <view class="mode-card instant {{taskForm.mode === 'instant' ? 'active' : ''}}" data-mode="instant" bindtap="switchTaskMode">
+            <text class="mode-eyebrow">瞬时类</text>
+            <text class="mode-title">考试 / 活动</text>
+            <text class="mode-desc">只在事件当天提醒</text>
+            <view class="mode-chip">Event Time</view>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">事项标题 *</text>
+          <input class="form-input" placeholder="给待办起个名字" value="{{taskForm.title}}" 
+                 data-field="title" bindinput="onTaskFormChange" />
+        </view>
+
+        <view class="deadline-panel">
+          <picker mode="date" value="{{taskForm.deadline_date}}" 
+                  data-field="deadline_date" bindchange="onTaskFormChange">
+            <view class="deadline-pill">
+              <text class="pill-label">日期</text>
+              <text class="pill-value">{{taskForm.deadline_date || '选择日期'}}</text>
+            </view>
+          </picker>
+          <picker mode="time" value="{{taskForm.deadline_time}}" 
+                  data-field="deadline_time" bindchange="onTaskFormChange"
+                  wx:if="{{taskForm.mode === 'instant' || taskForm.has_specific_time}}">
+            <view class="deadline-pill">
+              <text class="pill-label">时间</text>
+              <text class="pill-value">{{taskForm.deadline_time || '选择时间'}}</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="time-toggle-row" wx:if="{{taskForm.mode === 'persistent'}}">
+          <text class="form-label subtle">需要具体时间提醒？</text>
+          <view class="toggle-switch {{taskForm.has_specific_time ? 'active' : ''}}" 
+                catchtap="toggleSpecificTime">
+            <view class="toggle-slider"></view>
+          </view>
+        </view>
+
+        <view class="mode-hint" wx:if="{{taskForm.mode === 'persistent'}}">
+          <text>截止日前，每天的待办列表都会显示它。</text>
+        </view>
+        <view class="mode-hint" wx:else>
+          <text>事件仅在所选日期出现，务必填好具体时间。</text>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">任务描述</text>
+          <textarea class="form-textarea" placeholder="补充细节、准备事项或链接..." value="{{taskForm.description}}" 
+                    data-field="description" bindinput="onTaskFormChange" />
+        </view>
+      </scroll-view>
+
+      <view class="editor-actions">
+        <view class="action-btn cancel-btn" catchtap="closeTaskEditor">取消</view>
+        <view class="action-btn delete-btn" wx:if="{{editingTask}}" catchtap="deleteTask">删除</view>
+        <view class="action-btn save-btn" catchtap="saveTask">保存</view>
       </view>
     </view>
   </view>

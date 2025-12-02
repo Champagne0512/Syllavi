@@ -6,8 +6,6 @@ const {
   fetchTasks,
   fetchCourses,
   fetchResources,
-  fetchAchievements,
-  fetchLearningHeatmap,
   updateProfile,
   uploadToStorage
 } = supabaseApi;
@@ -34,90 +32,6 @@ const DEFAULT_STATS = {
   continuous_days: 0
 };
 
-const BADGE_VISUALS = {
-  default: {
-    token: 'default',
-    caption: '流光',
-    legacyIcon: '✦'
-  },
-  beginner: {
-    token: 'seed',
-    caption: '萌芽',
-    legacyIcon: '🌱'
-  },
-  focused_1h: {
-    token: 'flow',
-    caption: '流动',
-    legacyIcon: '⏰'
-  },
-  focused_10h: {
-    token: 'orbit',
-    caption: '轨道',
-    legacyIcon: '⏳'
-  },
-  focused_50h: {
-    token: 'flare',
-    caption: '焰心',
-    legacyIcon: '🔥'
-  },
-  focused_100h: {
-    token: 'prism',
-    caption: '晶核',
-    legacyIcon: '💎'
-  },
-  task_10: {
-    token: 'checkpoint',
-    caption: '践行',
-    legacyIcon: '✅'
-  },
-  task_50: {
-    token: 'target',
-    caption: '靶向',
-    legacyIcon: '🎯'
-  },
-  continuous_7: {
-    token: 'pulse',
-    caption: '律动',
-    legacyIcon: '📅'
-  },
-  continuous_30: {
-    token: 'crown',
-    caption: '冠冕',
-    legacyIcon: '🏆'
-  }
-};
-
-const BASE_ACHIEVEMENTS = [
-  { id: 'beginner', name: '初出茅庐', desc: '完成首次专注' },
-  { id: 'focused_1h', name: '专注达人', desc: '累计专注1小时' },
-  { id: 'focused_10h', name: '时间管理大师', desc: '累计专注10小时' },
-  { id: 'focused_50h', name: '学霸之光', desc: '累计专注50小时' },
-  { id: 'focused_100h', name: '百炼成钢', desc: '累计专注100小时' },
-  { id: 'task_10', name: '行动派', desc: '完成10个任务' },
-  { id: 'task_50', name: '执行力MAX', desc: '完成50个任务' },
-  { id: 'continuous_7', name: '坚持不懈', desc: '连续学习7天' },
-  { id: 'continuous_30', name: '习惯养成', desc: '连续学习30天' }
-];
-
-const decorateAchievementLogos = (list = []) =>
-  list.map((item, index) => {
-    const derivedId = item.id || item.achievement_id || `legacy_${index}`;
-    const meta = BADGE_VISUALS[derivedId] || BADGE_VISUALS.default;
-    return {
-      ...item,
-      id: derivedId,
-      name: item.name || item.achievement_name || meta.caption || '隐形成就',
-      desc: item.desc || item.achievement_desc || '',
-      icon: item.icon || item.achievement_icon || meta.legacyIcon || '✦',
-      iconToken: meta.token,
-      iconCaption: meta.caption,
-      unlocked: typeof item.unlocked === 'boolean' ? item.unlocked : Boolean(item.unlocked_at)
-    };
-  });
-
-const DEFAULT_ACHIEVEMENTS = decorateAchievementLogos(
-  BASE_ACHIEVEMENTS.map((item) => ({ ...item, unlocked: false }))
-);
 
 const sanitizeGrade = (grade) => {
   if (typeof grade !== 'string') return '';
@@ -150,12 +64,10 @@ Page({
       bio: ''
     },
     stats: DEFAULT_STATS,
-    achievements: DEFAULT_ACHIEVEMENTS,
-    heatmap: [],
     quickActions: [
       { id: 'courses', name: '我的课程', iconToken: 'courses', path: '/pages/hub/index' },
       { id: 'resources', name: '资源库', iconToken: 'resources', path: '/pages/knowledge/index' },
-      { id: 'focus', name: '专注记录', iconToken: 'focus', path: '/pages/focus/index' },
+      { id: 'tools', name: '专注工具', iconToken: 'focus', path: '/pages/tools/index' },
       { id: 'settings', name: '设置', iconToken: 'settings', path: '/pages/settings/index' }
     ],
     editModalVisible: false,
@@ -189,7 +101,6 @@ Page({
     // 刷新数据
     if (!this.data.loading) {
       this.loadStats();
-      this.loadAchievements();
     }
   },
 
@@ -197,9 +108,7 @@ Page({
     this.setData({ loading: true });
     await Promise.all([
       this.loadProfile(),
-      this.loadStats(),
-      this.loadAchievements(),
-      this.loadHeatmap()
+      this.loadStats()
     ]);
     this.setData({ loading: false });
   },
@@ -289,107 +198,6 @@ Page({
     }
   },
 
-  async loadAchievements() {
-    try {
-      const app = getApp();
-      const userId = app?.globalData?.supabase?.userId;
-
-      // 如果数据库有achievements表，从数据库加载
-      const dbAchievements = await fetchAchievements(userId).catch(() => null);
-
-      if (dbAchievements && Array.isArray(dbAchievements) && dbAchievements.length) {
-        const normalized = decorateAchievementLogos(dbAchievements);
-        this.setData({ achievements: normalized });
-      } else {
-        // 否则根据stats计算成就解锁状态
-        this.calculateAchievements();
-      }
-    } catch (err) {
-      console.warn('load achievements failed', err);
-      this.calculateAchievements();
-    }
-  },
-
-  calculateAchievements() {
-    const { stats } = this.data;
-    const totalHours = stats.total_focus_minutes / 60;
-    const completedTasks = stats.completed_tasks;
-    const continuousDays = stats.continuous_days;
-
-    const achievements = this.data.achievements.map(ach => {
-      let unlocked = false;
-
-      switch (ach.id) {
-        case 'beginner':
-          unlocked = stats.total_sessions > 0;
-          break;
-        case 'focused_1h':
-          unlocked = totalHours >= 1;
-          break;
-        case 'focused_10h':
-          unlocked = totalHours >= 10;
-          break;
-        case 'focused_50h':
-          unlocked = totalHours >= 50;
-          break;
-        case 'focused_100h':
-          unlocked = totalHours >= 100;
-          break;
-        case 'task_10':
-          unlocked = completedTasks >= 10;
-          break;
-        case 'task_50':
-          unlocked = completedTasks >= 50;
-          break;
-        case 'continuous_7':
-          unlocked = continuousDays >= 7;
-          break;
-        case 'continuous_30':
-          unlocked = continuousDays >= 30;
-          break;
-      }
-
-      return { ...ach, unlocked };
-    });
-
-    this.setData({ achievements });
-  },
-
-  async loadHeatmap() {
-    try {
-      const app = getApp();
-      const userId = app?.globalData?.supabase?.userId;
-      const heatmapData = await fetchLearningHeatmap(userId);
-
-      if (Array.isArray(heatmapData) && heatmapData.length) {
-        this.setData({ heatmap: heatmapData });
-      } else {
-        // 生成默认热力图（最近30天）
-        this.generateDefaultHeatmap();
-      }
-    } catch (err) {
-      console.warn('load heatmap failed', err);
-      this.generateDefaultHeatmap();
-    }
-  },
-
-  generateDefaultHeatmap() {
-    const heatmap = [];
-    const today = new Date();
-
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-
-      heatmap.push({
-        date: date.toISOString().split('T')[0],
-        level: 0, // 0-4，表示活跃度
-        minutes: 0
-      });
-    }
-
-    this.setData({ heatmap });
-  },
 
   navigateToAction(e) {
     const { path } = e.currentTarget.dataset;
@@ -401,6 +209,20 @@ Page({
         }
       });
     }
+  },
+
+  navigateToTasks() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({
+      url: '/pages/tasks/index'
+    });
+  },
+
+  goToTools() {
+    wx.vibrateShort({ type: 'light' });
+    wx.switchTab({
+      url: '/pages/tools/index'
+    });
   },
 
   editProfile() {
@@ -614,18 +436,6 @@ Page({
       wx.hideLoading();
       this.setData({ savingProfile: false });
     }
-  },
-
-  viewAchievement(e) {
-    const { achievement } = e.currentTarget.dataset;
-    const status = achievement.unlocked ? '已解锁' : '未解锁';
-    const badgeLabel = achievement.iconCaption || achievement.icon || '';
-    const modalTitle = [badgeLabel, achievement.name].filter(Boolean).join(' ');
-    wx.showModal({
-      title: modalTitle,
-      content: `${achievement.desc}\n\n状态：${status}`,
-      showCancel: false
-    });
   },
 
   formatTime(minutes) {
