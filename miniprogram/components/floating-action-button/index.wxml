@@ -2,7 +2,7 @@
   <!-- 主按钮 -->
   <view class="fab-main {{expanded ? 'expanded' : ''}}" bindtap="toggleMenu" catchtouchmove="preventTouch">
     <!-- 展开时的菜单项 -->
-    <view class="fab-menu-item {{expanded ? 'show' : ''}}" animation="{{itemAnimation}}" wx:if="{{expanded}}">
+    <view class="fab-menu-item {{expanded ? 'show' : ''}}" animation="{{itemAnimation}}">
       <view class="menu-item menu-add" bindtap="addItem">
         <text class="menu-icon">+</text>
         <text class="menu-label">添加</text>
@@ -20,5 +20,5 @@
   </view>
   
   <!-- 背景遮罩 -->
-  <view class="fab-overlay {{expanded ? 'show' : ''}}" bindtap="closeMenu" wx:if="{{expanded}}"></view>
+  <view class="fab-overlay {{expanded ? 'show' : ''}}" bindtap="closeMenu"></view>
 </view>

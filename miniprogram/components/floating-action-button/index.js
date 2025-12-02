@@ -9,19 +9,30 @@ Component({
     expanded: false,
     itemAnimation: null
   },
+  lifetimes: {
+    attached() {
+      console.log('悬浮按钮组件已加载');
+    }
+  },
   methods: {
     // 切换菜单状态
     toggleMenu() {
+      console.log('toggleMenu 被调用，当前 expanded:', this.data.expanded);
+      
       // 触感反馈
       wx.vibrateShort({ type: 'light' });
       
       const expanded = !this.data.expanded;
-      this.setData({ expanded });
+      console.log('设置 expanded 为:', expanded);
       
-      if (expanded) {
-        // 创建菜单项动画
-        this.createItemAnimation();
-      }
+      this.setData({ expanded }, () => {
+        console.log('expanded 已更新为:', this.data.expanded);
+        
+        if (expanded) {
+          // 创建菜单项动画
+          this.createItemAnimation();
+        }
+      });
     },
     
     // 关闭菜单
