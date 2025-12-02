@@ -15,6 +15,11 @@ Page({
     this.loadGroups()
   },
 
+  onShow() {
+    const app = getApp();
+    app.syncTabBar(); // 使用全局同步方法
+  },
+
   onPullDownRefresh() {
     this.loadGroups().finally(() => {
       wx.stopPullDownRefresh()

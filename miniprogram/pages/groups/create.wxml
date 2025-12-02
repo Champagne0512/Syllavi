@@ -1,69 +1,139 @@
 <!--pages/groups/create.wxml-->
-<view class="container">
-  <form bindsubmit="onSubmit">
+<view class="zen-container">
+  <!-- 弥散背景装饰 -->
+  <view class="floating-field">
+    <view class="mesh-orb orb-a"></view>
+    <view class="mesh-orb orb-b"></view>
+    <view class="mesh-orb orb-c"></view>
+  </view>
+
+  <!-- 页面头部 -->
+  <view class="zen-header">
+    <view class="header-back" bindtap="goBack">
+      <text class="back-icon">←</text>
+    </view>
+    <view class="header-content">
+      <view class="header-eyebrow">创建小组</view>
+      <view class="header-title">Create Group</view>
+      <view class="header-quote">Together we learn, together we grow.</view>
+    </view>
+  </view>
+
+  <!-- 创建表单 -->
+  <form bindsubmit="onSubmit" class="zen-form">
     <!-- 小组名称 -->
-    <view class="form-group">
-      <label class="form-label">小组名称</label>
-      <input 
-        class="form-input" 
-        name="name" 
-        value="{{form.name}}" 
-        placeholder="请输入小组名称（最多50字）"
-        maxlength="50"
-        data-field="name"
-        bindinput="onInputChange"
-      />
+    <view class="zen-form-group">
+      <view class="form-header">
+        <text class="form-label">小组名称</text>
+        <text class="form-required">*</text>
+      </view>
+      <view class="input-wrapper">
+        <input 
+          class="zen-input" 
+          name="name" 
+          value="{{form.name}}" 
+          placeholder="给你的小组起个响亮的名字"
+          maxlength="50"
+          data-field="name"
+          bindinput="onInputChange"
+        />
+        <view class="input-counter">{{form.name.length}}/50</view>
+      </view>
     </view>
 
     <!-- 小组描述 -->
-    <view class="form-group">
-      <label class="form-label">小组描述</label>
-      <textarea 
-        class="form-textarea" 
-        name="description" 
-        value="{{form.description}}" 
-        placeholder="请输入小组描述（选填，最多200字）"
-        maxlength="200"
-        data-field="description"
-        bindinput="onInputChange"
-      />
+    <view class="zen-form-group">
+      <view class="form-header">
+        <text class="form-label">小组描述</text>
+        <text class="form-optional">选填</text>
+      </view>
+      <view class="textarea-wrapper">
+        <textarea 
+          class="zen-textarea" 
+          name="description" 
+          value="{{form.description}}" 
+          placeholder="描述一下小组的学习目标或特色..."
+          maxlength="200"
+          data-field="description"
+          bindinput="onInputChange"
+          auto-height
+        />
+        <view class="input-counter">{{form.description.length}}/200</view>
+      </view>
     </view>
 
     <!-- 最大人数 -->
-    <view class="form-group">
-      <label class="form-label">最大人数</label>
-      <picker 
-        range="{{[10, 15, 20, 25, 30, 40, 50]}}" 
-        value="{{[10, 15, 20, 25, 30, 40, 50].indexOf(form.maxMembers)}}"
-        bindchange="onMaxMembersChange"
-      >
-        <view class="picker">{{form.maxMembers}}人</view>
-      </picker>
+    <view class="zen-form-group">
+      <view class="form-header">
+        <text class="form-label">最大人数</text>
+        <text class="form-hint">选择适合的小组规模</text>
+      </view>
+      <view class="zen-picker">
+        <picker 
+          range="{{memberOptions}}" 
+          range-key="label"
+          value="{{selectedMemberIndex}}"
+          bindchange="onMaxMembersChange"
+        >
+          <view class="picker-display">
+            <text class="picker-value">{{memberOptions[selectedMemberIndex].label}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
     </view>
 
-    <!-- 公开设置 -->
-    <view class="form-group">
-      <label class="form-label">小组类型</label>
-      <view class="switch-group">
-        <text class="switch-label">{{form.isPublic ? '公开小组' : '私密小组'}}</text>
-        <switch 
-          checked="{{form.isPublic}}" 
-          bindchange="togglePublic"
-          color="#1c1c1e"
-        />
+    <!-- 小组类型 -->
+    <view class="zen-form-group">
+      <view class="form-header">
+        <text class="form-label">小组类型</text>
+        <text class="form-hint">决定其他用户如何发现你的小组</text>
       </view>
-      <view class="form-tip">{{form.isPublic ? '公开小组可被其他用户搜索到' : '私密小组只能通过小组码加入'}}</view>
+      <view class="zen-switch-group">
+        <view class="switch-card {{form.isPublic ? 'public' : 'private'}}">
+          <view class="switch-icon-container">
+            <view class="switch-dot {{form.isPublic ? 'public' : 'private'}}"></view>
+          </view>
+          <view class="switch-content">
+            <text class="switch-title">{{form.isPublic ? '公开小组' : '私密小组'}}</text>
+            <text class="switch-desc">{{form.isPublic ? '任何人都可以搜索并申请加入' : '只能通过小组码邀请加入'}}</text>
+          </view>
+          <switch 
+            checked="{{form.isPublic}}" 
+            bindchange="togglePublic"
+            color="#87A8A4"
+          />
+        </view>
+      </view>
+    </view>
+
+    <!-- 小组头像 -->
+    <view class="zen-form-group">
+      <view class="form-header">
+        <text class="form-label">小组头像</text>
+        <text class="form-optional">选填</text>
+      </view>
+      <view class="avatar-upload" bindtap="chooseAvatar">
+        <view class="avatar-preview">
+          <image wx:if="{{form.avatarUrl}}" src="{{form.avatarUrl}}" class="avatar-image"></image>
+          <view wx:else class="avatar-placeholder">
+            <text class="avatar-text">点击上传头像</text>
+          </view>
+        </view>
+      </view>
     </view>
 
     <!-- 提交按钮 -->
-    <view class="form-actions">
+    <view class="zen-form-actions">
       <button 
-        class="btn-primary" 
+        class="zen-submit-btn {{canSubmit ? 'ready' : 'disabled'}}" 
         form-type="submit" 
-        disabled="{{submitting}}"
+        disabled="{{!canSubmit || submitting}}"
         loading="{{submitting}}"
       >
-        {{submitting ? '创建中...' : '创建小组'}}
+        <view class="btn-content">
+          <text class="btn-text">{{submitting ? '创建中...' : '创建小组'}}</text>
+        </view>
       </button>
     </view>
   </form>

@@ -167,9 +167,10 @@ Page({
   },
 
   onShow() {
-    if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(0);
-    }
+    const app = getApp();
+    app.syncTabBar(); // 使用全局同步方法
+    this.loadTasks(); // 加载任务数据
+    this.updateViewData(); // 更新视图数据
   },
 
   onUnload() {

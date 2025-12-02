@@ -1,101 +1,166 @@
-<!--pages/groups/index.wxml-->
-<view class="container">
-  <!-- 导航栏 -->
-  <view class="navbar">
+<view class="zen-container">
+  <!-- 弥散背景装饰 -->
+  <view class="floating-field">
+    <view class="mesh-orb orb-a"></view>
+    <view class="mesh-orb orb-b"></view>
+    <view class="mesh-orb orb-c"></view>
+    <view class="mesh-orb orb-d"></view>
+  </view>
+
+  <!-- 页面头部 -->
+  <view class="zen-header">
+    <view class="header-eyebrow">学习社区</view>
+    <view class="header-title">Study Groups</view>
+    <view class="header-quote">Flow stays when breathing stays.</view>
+  </view>
+
+  <!-- 玻璃拟态导航栏 -->
+  <view class="glass-navbar">
     <view class="nav-tabs">
       <view 
         class="nav-tab {{currentTab === 'myGroups' ? 'active' : ''}}"
         data-tab="myGroups"
         bindtap="switchTab"
       >
-        我的小组
+        <view class="tab-indicator"></view>
+        <text class="tab-text">我的小组</text>
       </view>
       <view 
         class="nav-tab {{currentTab === 'publicGroups' ? 'active' : ''}}"
         data-tab="publicGroups"
         bindtap="switchTab"
       >
-        公开小组
+        <view class="tab-indicator"></view>
+        <text class="tab-text">公开小组</text>
       </view>
     </view>
   </view>
 
   <!-- 加载状态 -->
-  <view wx:if="{{loading}}" class="loading-container">
-    <view class="loading-text">加载中...</view>
+  <view wx:if="{{loading}}" class="zen-loading">
+    <view class="breathing-dot"></view>
+    <text class="loading-text">正在加载...</text>
   </view>
 
   <!-- 我的小组 -->
-  <view wx:if="{{!loading && currentTab === 'myGroups'}}">
+  <view wx:if="{{!loading && currentTab === 'myGroups'}}" class="content-section">
     <!-- 空状态 -->
-    <view wx:if="{{userGroups.length === 0}}" class="empty-state">
-      <text class="empty-icon">📚</text>
-      <view class="empty-text">您还没有加入任何小组</view>
-      <view class="empty-desc">快来创建或加入一个学习小组吧！</view>
-      <view class="action-buttons">
-        <button class="btn-primary" bindtap="createGroup">创建小组</button>
-        <button class="btn-secondary" bindtap="joinGroup">加入小组</button>
+    <view wx:if="{{userGroups.length === 0}}" class="zen-empty">
+      <view class="empty-icon"></view>
+      <view class="empty-title">开始你的学习之旅</view>
+      <view class="empty-desc">创建或加入学习小组，与同伴一起成长</view>
+      <view class="empty-actions">
+        <button class="zen-btn primary" bindtap="createGroup">
+          <text class="btn-text">创建小组</text>
+        </button>
+        <button class="zen-btn secondary" bindtap="joinGroup">
+          <text class="btn-text">发现小组</text>
+        </button>
       </view>
     </view>
 
     <!-- 小组列表 -->
-    <view wx:else class="group-list">
-      <view class="group-card" wx:for="{{userGroups}}" wx:key="group_id" data-id="{{item.group_id}}" bindtap="viewGroupDetail" catch:tap="viewGroupDetail">
-        <view class="group-header">
-          <image class="group-avatar" src="{{item.avatar_url || '/static/default-avatar.png'}}"></image>
-          <view class="group-info">
-            <view class="group-name">{{item.group_name}}</view>
-            <view class="group-meta">
-              <text class="role-tag {{item.member_role}}">{{item.member_role === 'leader' ? '组长' : item.member_role === 'deputy_leader' ? '副组长' : '组员'}}</text>
-              <text class="member-count">{{item.member_count}}人</text>
+    <view wx:else class="zen-group-list">
+      <view class="zen-group-card" wx:for="{{userGroups}}" wx:key="group_id" data-id="{{item.group_id}}" bindtap="viewGroupDetail" catch:tap="viewGroupDetail">
+        <view class="card-glow"></view>
+        <view class="card-content">
+          <view class="group-header">
+            <view class="avatar-container">
+              <image class="group-avatar" src="{{item.avatar_url || '/static/icons/group-empty.png'}}"></image>
+              <view class="status-indicator {{item.member_role}}"></view>
+            </view>
+            <view class="group-info">
+              <view class="group-name">{{item.group_name}}</view>
+              <view class="group-meta">
+                <view class="role-badge {{item.member_role}}">
+                  <text class="role-text">{{item.member_role === 'leader' ? '组长' : item.member_role === 'deputy_leader' ? '副组长' : '组员'}}</text>
+                </view>
+                <view class="member-count">
+                  <text class="count-text">{{item.member_count}}人</text>
+                </view>
+              </view>
             </view>
           </view>
-        </view>
-        <view class="group-description">{{item.group_description || '暂无描述'}}</view>
-        <view class="group-actions">
-          <button class="btn-small secondary" data-id="{{item.group_id}}" bindtap="viewGroupDetail" catchtap>查看详情</button>
+          <view class="group-description">{{item.group_description || '暂无描述，点击查看详情'}}</view>
+          <view class="group-stats">
+            <view class="stat-item">
+              <text class="stat-value">{{item.task_count || 0}}</text>
+              <text class="stat-label">任务</text>
+            </view>
+            <view class="stat-divider"></view>
+            <view class="stat-item">
+              <text class="stat-value">{{item.resource_count || 0}}</text>
+              <text class="stat-label">资料</text>
+            </view>
+            <view class="stat-divider"></view>
+            <view class="stat-item">
+              <text class="stat-value">{{item.active_days || 0}}</text>
+              <text class="stat-label">活跃天数</text>
+            </view>
+          </view>
         </view>
       </view>
     </view>
   </view>
 
   <!-- 公开小组 -->
-  <view wx:if="{{!loading && currentTab === 'publicGroups'}}">
+  <view wx:if="{{!loading && currentTab === 'publicGroups'}}" class="content-section">
     <!-- 空状态 -->
-    <view wx:if="{{publicGroups.length === 0}}" class="empty-state">
-      <text class="empty-icon">🌍</text>
-      <view class="empty-text">暂无公开小组</view>
-      <view class="empty-desc">您也可以创建第一个小组！</view>
-      <button class="btn-primary" bindtap="createGroup">创建小组</button>
+    <view wx:if="{{publicGroups.length === 0}}" class="zen-empty">
+      <view class="empty-icon"></view>
+      <view class="empty-title">暂无公开小组</view>
+      <view class="empty-desc">成为第一个创建公开小组的引领者</view>
+      <button class="zen-btn primary" bindtap="createGroup">
+        <text class="btn-text">创建小组</text>
+      </button>
     </view>
 
     <!-- 公开小组列表 -->
-    <view wx:else class="group-list">
-      <view class="group-card" wx:for="{{publicGroups}}" wx:key="id" data-id="{{item.id}}" bindtap="viewGroupDetail">
-        <view class="group-header">
-          <image class="group-avatar" src="{{item.avatar_url || '/static/default-avatar.png'}}"></image>
-          <view class="group-info">
-            <view class="group-name">{{item.name}}</view>
-            <view class="group-meta">
-              <text class="member-count">小组码：{{item.group_code}}</text>
+    <view wx:else class="zen-group-list">
+      <view class="zen-group-card" wx:for="{{publicGroups}}" wx:key="id" data-id="{{item.id}}" bindtap="viewGroupDetail">
+        <view class="card-glow"></view>
+        <view class="card-content">
+          <view class="group-header">
+            <view class="avatar-container">
+              <image class="group-avatar" src="{{item.avatar_url || '/static/icons/group-empty.png'}}"></image>
+              <view class="public-badge"></view>
+            </view>
+            <view class="group-info">
+              <view class="group-name">{{item.name}}</view>
+              <view class="group-meta">
+                <view class="group-code">
+                  <text class="code-text">{{item.group_code}}</text>
+                </view>
+                <view class="member-count">
+                  <text class="count-text">{{item.member_count || 0}}人</text>
+                </view>
+              </view>
             </view>
           </view>
-        </view>
-        <view class="group-description">{{item.description || '暂无描述'}}</view>
-        <view class="group-actions">
-          <button class="btn-small" data-code="{{item.group_code}}" bindtap="joinFromPublic" catchtap>申请加入</button>
+          <view class="group-description">{{item.description || '暂无描述，点击查看详情'}}</view>
+          <view class="join-action">
+            <button class="join-btn" data-code="{{item.group_code}}" bindtap="joinFromPublic" catchtap>
+              <text class="join-text">申请加入</text>
+            </button>
+          </view>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- 底部操作栏 -->
-  <view wx:if="{{!loading}}" class="floating-actions">
-    <button class="fab" bindtap="createGroup">
-      <text class="fab-text">+</text>
+  <!-- 悬浮操作按钮 -->
+  <view wx:if="{{!loading}}" class="zen-floating-actions">
+    <button class="zen-fab primary" bindtap="createGroup">
+      <view class="fab-content">
+        <view class="fab-icon create"></view>
+      </view>
+      <view class="fab-label">创建</view>
     </button>
-    <button class="fab secondary" bindtap="joinGroup">
-      <text class="fab-text">加入</text>
+    <button class="zen-fab secondary" bindtap="joinGroup">
+      <view class="fab-content">
+        <view class="fab-icon join"></view>
+      </view>
+      <view class="fab-label">发现</view>
     </button>
   </view>
 </view>

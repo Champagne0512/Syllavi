@@ -86,9 +86,8 @@ Page({
     if (guestMode !== this.data.isGuest) {
       this.setData({ isGuest: guestMode });
     }
-    if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(3);
-    }
+    const app = getApp();
+    app.syncTabBar(); // 使用全局同步方法
     // 刷新数据
     if (!this.data.loading) {
       this.loadStats();
@@ -160,19 +159,47 @@ Page({
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
 
+      if (!userId) {
+        console.warn('未找到用户ID，使用默认统计数据');
+        this.setData({ stats: DEFAULT_STATS });
+        return;
+      }
+
+      console.log('开始加载个人主页统计数据，用户ID:', userId);
+
       // 并行加载所有统计数据
       const [focusStats, tasks, courses, resources] = await Promise.all([
-        fetchFocusStats(userId).catch(() => null),
-        fetchTasks(userId).catch(() => []),
-        fetchCourses(userId).catch(() => []),
-        fetchResources(userId).catch(() => [])
+        fetchFocusStats(userId).catch(err => {
+          console.warn('专注统计获取失败:', err);
+          return null;
+        }),
+        fetchTasks(userId).catch(err => {
+          console.warn('任务数据获取失败:', err);
+          return [];
+        }),
+        fetchCourses(userId).catch(err => {
+          console.warn('课程数据获取失败:', err);
+          return [];
+        }),
+        fetchResources(userId).catch(err => {
+          console.warn('资源数据获取失败:', err);
+          return [];
+        })
       ]);
+
+      console.log('个人主页数据获取完成:', {
+        focusStats: focusStats,
+        tasks: tasks?.length,
+        courses: courses?.length,
+        resources: resources?.length
+      });
 
       const todayMinutes = Number(focusStats?.today_minutes) || 0;
       const weekMinutes = Number(focusStats?.week_minutes) || 0;
       const totalFocusMinutes = Math.max(0, Math.floor(Number(focusStats?.total_minutes) || 0));
       const totalSessions = Number(focusStats?.total_sessions) || 0;
       const continuousDays = Number(focusStats?.continuous_days) || 0;
+      
       const stats = {
         today_focus_minutes: todayMinutes,
         week_focus_minutes: weekMinutes,
@@ -188,8 +215,9 @@ Page({
 
       this.setData({ stats });
       wx.setStorageSync('profile_stats', stats);
+      console.log('个人主页统计数据已更新:', stats);
     } catch (err) {
-      console.warn('load stats failed', err);
+      console.error('load stats failed', err);
       const cached = wx.getStorageSync('profile_stats');
       this.setData({ stats: cached || DEFAULT_STATS });
     }

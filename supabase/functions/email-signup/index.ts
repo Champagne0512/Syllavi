@@ -1,8 +1,15 @@
 import { getServiceClient, getServiceRoleKey, getSupabaseUrl } from '../_shared/supabaseClient.ts';
 
-const supabase = getServiceClient();
-const supabaseUrl = getSupabaseUrl();
-const serviceRoleKey = getServiceRoleKey();
+let supabase, supabaseUrl, serviceRoleKey;
+try {
+  supabase = getServiceClient();
+  supabaseUrl = getSupabaseUrl();
+  serviceRoleKey = getServiceRoleKey();
+  console.log('email-signup: Supabase客户端初始化成功');
+} catch (error) {
+  console.error('email-signup: Supabase客户端初始化失败:', error);
+  throw error;
+}
 
 interface SignupPayload {
   email?: string;

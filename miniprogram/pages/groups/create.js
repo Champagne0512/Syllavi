@@ -25,6 +25,11 @@ Page({
     // 页面加载时的初始化
   },
 
+  // 返回上一页
+  goBack() {
+    wx.navigateBack()
+  },
+
   // 输入框变化
   onInputChange(e) {
     const field = e.currentTarget.dataset.field

@@ -33,114 +33,139 @@ Page({
   },
 
   onShow() {
-    if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(2);
-    }
+    const app = getApp();
+    app.syncTabBar(); // 使用全局同步方法
     this.loadFocusData();
   },
 
   // 加载专注数据
   async loadFocusData() {
     try {
-      // 从本地服务获取数据
-      const stats = focusService.getStats();
-      const achievements = this.normalizeAchievements(focusService.getAchievements());
-      const heatmapData = focusService.getHeatmapData();
-      const distributionData = focusService.getHourlyDistribution();
-      const insightList = this.buildInsights(stats);
-      const heatmapSummary = this.buildHeatmapSummary(heatmapData);
-      const achievementsMeta = {
-        unlocked: achievements.filter(item => item.unlocked).length,
-        total: achievements.length
-      };
-      
-      this.setData({
-        focusStats: {
-          todayFocus: stats.todayMinutes,
-          totalSessions: stats.totalSessions,
-          streakDays: stats.streakDays
-        },
-        achievements,
-        achievementsMeta,
-        insightList,
-        heatmapData: heatmapData,
-        distributionData: distributionData,
-        heatmapSummary,
-        showStats: true
-      });
+      // 先显示加载状态
+      this.setData({ showStats: false });
 
-      // 同时尝试从远程获取数据
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
-      if (userId) {
-        const [remoteStats, heatmapRows, distributionRows, achievementRows] = await Promise.all([
-          fetchFocusStats(userId),
-          fetchFocusHeatmapRemote(userId, 365),
-          fetchFocusDistributionRemote(userId),
-          fetchRemoteAchievementsSnapshot(userId)
-        ]);
-
-        const nextAchievements = this.mergeRemoteAchievements(achievementRows);
-        const achievementsMeta = {
-          unlocked: nextAchievements.filter(item => item.unlocked).length,
-          total: nextAchievements.length
-        };
-
-        const mergedStats = {
-          totalMinutes: remoteStats?.total_minutes ?? stats.totalMinutes,
-          totalSessions: remoteStats?.total_sessions ?? stats.totalSessions,
-          longestSession: remoteStats?.longest_session ?? stats.longestSession ?? 0,
-          streakDays: remoteStats?.streak_days ?? stats.streakDays,
-          todayMinutes: remoteStats?.today_minutes ?? stats.todayMinutes
-        };
-
-        const remoteHeatmap = heatmapRows && heatmapRows.length ? this.normalizeHeatmapFromRemote(heatmapRows) : this.data.heatmapData;
-        const remoteDistribution = distributionRows && distributionRows.length ? this.normalizeDistributionFromRemote(distributionRows) : this.data.distributionData;
-        const heatmapSummary = this.buildHeatmapSummary(remoteHeatmap);
-
-        this.setData({
-          focusStats: {
-            todayFocus: mergedStats.todayMinutes,
-            totalSessions: mergedStats.totalSessions,
-            streakDays: mergedStats.streakDays,
-            longestSession: mergedStats.longestSession
-          },
-          heatmapData: remoteHeatmap,
-          distributionData: remoteDistribution,
-          heatmapSummary,
-          achievements: nextAchievements,
-          achievementsMeta,
-          insightList: this.buildInsights(mergedStats)
-        });
-      }
-    } catch (error) {
-      console.error('Load focus data failed:', error);
-      // 即使远程失败，本地数据仍然可用
-      const stats = focusService.getStats();
-      const achievements = this.normalizeAchievements(focusService.getAchievements());
-      const heatmapData = focusService.getHeatmapData();
-      const distributionData = focusService.getHourlyDistribution();
-      const insightList = this.buildInsights(stats);
-      const achievementsMeta = {
-        unlocked: achievements.filter(item => item.unlocked).length,
-        total: achievements.length
-      };
       
+      if (!userId) {
+        console.warn('未找到用户ID，使用本地数据');
+        this.loadLocalData();
+        return;
+      }
+
+      console.log('开始加载专注数据，用户ID:', userId);
+
+      // 并行获取所有远程数据
+      const [remoteStats, heatmapRows, distributionRows, achievementRows] = await Promise.all([
+        fetchFocusStats(userId).catch(err => {
+          console.warn('专注统计获取失败:', err);
+          return null;
+        }),
+        fetchFocusHeatmapRemote(userId, 365).catch(err => {
+          console.warn('热力图数据获取失败:', err);
+          return [];
+        }),
+        fetchFocusDistributionRemote(userId).catch(err => {
+          console.warn('时段分布获取失败:', err);
+          return [];
+        }),
+        fetchRemoteAchievementsSnapshot(userId).catch(err => {
+          console.warn('成就数据获取失败:', err);
+          return [];
+        })
+      ]);
+
+      console.log('远程数据获取完成:', {
+        stats: remoteStats,
+        heatmap: heatmapRows?.length,
+        distribution: distributionRows?.length,
+        achievements: achievementRows?.length
+      });
+
+      // 处理成就数据
+      const nextAchievements = this.mergeRemoteAchievements(achievementRows);
+      const achievementsMeta = {
+        unlocked: nextAchievements.filter(item => item.unlocked).length,
+        total: nextAchievements.length
+      };
+
+      // 处理统计数据
+      const stats = remoteStats || {
+        total_minutes: 0,
+        total_sessions: 0,
+        longest_session: 0,
+        today_minutes: 0,
+        streak_days: 0
+      };
+
+      // 处理热力图数据
+      const remoteHeatmap = heatmapRows && heatmapRows.length ? 
+        this.normalizeHeatmapFromRemote(heatmapRows) : 
+        focusService.getHeatmapData();
+
+      // 处理时段分布数据
+      const remoteDistribution = distributionRows && distributionRows.length ? 
+        this.normalizeDistributionFromRemote(distributionRows) : 
+        focusService.getHourlyDistribution();
+
+      const heatmapSummary = this.buildHeatmapSummary(remoteHeatmap);
+      const insightList = this.buildInsights(stats);
+
+      // 更新页面数据
       this.setData({
         focusStats: {
-          todayFocus: stats.todayMinutes,
-          totalSessions: stats.totalSessions,
-          streakDays: stats.streakDays
+          todayFocus: stats.today_minutes,
+          totalSessions: stats.total_sessions,
+          streakDays: stats.streak_days,
+          longestSession: stats.longest_session
         },
-        achievements,
+        achievements: nextAchievements,
         achievementsMeta,
         insightList,
-        heatmapData: heatmapData,
-        distributionData: distributionData,
+        heatmapData: remoteHeatmap,
+        distributionData: remoteDistribution,
         heatmapSummary,
         showStats: true
       });
+
+      console.log('专注数据加载完成');
+
+    } catch (error) {
+      console.error('Load focus data failed:', error);
+      this.loadLocalData();
     }
+  },
+
+  // 加载本地数据作为备用
+  loadLocalData() {
+    const stats = focusService.getStats();
+    const achievements = this.normalizeAchievements(focusService.getAchievements());
+    const heatmapData = focusService.getHeatmapData();
+    const distributionData = focusService.getHourlyDistribution();
+    const insightList = this.buildInsights(stats);
+    const heatmapSummary = this.buildHeatmapSummary(heatmapData);
+    const achievementsMeta = {
+      unlocked: achievements.filter(item => item.unlocked).length,
+      total: achievements.length
+    };
+    
+    this.setData({
+      focusStats: {
+        todayFocus: stats.todayMinutes,
+        totalSessions: stats.totalSessions,
+        streakDays: stats.streakDays,
+        longestSession: stats.longestSession || 0
+      },
+      achievements,
+      achievementsMeta,
+      insightList,
+      heatmapData: heatmapData,
+      distributionData: distributionData,
+      heatmapSummary,
+      showStats: true
+    });
+
+    console.log('已加载本地专注数据');
   },
 
   normalizeAchievements(map = {}) {

@@ -57,9 +57,9 @@ Page({
     this.loadResources();
   },
   onShow() {
-    if (this.getTabBar && this.getTabBar()) {
-      this.getTabBar().setSelected(1);
-    }
+    const app = getApp();
+    app.syncTabBar(); // 使用全局同步方法
+    this.setData({ showUploadModal: false });
   },
   onUnload() {
     this.clearAiPolling();

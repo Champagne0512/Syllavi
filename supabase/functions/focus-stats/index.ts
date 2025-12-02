@@ -1,6 +1,13 @@
 import { getServiceClient } from '../_shared/supabaseClient.ts';
 
-const supabase = getServiceClient();
+let supabase;
+try {
+  supabase = getServiceClient();
+  console.log('focus-stats: Supabase客户端初始化成功');
+} catch (error) {
+  console.error('focus-stats: Supabase客户端初始化失败:', error);
+  throw error;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

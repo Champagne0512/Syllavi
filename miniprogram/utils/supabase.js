@@ -41,6 +41,8 @@ function buildHeaders(extra = {}) {
     apikey: SUPABASE_ANON_KEY,
     Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Prefer': 'return=representation', // 确保返回创建的数据
     ...extra
   };
 }
@@ -57,20 +59,17 @@ function request(path, { method = 'GET', data = null, query = '', headers = {} }
   const finalHeaders = buildHeaders(headers);
   
   // 添加调试信息
-  if (method === 'POST' && (path === 'group_tasks' || path === 'group_task_members')) {
-    console.log('请求URL:', url);
-    console.log('请求方法:', method);
-    console.log('请求头:', finalHeaders);
-    console.log('请求数据:', requestData);
-  }
-
+  console.log(`[Supabase请求] ${method} ${url}`);
+  
   return new Promise((resolve, reject) => {
     wx.request({
       url,
       method,
       data: requestData,
       header: finalHeaders,
+      timeout: 10000, // 添加10秒超时
       success(res) {
+        console.log(`[Supabase响应] 状态码: ${res.statusCode}`);
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 对于 DELETE 请求，即使没有数据返回也视为成功
           if (method === 'DELETE' && (res.data === null || res.data === '')) {
@@ -79,16 +78,42 @@ function request(path, { method = 'GET', data = null, query = '', headers = {} }
             resolve(res.data);
           }
         } else {
-          console.error('Supabase error', res);
-          // 添加更多错误信息
-          if (res.statusCode === 400 || res.statusCode === 401) {
-            console.error('权限或数据格式错误:', res.data);
+          console.error('[Supabase错误]', res);
+          // 添加重试逻辑
+          if (res.statusCode === 401) {
+            console.log('尝试刷新令牌...');
+            refreshToken().then(refreshResult => {
+              if (refreshResult.success) {
+                // 重新构建请求头
+                const newHeaders = buildHeaders(headers);
+                wx.request({
+                  url,
+                  method,
+                  data: requestData,
+                  header: newHeaders,
+                  timeout: 10000,
+                  success(retryRes) {
+                    if (retryRes.statusCode >= 200 && retryRes.statusCode < 300) {
+                      resolve(retryRes.data);
+                    } else {
+                      reject(retryRes);
+                    }
+                  },
+                  fail(retryErr) {
+                    reject(retryErr);
+                  }
+                });
+              } else {
+                reject(res);
+              }
+            });
+          } else {
+            reject(res);
           }
-          reject(res);
         }
       },
       fail(err) {
-        console.error('Supabase network issue', err);
+        console.error('[Supabase网络错误]', err);
         reject(err);
       }
     });
@@ -489,6 +514,321 @@ async function fetchWeekSchedule(userId, startDate, endDate) {
   return request('week_schedules', { query });
 }
 
+// 专注统计相关函数
+async function fetchFocusStats(userId) {
+  // 直接查询数据库，避免云函数404错误
+  return await fetchFocusStatsDirect(userId);
+}
+
+// 直接查询数据库获取专注统计
+async function fetchFocusStatsDirect(userId) {
+  try {
+    // 先查询所有专注会话，然后在客户端计算统计
+    const sessionQuery = [
+      `user_id=eq.${userId}`,
+      'completed=eq.true',
+      'select=duration,started_at'
+    ].join('&');
+    
+    const sessions = await request('focus_sessions', { query: sessionQuery });
+    console.log('专注会话数据获取成功:', sessions?.length, '条记录');
+    
+    // 在客户端计算统计数据
+    let totalMinutes = 0;
+    let longestSession = 0;
+    let totalSessions = 0;
+    
+    if (sessions && sessions.length > 0) {
+      sessions.forEach(session => {
+        const duration = Number(session.duration) || 0;
+        totalMinutes += duration;
+        longestSession = Math.max(longestSession, duration);
+        totalSessions++;
+      });
+    }
+    
+    // 查询今日专注时间
+    const today = new Date().toISOString().slice(0, 10);
+    const todayQuery = [
+      `user_id=eq.${userId}`,
+      `date=eq.${today}`,
+      'select=focus_minutes'
+    ].join('&');
+    
+    const todayResult = await request('learning_heatmap', { query: todayQuery });
+    const todayMinutes = todayResult && todayResult.length > 0 ? todayResult[0].focus_minutes : 0;
+    console.log('今日专注时间:', todayMinutes);
+    
+    // 查询本周专注时间
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const weekStartStr = weekStart.toISOString().slice(0, 10);
+    const weekQuery = [
+      `user_id=eq.${userId}`,
+      `date=gte.${weekStartStr}`,
+      'select=focus_minutes'
+    ].join('&');
+    
+    const weekResults = await request('learning_heatmap', { query: weekQuery });
+    let weekMinutes = 0;
+    if (weekResults && weekResults.length > 0) {
+      weekMinutes = weekResults.reduce((sum, item) => sum + (Number(item.focus_minutes) || 0), 0);
+    }
+    console.log('本周专注时间:', weekMinutes);
+    
+    // 计算连续天数（简化版本，基于热力图数据）
+    const streakQuery = [
+      `user_id=eq.${userId}`,
+      'order=date.desc',
+      'limit=30',
+      'select=date,focus_minutes'
+    ].join('&');
+    
+    const streakResult = await request('learning_heatmap', { query: streakQuery });
+    let streakDays = 0;
+    if (streakResult && streakResult.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      for (let i = 0; i < streakResult.length; i++) {
+        const record = streakResult[i];
+        const recordDate = new Date(record.date);
+        recordDate.setHours(0, 0, 0, 0);
+        
+        const diffDays = Math.floor((today - recordDate) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === i && record.focus_minutes > 0) {
+          streakDays++;
+        } else if (diffDays > i) {
+          break;
+        }
+      }
+    }
+    console.log('连续天数:', streakDays);
+    
+    return {
+      total_minutes: totalMinutes,
+      total_sessions: totalSessions,
+      longest_session: longestSession,
+      avg_session_length: totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0,
+      today_minutes: todayMinutes,
+      streak_days: streakDays,
+      continuous_days: streakDays,
+      week_minutes: weekMinutes,
+      night_owl_sessions: 0, // 需要复杂查询，暂时设为0
+      early_bird_sessions: 0,
+      deep_diver_sessions: 0
+    };
+  } catch (error) {
+    console.error('直接查询专注统计失败:', error);
+    return {
+      total_minutes: 0,
+      total_sessions: 0,
+      longest_session: 0,
+      avg_session_length: 0,
+      today_minutes: 0,
+      streak_days: 0,
+      continuous_days: 0,
+      week_minutes: 0,
+      night_owl_sessions: 0,
+      early_bird_sessions: 0,
+      deep_diver_sessions: 0
+    };
+  }
+}
+
+// 获取专注热力图数据
+async function fetchFocusHeatmapRemote(userId, days = 365) {
+  try {
+    const query = [
+      `user_id=eq.${userId}`,
+      'order=date.desc',
+      `limit=${days}`,
+      'select=date,focus_minutes,level'
+    ].join('&');
+    
+    const result = await request('learning_heatmap', { query });
+    console.log('热力图数据获取成功:', result?.length, '条记录');
+    return result || [];
+  } catch (error) {
+    console.error('获取热力图数据失败:', error);
+    return [];
+  }
+}
+
+// 获取专注时段分布数据
+async function fetchFocusDistributionRemote(userId) {
+  try {
+    // 查询专注会话的时段分布
+    const query = [
+      `user_id=eq.${userId}`,
+      'completed=eq.true',
+      'select=started_at'
+    ].join('&');
+    
+    const sessions = await request('focus_sessions', { query });
+    
+    // 统计24小时分布
+    const hourlyData = Array(24).fill(0);
+    
+    if (sessions && sessions.length > 0) {
+      sessions.forEach(session => {
+        if (session.started_at) {
+          const hour = new Date(session.started_at).getHours();
+          hourlyData[hour] += 1; // 统计次数，而不是分钟数
+        }
+      });
+    }
+    
+    const distribution = hourlyData.map((count, hour) => ({
+      hour: hour,
+      sessions: count,
+      minutes: count * 30, // 假设平均每次30分钟
+      label: `${hour.toString().padStart(2, '0')}:00`
+    }));
+    
+    console.log('时段分布数据获取成功:', distribution.length, '个小时段');
+    return distribution;
+  } catch (error) {
+    console.error('获取时段分布失败:', error);
+    return [];
+  }
+}
+
+// 直接查询时段分布
+async function fetchFocusDistributionDirect(userId) {
+  try {
+    // 这里需要根据实际的数据库表结构来查询
+    // 暂时返回空数组，需要根据实际表结构调整
+    return [];
+  } catch (error) {
+    console.error('获取时段分布失败:', error);
+    return [];
+  }
+}
+
+// 获取用户成就数据
+async function fetchRemoteAchievementsSnapshot(userId) {
+  try {
+    // 直接查询成就表
+    const query = [
+      `user_id=eq.${userId}`,
+      'order=unlocked_at.desc',
+      'select=achievement_id,achievement_name,achievement_desc,achievement_icon,unlocked_at'
+    ].join('&');
+    
+    const result = await request('achievements', { query });
+    console.log('成就数据获取成功:', result?.length, '条记录');
+    return result || [];
+  } catch (error) {
+    console.error('获取成就数据失败:', error);
+    return [];
+  }
+}
+
+// 直接查询成就数据
+async function fetchAchievementsDirect(userId) {
+  try {
+    const query = [
+      `user_id=eq.${userId}`,
+      'order=unlocked_at.desc',
+      'select=achievement_id,achievement_name,achievement_desc,achievement_icon,unlocked_at'
+    ].join('&');
+    
+    return await request('achievements', { query });
+  } catch (error) {
+    console.error('获取成就数据失败:', error);
+    return [];
+  }
+}
+
+// 获取用户资料
+async function fetchProfile(userId) {
+  try {
+    const query = [
+      `id=eq.${userId}`,
+      'select=nickname,school_name,grade,avatar_url,bio,created_at,updated_at'
+    ].join('&');
+    
+    return await request('profiles', { query });
+  } catch (error) {
+    console.error('获取用户资料失败:', error);
+    return [];
+  }
+}
+
+// 更新用户资料
+async function updateProfile(userId, profileData) {
+  try {
+    const query = `id=eq.${userId}`;
+    return await request('profiles', {
+      method: 'PATCH',
+      query,
+      data: profileData
+    });
+  } catch (error) {
+    console.error('更新用户资料失败:', error);
+    throw error;
+  }
+}
+
+// 获取资源列表
+async function fetchResources(userId) {
+  try {
+    const query = [
+      `user_id=eq.${userId}`,
+      'order=created_at.desc',
+      'select=id,file_name,file_type,subject,file_size,ai_summary,created_at,file_url'
+    ].join('&');
+    
+    return await request('resources', { query });
+  } catch (error) {
+    console.error('获取资源列表失败:', error);
+    return [];
+  }
+}
+
+// 上传文件到存储
+async function uploadToStorage(bucket, filePath, fileName, options = {}) {
+  try {
+    const { userId, token } = options;
+    const formData = new FormData();
+    
+    // 读取文件
+    const fileData = await new Promise((resolve, reject) => {
+      wx.getFileSystemManager().readFile({
+        filePath,
+        success: resolve,
+        fail: reject
+      });
+    });
+    
+    // 构建FormData
+    formData.append('file', new Blob([fileData]), fileName);
+    
+    const response = await wx.request({
+      url: `${SUPABASE_URL}/storage/v1/object/${bucket}/${fileName}`,
+      method: 'POST',
+      header: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
+      },
+      data: formData
+    });
+    
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return {
+        publicUrl: `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`
+      };
+    } else {
+      throw new Error('上传失败');
+    }
+  } catch (error) {
+    console.error('文件上传失败:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   request,
   SUPABASE_URL,
@@ -508,5 +848,13 @@ module.exports = {
   fetchAllTasks,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  fetchFocusStats,
+  fetchFocusHeatmapRemote,
+  fetchFocusDistributionRemote,
+  fetchRemoteAchievementsSnapshot,
+  fetchProfile,
+  updateProfile,
+  fetchResources,
+  uploadToStorage
 };
