@@ -14,8 +14,8 @@ exports.main = async (event, context) => {
   console.log('开始调用 Coze, 图片:', imageUrl);
 
   try {
-    // 调用 Coze V3 Chat API
-    const response = await axios.post(
+    // 第一步：调用 Coze V3 Chat API 发起请求
+    const initResponse = await axios.post(
       'https://api.coze.cn/v3/chat',
       {
         bot_id: BOT_ID,
@@ -41,42 +41,84 @@ exports.main = async (event, context) => {
       }
     );
 
-    // === 解析 Coze 返回的数据 ===
-    console.log('Coze API 完整响应:', JSON.stringify(response.data, null, 2));
+    console.log('Coze 初始化响应:', JSON.stringify(initResponse.data, null, 2));
     
-    // Coze V3 的非流式返回结构：data.messages 数组
-    const messages = response.data?.data?.messages;
+    const chatId = initResponse.data.data?.id;
+    const conversationId = initResponse.data.data?.conversation_id;
     
-    if (!messages || !Array.isArray(messages)) {
-      console.error('Coze 返回的数据格式异常:', response.data);
-      return { success: false, error: 'Coze 返回数据格式异常' };
-    }
-    
-    // 找到 type 为 'answer' 的那条消息
-    const answerMsg = messages.find(msg => msg.type === 'answer');
-    
-    if (!answerMsg) {
-      return { success: false, error: 'Coze 没有返回答案' };
+    if (!chatId) {
+      return { success: false, error: '无法获取聊天 ID' };
     }
 
-    const rawContent = answerMsg.content;
-    console.log('Coze 原始返回:', rawContent);
+    // 第二步：轮询获取结果
+    let attempts = 0;
+    const maxAttempts = 10; // 最多尝试10次
+    const pollInterval = 2000; // 每2秒轮询一次
 
-    // === 清洗数据 (核心步骤) ===
-    // AI 有时候会输出 ```json ... ```，我们需要把这些 markdown 符号去掉
-    let jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
-    
-    // 尝试解析为对象
-    let resultData;
-    try {
-      resultData = JSON.parse(jsonStr);
-    } catch (e) {
-      console.error('JSON解析失败，返回原始文本');
-      // 如果解析失败，可能是 AI 说了一堆废话，这里可以做一个容错，或者直接报错
-      return { success: false, error: 'AI 返回的不是标准 JSON', raw: rawContent };
+    while (attempts < maxAttempts) {
+      attempts++;
+      console.log(`轮询第 ${attempts} 次...`);
+      
+      // 等待一段时间再查询
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+      
+      const pollResponse = await axios.get(
+        `https://api.coze.cn/v3/chat/retrieve?chat_id=${chatId}&conversation_id=${conversationId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${PAT}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log(`第 ${attempts} 次轮询结果:`, JSON.stringify(pollResponse.data, null, 2));
+
+      const status = pollResponse.data.data?.status;
+      
+      if (status === 'completed') {
+        // 处理完成，获取结果
+        const messages = pollResponse.data.data?.messages;
+        
+        if (!messages || !Array.isArray(messages)) {
+          return { success: false, error: 'Coze 返回的数据格式异常' };
+        }
+        
+        // 找到 type 为 'answer' 的那条消息
+        const answerMsg = messages.find(msg => msg.type === 'answer');
+        
+        if (!answerMsg) {
+          return { success: false, error: 'Coze 没有返回答案' };
+        }
+
+        const rawContent = answerMsg.content;
+        console.log('Coze 原始返回:', rawContent);
+
+        // === 清洗数据 (核心步骤) ===
+        // AI 有时候会输出 ```json ... ```，我们需要把这些 markdown 符号去掉
+        let jsonStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // 尝试解析为对象
+        let resultData;
+        try {
+          resultData = JSON.parse(jsonStr);
+        } catch (e) {
+          console.error('JSON解析失败，返回原始文本');
+          // 如果解析失败，可能是 AI 说了一堆废话，这里可以做一个容错，或者直接报错
+          return { success: false, error: 'AI 返回的不是标准 JSON', raw: rawContent };
+        }
+
+        return { success: true, data: resultData };
+        
+      } else if (status === 'failed') {
+        return { success: false, error: 'Coze 处理失败' };
+      }
+      
+      // 如果还是 in_progress，继续轮询
     }
 
-    return { success: true, data: resultData };
+    // 超时
+    return { success: false, error: 'Coze 处理超时，请重试' };
 
   } catch (error) {
     console.error('API 调用错误:', error.response ? error.response.data : error);

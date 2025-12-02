@@ -1259,6 +1259,14 @@ Page({
             const errorMsg = cozeRes.result?.error || '解析未返回数据';
             console.error('云函数返回错误:', errorMsg);
             console.error('完整响应:', cozeRes);
+            
+            // 临时显示完整响应用于调试
+            wx.showModal({
+              title: '调试信息',
+              content: `完整响应: ${JSON.stringify(cozeRes, null, 2)}`,
+              showCancel: false
+            });
+            
             throw new Error(errorMsg);
           }
 
