@@ -104,9 +104,15 @@
           <text class="head-title">课程表</text>
           <text class="head-sub">{{totalWeekCourses || 5}} 门课程</text>
         </view>
-        <view class="add-course-btn" bindtap="addCourse">
-          <text class="add-icon">＋</text>
-          <text class="add-text">添加课程</text>
+        <view class="header-actions-row">
+          <view class="scan-course-btn {{isScanning ? 'scanning' : ''}}" bindtap="handleScanImage">
+            <text class="scan-icon">👁️</text>
+            <text class="scan-text">扫描课表</text>
+          </view>
+          <view class="add-course-btn" bindtap="addCourse">
+            <text class="add-icon">＋</text>
+            <text class="add-text">添加课程</text>
+          </view>
         </view>
       </view>
 

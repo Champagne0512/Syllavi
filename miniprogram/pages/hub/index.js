@@ -10,7 +10,8 @@ const {
   createCourseSchedules,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  uploadToStorage
 } = require('../../utils/supabase');
 
 // 模拟课程数据 (实际开发中应从数据库加载)
@@ -119,6 +120,9 @@ Page({
     selectedCourseTasks: [],
     showCourseEditor: false,
     editingCourse: {},
+    
+    // AI 扫描状态
+    isScanning: false, // 控制扫描动画显隐
     courseForm: {
       name: '',
       location: '',
@@ -1340,6 +1344,99 @@ Page({
             
             this.closeCourseDetail();
           }
+        }
+      }
+    });
+  },
+
+  // 👁️ 点击"扫描课表"按钮触发 - 扫描图片识别课程表/待办事项
+  async handleScanImage() {
+    const that = this;
+    
+    // 1. 选择图片
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: async (res) => {
+        const tempFilePath = res.tempFiles[0].tempFilePath;
+        
+        // 开启扫描动画
+        that.setData({ isScanning: true });
+        wx.showLoading({ title: '上传母体...', mask: true });
+
+        try {
+          // 2. 上传图片到 Supabase (Coze 需要公网链接)
+          // 注意：文件名最好加个随机数防止重复
+          const fileName = `scan_${Date.now()}.jpg`;
+          // 使用 resources bucket，避免权限问题
+          const { publicUrl } = await uploadToStorage('resources', tempFilePath, fileName);
+
+          if (!publicUrl) throw new Error('图片上传失败');
+
+          wx.showLoading({ title: '神经网络解析中...' });
+
+          // 3. 呼叫云函数 (Call Coze)
+          const cozeRes = await wx.cloud.callFunction({
+            name: 'analyzeImage', // 刚才创建的云函数名
+            data: {
+              imageUrl: publicUrl,
+              userId: 'user_123' // 这里可以换成真实的 openid
+            }
+          });
+
+          // 关闭 Loading
+          wx.hideLoading();
+          that.setData({ isScanning: false });
+
+          console.log('云函数结果:', cozeRes);
+
+          // 4. 处理结果
+          if (cozeRes.result && cozeRes.result.success) {
+            const aiData = cozeRes.result.data;
+            
+            // 成功！弹出确认框
+            that.showAiResultConfirm(aiData);
+          } else {
+            // 添加更多错误信息
+            const errorMsg = cozeRes.result?.error || '解析未返回数据';
+            console.error('云函数返回错误:', errorMsg);
+            console.error('完整响应:', cozeRes);
+            
+            // 临时显示完整响应用于调试
+            wx.showModal({
+              title: '调试信息',
+              content: `完整响应: ${JSON.stringify(cozeRes, null, 2)}`,
+              showCancel: false
+            });
+            
+            throw new Error(errorMsg);
+          }
+
+        } catch (err) {
+          console.error('全链路失败:', err);
+          wx.hideLoading();
+          that.setData({ isScanning: false });
+          wx.showToast({ title: '解析中断', icon: 'none' });
+        }
+      }
+    })
+  },
+
+  // 弹窗确认逻辑
+  showAiResultConfirm(data) {
+    // 假设 AI 返回了 { type: 'schedule', data: [...] }
+    const contentStr = JSON.stringify(data, null, 2); // 简单展示，以后可以做漂亮点
+    
+    wx.showModal({
+      title: '✨ 解析成功',
+      content: `识别到内容，是否导入？\n${contentStr.slice(0, 100)}...`, // 只显示前100字防止太长
+      confirmText: '导入数据库',
+      success: (res) => {
+        if (res.confirm) {
+          // TODO: 这里调用你之前的 createCourse 或 createTask 写入数据库
+          console.log('用户确认导入:', data);
+          wx.showToast({ title: '已同步', icon: 'success' });
         }
       }
     });

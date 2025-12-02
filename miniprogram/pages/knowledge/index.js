@@ -1,6 +1,9 @@
 const { MORANDI_COLORS } = require('../../utils/colors');
 const {
+  createCourse,
+  createCourseSchedules,
   createResource,
+  createTask,
   deleteFromStorage,
   deleteResource,
   fetchResources,
@@ -35,7 +38,7 @@ Page({
     selectedFiles: [],
     lastOpenedFile: null,
     actionableInsight: null
-  },
+  },,
 
   // 增加一个辅助函数用于 CSS 类名映射
   getFileTypeClass(type) {
@@ -57,6 +60,9 @@ Page({
     if (this.getTabBar && this.getTabBar()) {
       this.getTabBar().setSelected(1);
     }
+  },
+  onUnload() {
+    this.clearAiPolling();
   },
   async loadResources() {
     this.setData({ loading: true });
@@ -1104,7 +1110,6 @@ Page({
       target = files[0];
     }
 
-<<<<<<< HEAD
     if (!target) {
       wx.showToast({ title: '上传文件以体验 AI', icon: 'none' });
       return;
@@ -1113,192 +1118,480 @@ Page({
     this.runSummary(target);
   },
 
-  // 👁️ 点击"魔眼"按钮触发 - 扫描图片识别课程表/待办事项
-  async handleScanImage() {
-    const that = this;
-    
-    // 1. 选择图片
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      success: async (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath;
-        
-        // 开启扫描动画
-        that.setData({ isScanning: true });
-        wx.showLoading({ title: '上传母体...', mask: true });
+  
 
-        try {
-          // 2. 上传图片到 Supabase (Coze 需要公网链接)
-          // 注意：文件名最好加个随机数防止重复
-          const fileName = `scan_${Date.now()}.jpg`;
-          // 使用 resources bucket，避免权限问题
-          const { publicUrl } = await uploadToStorage('resources', tempFilePath, fileName);
+  async startAiScanPipeline(tempFilePath) {
+    this.clearAiPolling();
+    this.setData({
+      isScanning: true,
+      aiScanError: null,
+      aiScanPreview: null
+    });
 
-          if (!publicUrl) throw new Error('图片上传失败');
+    wx.showLoading({ title: '上传母体...', mask: true });
 
-          wx.showLoading({ title: '神经网络解析中...' });
-
-          // 3. 呼叫云函数 (Call Coze)
-          const cozeRes = await wx.cloud.callFunction({
-            name: 'analyzeImage', // 刚才创建的云函数名
-            data: {
-              imageUrl: publicUrl,
-              userId: 'user_123' // 这里可以换成真实的 openid
-            }
-          });
-
-          // 关闭 Loading
-          wx.hideLoading();
-          that.setData({ isScanning: false });
-
-          console.log('云函数结果:', cozeRes);
-
-          // 4. 处理结果
-          if (cozeRes.result && cozeRes.result.success) {
-            const aiData = cozeRes.result.data;
-            
-            // 成功！弹出确认框
-            that.showAiResultConfirm(aiData);
-          } else {
-            throw new Error(cozeRes.result?.error || '解析未返回数据');
-          }
-
-        } catch (err) {
-          console.error('全链路失败:', err);
-          wx.hideLoading();
-          that.setData({ isScanning: false });
-          wx.showToast({ title: '解析中断', icon: 'none' });
-        }
+    try {
+      const fileName = `scan_${Date.now()}.jpg`;
+      const { publicUrl } = await uploadToStorage('resources', tempFilePath, fileName);
+      if (!publicUrl) {
+        throw new Error('图片上传失败');
       }
-    })
+
+      wx.showLoading({ title: '神经网络解析中...' });
+      const app = getApp();
+      const userId = app?.globalData?.supabase?.userId || 'user_123';
+
+      const cozeRes = await wx.cloud.callFunction({
+        name: 'analyzeImage',
+        data: {
+          action: 'start',
+          imageUrl: publicUrl,
+          userId
+        }
+      });
+
+      console.log('云函数响应:', cozeRes);
+      this.handleAiFunctionResponse(cozeRes?.result);
+    } catch (error) {
+      console.error('AI 流程失败', error);
+      this.setData({ aiScanError: error.message || '解析失败' });
+      wx.showToast({ title: '解析中断', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ isScanning: false });
+    }
   },
 
-  // 弹窗确认逻辑
-  showAiResultConfirm(data) {
-    // 假设 AI 返回了 { type: 'schedule', data: [...] }
-    const contentStr = JSON.stringify(data, null, 2); // 简单展示，以后可以做漂亮点
-    
-    wx.showModal({
-      title: '✨ 解析成功',
-      content: `识别到内容，是否导入？\n${contentStr.slice(0, 100)}...`, // 只显示前100字防止太长
-      confirmText: '导入数据库',
-      success: (res) => {
-        if (res.confirm) {
-          // TODO: 这里调用你之前的 createResource 或 createTodo 写入数据库
-          console.log('用户确认导入:', data);
-          wx.showToast({ title: '已同步', icon: 'success' });
-        }
-      }
-    });
-  }
-
-  // 基础文件管理功能已简化，移除分享相关代码
-});
-=======
-    if (!target) {
-      wx.showToast({ title: '上传文件以体验 AI', icon: 'none' });
+  handleAiFunctionResponse(result) {
+    if (!result) {
+      this.setData({ aiScanError: '云函数没有返回结果' });
       return;
     }
 
-    this.runSummary(target);
+    if (result.success && !result.pending) {
+      this.consumeAiScanResult(result.data);
+      return;
+    }
+
+    if (result.pending) {
+      const job = {
+        chatId: result.chatId,
+        conversationId: result.conversationId
+      };
+      this.setData({
+        aiScanJob: job,
+        aiScanError: null,
+        aiPolling: true
+      });
+      this.startAiPolling(job, result.retryAfter || 600);
+      wx.showToast({ title: 'AI 解析中...', icon: 'loading', duration: 800 });
+      return;
+    }
+
+    this.setData({ aiScanError: result.error || '解析未返回数据' });
+    wx.showToast({ title: '解析失败', icon: 'none' });
   },
 
-  // 👁️ 点击"魔眼"按钮触发 - 扫描图片识别课程表/待办事项
-  async handleScanImage() {
-    const that = this;
-    
-    // 1. 选择图片
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      success: async (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath;
-        
-        // 开启扫描动画
-        that.setData({ isScanning: true });
-        wx.showLoading({ title: '上传母体...', mask: true });
+  startAiPolling(job, delay = 600) {
+    if (!job?.chatId || !job?.conversationId) return;
+    this.cancelAiPollingTimer();
+    this.aiPollAttempts = 0;
+    const DEFAULT_CLIENT_POLL_INTERVAL = Math.max(500, delay);
+    const maxAttempts = Math.max(10, Math.ceil(10000 / DEFAULT_CLIENT_POLL_INTERVAL));
 
-        try {
-          // 2. 上传图片到 Supabase (Coze 需要公网链接)
-          // 注意：文件名最好加个随机数防止重复
-          const fileName = `scan_${Date.now()}.jpg`;
-          // 使用 resources bucket，避免权限问题
-          const { publicUrl } = await uploadToStorage('resources', tempFilePath, fileName);
+    const pollOnce = async () => {
+      if (this.aiPollAttempts >= maxAttempts) {
+        this.setData({
+          aiPolling: false,
+          aiScanError: 'AI 解析超时，请稍后重试'
+        });
+        wx.showToast({ title: 'AI 解析超时', icon: 'none' });
+        return;
+      }
 
-          if (!publicUrl) throw new Error('图片上传失败');
+      this.aiPollAttempts += 1;
 
-          wx.showLoading({ title: '神经网络解析中...' });
-
-          // 3. 呼叫云函数 (Call Coze)
-          const cozeRes = await wx.cloud.callFunction({
-            name: 'analyzeImage', // 刚才创建的云函数名
-            data: {
-              imageUrl: publicUrl,
-              userId: 'user_123' // 这里可以换成真实的 openid
-            }
-          });
-
-          // 关闭 Loading
-          wx.hideLoading();
-          that.setData({ isScanning: false });
-
-          console.log('云函数结果:', cozeRes);
-          console.log('云函数返回的完整数据:', JSON.stringify(cozeRes, null, 2));
-
-          // 4. 处理结果
-          if (cozeRes.result && cozeRes.result.success) {
-            const aiData = cozeRes.result.data;
-            
-            // 成功！弹出确认框
-            that.showAiResultConfirm(aiData);
-          } else {
-            // 添加更多错误信息
-            const errorMsg = cozeRes.result?.error || '解析未返回数据';
-            console.error('云函数返回错误:', errorMsg);
-            console.error('完整响应:', cozeRes);
-            
-            // 临时显示完整响应用于调试
-            wx.showModal({
-              title: '调试信息',
-              content: `完整响应: ${JSON.stringify(cozeRes, null, 2)}`,
-              showCancel: false
-            });
-            
-            throw new Error(errorMsg);
+      try {
+        const pollRes = await wx.cloud.callFunction({
+          name: 'analyzeImage',
+          data: {
+            action: 'poll',
+            chatId: job.chatId,
+            conversationId: job.conversationId
           }
+        });
 
-        } catch (err) {
-          console.error('全链路失败:', err);
-          wx.hideLoading();
-          that.setData({ isScanning: false });
-          wx.showToast({ title: '解析中断', icon: 'none' });
+        const payload = pollRes?.result;
+        console.log('AI 轮询', payload);
+
+        if (payload?.success && !payload.pending) {
+          this.consumeAiScanResult(payload.data);
+          return;
         }
+
+        if (!payload?.success && !payload?.pending) {
+          this.setData({ aiScanError: payload?.error || 'AI 解析失败', aiPolling: false });
+          wx.showToast({ title: 'AI 解析失败', icon: 'none' });
+          return;
+        }
+
+        const nextIn = payload?.retryAfter || DEFAULT_CLIENT_POLL_INTERVAL;
+        this.aiPollTimer = setTimeout(pollOnce, nextIn);
+      } catch (error) {
+        console.error('轮询失败', error);
+        this.aiPollTimer = setTimeout(pollOnce, DEFAULT_CLIENT_POLL_INTERVAL);
       }
-    })
+    };
+
+    this.aiPollTimer = setTimeout(pollOnce, DEFAULT_CLIENT_POLL_INTERVAL);
   },
 
-  // 弹窗确认逻辑
-  showAiResultConfirm(data) {
-    // 假设 AI 返回了 { type: 'schedule', data: [...] }
-    const contentStr = JSON.stringify(data, null, 2); // 简单展示，以后可以做漂亮点
-    
-    wx.showModal({
-      title: '✨ 解析成功',
-      content: `识别到内容，是否导入？\n${contentStr.slice(0, 100)}...`, // 只显示前100字防止太长
-      confirmText: '导入数据库',
-      success: (res) => {
-        if (res.confirm) {
-          // TODO: 这里调用你之前的 createResource 或 createTodo 写入数据库
-          console.log('用户确认导入:', data);
-          wx.showToast({ title: '已同步', icon: 'success' });
-        }
-      }
+  clearAiPolling() {
+    this.cancelAiPollingTimer();
+    this.aiPollAttempts = 0;
+    this.setData({ aiPolling: false, aiScanJob: null });
+  },
+
+  cancelAiPollingTimer() {
+    if (this.aiPollTimer) {
+      clearTimeout(this.aiPollTimer);
+      this.aiPollTimer = null;
+    }
+  },
+
+  consumeAiScanResult(rawData) {
+    this.clearAiPolling();
+    if (!rawData) {
+      this.setData({ aiScanError: 'AI 没有返回内容' });
+      return;
+    }
+
+    const normalized = this.normalizeAiScanResult(rawData);
+    wx.vibrateShort({ type: 'medium' });
+    this.setData({
+      aiScanPreview: normalized,
+      aiScanError: null
     });
+    wx.showToast({ title: '解析成功', icon: 'success' });
+  },
+
+  normalizeAiScanResult(payload = {}) {
+    const type = this.detectAiResultType(payload);
+    const rows = this.extractAiResultItems(payload);
+    const now = Date.now();
+
+    const items = rows.map((row, index) => {
+      const safeRow = row || {};
+      return {
+        id: safeRow.id || `${now}_${index}`,
+        title:
+          safeRow.title ||
+          safeRow.name ||
+          safeRow.course ||
+          safeRow.task ||
+          `条目 ${index + 1}`,
+        subtitle: this.buildAiSubtitle(safeRow, type),
+        raw: safeRow
+      };
+    });
+
+    return {
+      type,
+      count: items.length,
+      items,
+      raw: payload,
+      jsonText: JSON.stringify(payload, null, 2)
+    };
+  },
+
+  detectAiResultType(payload = {}) {
+    if (!payload) return 'unknown';
+    const declared = typeof payload.type === 'string' ? payload.type.toLowerCase() : '';
+    if (declared.includes('schedule') || declared.includes('course')) {
+      return 'schedule';
+    }
+    if (declared.includes('todo') || declared.includes('task')) {
+      return 'task';
+    }
+    if (Array.isArray(payload.schedule) || Array.isArray(payload.courses)) {
+      return 'schedule';
+    }
+    if (Array.isArray(payload.todos) || Array.isArray(payload.tasks)) {
+      return 'task';
+    }
+    return 'unknown';
+  },
+
+  extractAiResultItems(payload = {}) {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    const buckets = ['data', 'items', 'schedule', 'todos', 'tasks', 'courses'];
+    for (const key of buckets) {
+      if (Array.isArray(payload[key])) {
+        return payload[key];
+      }
+    }
+    return [];
+  },
+
+  buildAiSubtitle(row = {}, type = 'unknown') {
+    if (type === 'schedule') {
+      const weekday = this.formatWeekdayLabel(row.day_of_week || row.weekday || row.day);
+      const sections = this.formatSectionRange(row.start_section || row.startSection, row.length);
+      const timeRange = row.time || row.time_range;
+      const location = row.location || row.classroom;
+      return [weekday, sections || timeRange, location].filter(Boolean).join(' · ');
+    }
+
+    if (type === 'task') {
+      const course = row.course || row.subject;
+      const deadline = this.normalizeDateDisplay(row.deadline || row.date || row.due_date);
+      const category = row.type || row.category;
+      return [course, category, deadline].filter(Boolean).join(' · ');
+    }
+
+    return row.description || row.summary || '';
+  },
+
+  formatWeekdayLabel(value) {
+    if (!value && value !== 0) return '';
+    if (typeof value === 'number') {
+      const map = ['一', '二', '三', '四', '五', '六', '日'];
+      const index = Math.max(1, Math.min(7, value)) - 1;
+      return `周${map[index]}`;
+    }
+    const str = String(value);
+    if (/周/.test(str)) return str;
+    return `周${str}`;
+  },
+
+  formatSectionRange(start, length) {
+    if (!start) return '';
+    const safeStart = Number(start) || 1;
+    const len = Number(length) || 1;
+    const end = safeStart + len - 1;
+    return len > 1 ? `第${safeStart}-${end}节` : `第${safeStart}节`;
+  },
+
+  normalizeDateDisplay(value) {
+    if (!value) return '';
+    if (typeof value === 'number') {
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString().slice(0, 10);
+      }
+    }
+    const str = String(value).trim();
+    if (!str) return '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      return str.slice(0, 10);
+    }
+    if (/^\d{1,2}月\d{1,2}日/.test(str)) {
+      return str;
+    }
+    return str;
+  },
+
+  copyAiScanJson() {
+    const jsonText = this.data.aiScanPreview?.jsonText;
+    if (!jsonText) {
+      wx.showToast({ title: '暂无可复制的数据', icon: 'none' });
+      return;
+    }
+    wx.setClipboardData({
+      data: jsonText,
+      success: () => wx.showToast({ title: 'JSON 已复制', icon: 'success' })
+    });
+  },
+
+  async importAiScanResult() {
+    const preview = this.data.aiScanPreview;
+    if (!preview || !preview.items?.length) {
+      wx.showToast({ title: '没有可导入的数据', icon: 'none' });
+      return;
+    }
+
+    wx.showLoading({ title: '写入中...' });
+
+    try {
+      let count = 0;
+      if (preview.type === 'schedule') {
+        count = await this.importAiSchedule(preview.items);
+      } else {
+        count = await this.importAiTasks(preview.items);
+      }
+
+      wx.hideLoading();
+      wx.showToast({ title: `导入 ${count} 条成功`, icon: 'success' });
+    } catch (error) {
+      console.error('导入失败', error);
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '导入失败', icon: 'none' });
+    }
+  },
+
+  async importAiTasks(items = []) {
+    const app = getApp();
+    const userId = app?.globalData?.supabase?.userId;
+    if (!userId) throw new Error('请先登录');
+
+    const payloads = items
+      .map((item) => {
+        const raw = item.raw || {};
+        return {
+          user_id: userId,
+          type: raw.type || raw.category || 'homework',
+          title: item.title,
+          deadline: this.normalizeDeadlineForDb(raw.deadline || raw.date || raw.due_date),
+          description: raw.description || raw.details || null
+        };
+      })
+      .filter((payload) => payload.title);
+
+    if (!payloads.length) {
+      throw new Error('解析结果中没有有效的待办');
+    }
+
+    await Promise.all(payloads.map((payload) => createTask(payload)));
+    return payloads.length;
+  },
+
+  async importAiSchedule(items = []) {
+    const app = getApp();
+    const userId = app?.globalData?.supabase?.userId;
+    if (!userId) throw new Error('请先登录');
+
+    const courseMap = new Map();
+    const payloads = [];
+
+    for (const item of items) {
+      const raw = item.raw || {};
+      const courseName = raw.name || raw.course || item.title;
+      const day = this.normalizeWeekdayNumber(raw.day_of_week || raw.weekday || raw.day);
+      const startSection = Number(raw.start_section || raw.startSection);
+      const length = Number(raw.length || raw.duration_sections) || 2;
+      if (!courseName || !day || !startSection) continue;
+
+      let course = courseMap.get(courseName);
+      if (!course) {
+        const colorIndex = courseMap.size % MORANDI_COLORS.length;
+        const color = MORANDI_COLORS[colorIndex];
+        const [createdCourse] = await createCourse({
+          user_id: userId,
+          name: courseName,
+          color,
+          location: raw.location || null,
+          teacher: raw.teacher || null
+        });
+        course = createdCourse;
+        courseMap.set(courseName, course);
+      }
+
+      payloads.push({
+        user_id: userId,
+        course_id: course.id,
+        day_of_week: day,
+        start_section: startSection,
+        length,
+        weeks: this.normalizeWeeks(raw.weeks),
+        location: raw.location || null
+      });
+    }
+
+    if (!payloads.length) {
+      throw new Error('解析结果缺少课程时间');
+    }
+
+    await createCourseSchedules(payloads);
+    return payloads.length;
+  },
+
+  normalizeDeadlineForDb(value) {
+    if (!value) return null;
+    if (typeof value === 'number') {
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+    const str = String(value).trim();
+    if (!str) return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      return str.slice(0, 10);
+    }
+    if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(str)) {
+      const [year, month, day] = str.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    if (/^\d{1,2}月\d{1,2}日/.test(str)) {
+      const match = str.match(/(\d{1,2})月(\d{1,2})日/);
+      if (match) {
+        const year = new Date().getFullYear();
+        const month = match[1].padStart(2, '0');
+        const day = match[2].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
+    const parsed = new Date(str);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+    return null;
+  },
+
+  normalizeWeekdayNumber(value) {
+    if (typeof value === 'number' && value >= 1 && value <= 7) {
+      return value;
+    }
+    const str = String(value || '').trim();
+    if (!str) return null;
+    const map = {
+      '周一': 1,
+      '星期一': 1,
+      一: 1,
+      'monday': 1,
+      '周二': 2,
+      '星期二': 2,
+      二: 2,
+      'tuesday': 2,
+      '周三': 3,
+      '星期三': 3,
+      三: 3,
+      'wednesday': 3,
+      '周四': 4,
+      '星期四': 4,
+      四: 4,
+      'thursday': 4,
+      '周五': 5,
+      '星期五': 5,
+      五: 5,
+      'friday': 5,
+      '周六': 6,
+      '星期六': 6,
+      六: 6,
+      'saturday': 6,
+      '周日': 7,
+      '星期日': 7,
+      日: 7,
+      天: 7,
+      'sunday': 7
+    };
+    return map[str.toLowerCase()] || map[str] || null;
+  },
+
+  normalizeWeeks(value) {
+    if (Array.isArray(value) && value.length) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const weeks = value
+        .split(/[,，]/)
+        .map((item) => Number(item.trim()))
+        .filter((num) => !Number.isNaN(num));
+      if (weeks.length) return weeks;
+    }
+    return [1];
   }
 
   // 基础文件管理功能已简化，移除分享相关代码
 });
->>>>>>> 3f07307 (fix: 使用 resources bucket 避免 temp_scans 权限问题)
