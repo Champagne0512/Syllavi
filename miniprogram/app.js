@@ -13,6 +13,15 @@ const MORANDI = {
 
 App({
   onLaunch() {
+    if (wx.cloud) {
+      wx.cloud.init({
+        env: 'cloud1-5g7qipav614b36a6',
+        traceUser: true
+      });
+    } else {
+      console.error('请使用 2.2.3 或以上的基础库以使用云能力');
+    }
+
     this.preloadGothamFont();
     const storedUserId =
       wx.getStorageSync('user_id') ||

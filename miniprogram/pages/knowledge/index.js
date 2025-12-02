@@ -1246,6 +1246,7 @@ Page({
           that.setData({ isScanning: false });
 
           console.log('云函数结果:', cozeRes);
+          console.log('云函数返回的完整数据:', JSON.stringify(cozeRes, null, 2));
 
           // 4. 处理结果
           if (cozeRes.result && cozeRes.result.success) {
@@ -1254,7 +1255,11 @@ Page({
             // 成功！弹出确认框
             that.showAiResultConfirm(aiData);
           } else {
-            throw new Error(cozeRes.result?.error || '解析未返回数据');
+            // 添加更多错误信息
+            const errorMsg = cozeRes.result?.error || '解析未返回数据';
+            console.error('云函数返回错误:', errorMsg);
+            console.error('完整响应:', cozeRes);
+            throw new Error(errorMsg);
           }
 
         } catch (err) {
