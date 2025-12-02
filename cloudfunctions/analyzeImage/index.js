@@ -52,8 +52,8 @@ exports.main = async (event, context) => {
 
     // 第二步：轮询获取结果
     let attempts = 0;
-    const maxAttempts = 10; // 最多尝试10次
-    const pollInterval = 2000; // 每2秒轮询一次
+    const maxAttempts = 6; // 最多尝试6次
+    const pollInterval = 500; // 每0.5秒轮询一次
 
     while (attempts < maxAttempts) {
       attempts++;
