@@ -1,4 +1,4 @@
--- 016_focus_snapshots.sql
+-- 018_focus_snapshots.sql
 -- 为前端提供免登录的聚合接口，便于演示番茄钟数据
 
 DROP FUNCTION IF EXISTS public.get_focus_heatmap(UUID, INTEGER);

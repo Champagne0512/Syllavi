@@ -1,4 +1,4 @@
--- 015_focus_demo_data.sql
+-- 017_focus_demo_data.sql
 -- 番茄钟演示数据：插入大量历史数据，用于项目演示
 
 -- 假设的用户ID（需要在实际使用时替换为真实的用户ID）
@@ -19,7 +19,7 @@ DECLARE
 BEGIN
   -- 若用户不存在则提示
   IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = demo_user_id) THEN
-    RAISE EXCEPTION 'Profile % 不存在，请先在 auth.users/profiles 中创建该用户后再运行 015 脚本。', demo_user_id;
+    RAISE EXCEPTION 'Profile % 不存在，请先在 auth.users/profiles 中创建该用户后再运行 017 脚本。', demo_user_id;
   END IF;
 
   -- 补全基础信息，避免空数据影响页面展示
