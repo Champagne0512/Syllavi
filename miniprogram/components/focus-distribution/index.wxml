@@ -1,42 +1,66 @@
-<view class="focus-distribution-container {{size}} {{variant}}">
-  <view class="chart-header">
-    <text class="chart-title">专注时段分布</text>
-    <text class="chart-subtitle">24小时环形图</text>
-  </view>
-  
-  <view class="chart-wrapper">
-    <canvas 
-      canvas-id="focusChart" 
-      class="focus-chart"
-      style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
-      bindtap="onCanvasTap"
-    ></canvas>
-    
-    <!-- 中心信息 -->
-    <view class="chart-center">
-      <text class="center-value">{{totalMinutes}}</text>
-      <text class="center-label">总分钟</text>
+<view class="rhythm-container {{size}} {{variant}}">
+  <view class="rhythm-header" wx:if="{{variant !== 'embedded'}}">
+    <view class="header-main">
+      <text class="rhythm-title">全天节奏</text>
+      <text class="rhythm-subtitle">24小时专注分布</text>
+    </view>
+    <view class="total-time" wx:if="{{totalMinutes > 0}}">
+      <text class="time-value">{{totalMinutes}}</text>
+      <text class="time-unit">分钟</text>
     </view>
   </view>
-  
+
+  <!-- 24小时进度条 -->
+  <view class="hourly-bars">
+    <view class="hour-bar-wrapper" 
+          wx:for="{{processedData}}" 
+          wx:key="hour"
+          wx:for-item="item"
+          data-hour="{{item.hour}}"
+          data-minutes="{{item.minutes}}"
+          data-label="{{item.label}}"
+          bindtap="onHourTap">
+      
+      <view class="hour-label">{{formatHour(item.hour)}}</view>
+      
+      <view class="bar-container">
+        <view class="bar-track">
+          <view class="bar-fill {{item.intensityClass}} {{item.isPeak ? 'peak' : ''}} {{animationReady ? 'animated' : ''}}"
+               style="width: {{animationReady ? item.widthPercent : 0}}%;">
+          </view>
+        </view>
+      </view>
+      
+      <view class="minutes-label" wx:if="{{item.minutes > 0}}">
+        {{item.minutes}}'
+      </view>
+      <view class="minutes-label empty" wx:else>
+        -
+      </view>
+    </view>
+  </view>
+
+  <!-- 洞察信息 -->
+  <view class="insights-section" wx:if="{{showInsights && insights.length > 0}}">
+    <view class="insight-item {{item.type}}" wx:for="{{insights}}" wx:key="type">
+      <text class="insight-icon">{{item.icon}}</text>
+      <text class="insight-text">{{item.text}}</text>
+    </view>
+  </view>
+
   <!-- 图例 -->
-  <view class="chart-legend">
+  <view class="legend" wx:if="{{variant !== 'embedded'}}">
     <view class="legend-item">
-      <view class="legend-color low"></view>
-      <text class="legend-text">低强度</text>
+      <view class="legend-color intensity-high"></view>
+      <text class="legend-text">高峰时段</text>
     </view>
     <view class="legend-item">
-      <view class="legend-color medium"></view>
-      <text class="legend-text">中强度</text>
+      <view class="legend-color intensity-medium"></view>
+      <text class="legend-text">专注时段</text>
     </view>
     <view class="legend-item">
-      <view class="legend-color high"></view>
-      <text class="legend-text">高强度</text>
+      <view class="legend-color intensity-low"></view>
+      <text class="legend-text">轻度专注</text>
     </view>
-  </view>
-  
-  <!-- 时间提示 -->
-  <view class="time-hint">
-    <text class="hint-text">点击环形图查看具体时段</text>
   </view>
 </view>

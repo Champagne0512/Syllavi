@@ -10,10 +10,15 @@ Page({
     tasks: [],
     selectionMode: false,
     selectedTasks: [],
-    showCompleteConfirm: false
+    showCompleteConfirm: false,
+    statusBarHeight: 0
   },
 
   onLoad() {
+    const systemInfo = wx.getSystemInfoSync();
+    this.setData({
+      statusBarHeight: systemInfo.statusBarHeight
+    });
     this.loadTasks();
   },
 

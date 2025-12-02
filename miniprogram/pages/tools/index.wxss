@@ -1,43 +1,80 @@
-/* 工具页面 - Flow Studio 重新设计 */
+/* 工具页面 - 流动的秩序设计 */
 .tools-page {
   min-height: 100vh;
   padding: 32rpx;
-  color: #1f2a2e;
-  background: #f2f4f6;
+  color: #2D3436;
+  background: #F2F4F6;
   font-family: var(--main-font);
   position: relative;
+  overflow-x: hidden;
 }
 
+/* 弥散背景 - 流动的秩序 */
 .tools-page::before,
 .tools-page::after {
   content: '';
   position: absolute;
-  inset: 0;
   z-index: -1;
-  opacity: 0.35;
+  opacity: 0.4;
+  filter: blur(60rpx);
+  animation: float 20s infinite ease-in-out;
 }
 
 .tools-page::before {
-  background: radial-gradient(circle at 12% 25%, rgba(135, 168, 164, 0.5), transparent 55%);
+  top: -10%;
+  left: -10%;
+  width: 500rpx;
+  height: 500rpx;
+  background: radial-gradient(circle, #87A8A4 0%, transparent 70%);
+  animation-delay: 0s;
 }
 
 .tools-page::after {
-  background: radial-gradient(circle at 90% 70%, rgba(224, 142, 121, 0.4), transparent 60%);
+  top: 60%;
+  right: -10%;
+  width: 400rpx;
+  height: 400rpx;
+  background: radial-gradient(circle, #E08E79 0%, transparent 70%);
+  animation-delay: 10s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(30rpx, 20rpx) rotate(120deg);
+  }
+  66% {
+    transform: translate(-20rpx, 30rpx) rotate(240deg);
+  }
 }
 
 scroll-view {
   height: calc(100vh - 80rpx);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
 }
 
+/* 玻璃拟态卡片设计 */
 .hero-card {
   position: relative;
   padding: 48rpx;
   border-radius: 48rpx;
-  background: linear-gradient(135deg, rgba(135, 168, 164, 0.95), rgba(64, 92, 92, 0.92));
-  color: #fdfdfb;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  color: #2D3436;
   overflow: hidden;
   margin-bottom: 32rpx;
-  box-shadow: 0 36rpx 80rpx rgba(15, 23, 42, 0.2);
+  box-shadow: 0 36rpx 80rpx rgba(15, 23, 42, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
 .hero-content {
@@ -100,6 +137,8 @@ scroll-view {
   font-weight: 600;
   color: #1c1c1e;
   box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  cursor: pointer;
 }
 
 .background-orb {
@@ -123,31 +162,37 @@ scroll-view {
   background: rgba(224, 142, 121, 0.55);
 }
 
+/* 超级椭圆工具区块 */
 .tool-section {
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
   border-radius: 40rpx;
-  padding: 36rpx;
-  margin-bottom: 32rpx;
-  box-shadow: 0 24rpx 60rpx rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(18rpx);
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 32rpx 0 rgba(31, 38, 135, 0.07);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24rpx;
+  margin-bottom: 16rpx;
   gap: 24rpx;
 }
 
 .section-title {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #1f2a2e;
 }
 
 .section-desc {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: rgba(31, 42, 46, 0.6);
   margin-top: 4rpx;
 }
@@ -166,6 +211,9 @@ scroll-view {
   background: rgba(242, 244, 246, 0.85);
   border: 2rpx solid rgba(135, 168, 164, 0.25);
   transition: transform 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  z-index: 100;
+  cursor: pointer;
 }
 
 .focus-pill:active {
@@ -227,10 +275,17 @@ scroll-view {
 }
 
 .data-card {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 40rpx;
-  padding: 24rpx;
-  box-shadow: 0 24rpx 50rpx rgba(15, 23, 42, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+  border-radius: 36rpx;
+  padding: 16rpx;
+  box-shadow: 
+    0 16rpx 40rpx rgba(15, 23, 42, 0.06),
+    inset 0 1rpx 2rpx rgba(255, 255, 255, 0.8);
+  border: 1rpx solid rgba(135, 168, 164, 0.1);
+  overflow: hidden;
+  min-height: 400rpx;
+  position: relative;
+  contain: layout;
 }
 
 .card-head {
@@ -263,16 +318,70 @@ scroll-view {
   display: block;
 }
 
-.achievements-scroll {
-  white-space: nowrap;
-  margin-top: 12rpx;
-  padding-bottom: 8rpx;
+/* 确保全天节奏图表在卡片中正确显示 */
+.data-card .focus-distribution-container.embedded {
+  width: 100%;
+  height: auto;
+  min-height: 360rpx;
+  overflow: hidden;
+  position: relative;
+  will-change: transform;
+  contain: layout;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.data-card .focus-distribution-container.embedded .chart-wrapper {
+  width: 100%;
+  height: 360rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  transform: none !important;
+  will-change: transform;
+  contain: layout;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.data-card .focus-distribution-container.embedded .focus-chart {
+  width: 340rpx !important;
+  height: 340rpx !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 340rpx !important;
+  min-height: 340rpx !important;
+  border-radius: 0;
+  overflow: hidden;
+  display: block;
+  position: relative;
+  transform: none !important;
+  left: 0 !important;
+  top: 0 !important;
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.achievements-container {
+  margin-top: 8rpx;
+  padding: 0;
+  overflow: hidden;
 }
 
 .achievements-list {
   display: flex;
-  gap: 20rpx;
-  padding: 8rpx 0;
+  gap: 8rpx;
+  padding: 0 8rpx;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .tools-grid {
@@ -369,4 +478,267 @@ scroll-view {
 
 .goal-icon {
   background: linear-gradient(135deg, #e08e79 0%, #d4a5a5 100%);
+}
+
+/* 成就详情弹窗 */
+.achievement-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8rpx);
+  -webkit-backdrop-filter: blur(8rpx);
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 40rpx;
+  padding: 40rpx;
+  margin: 40rpx;
+  max-width: 600rpx;
+  width: 100%;
+  box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.2);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(40rpx) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32rpx;
+  position: relative;
+}
+
+.modal-badge {
+  position: relative;
+  width: 100rpx;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 30rpx;
+  margin-right: 24rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+}
+
+.modal-icon {
+  font-size: 50rpx;
+  filter: drop-shadow(0 4rpx 8rpx rgba(0, 0, 0, 0.2));
+}
+
+.modal-rarity {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+}
+
+.modal-rarity.rarity-common {
+  background: linear-gradient(45deg, #87A8A4, #A2B18A);
+}
+
+.modal-rarity.rarity-uncommon {
+  background: linear-gradient(45deg, #6B8A9C, #8CA8BC);
+}
+
+.modal-rarity.rarity-rare {
+  background: linear-gradient(45deg, #87A8A4, #A8C4C0);
+}
+
+.modal-rarity.rarity-epic {
+  background: linear-gradient(45deg, #BCA0BC, #D4C0D4);
+}
+
+.modal-rarity.rarity-legendary {
+  background: linear-gradient(45deg, #E74C3C, #FF6B6B);
+  animation: legendaryGlow 2s infinite ease-in-out;
+}
+
+@keyframes legendaryGlow {
+  0%, 100% {
+    box-shadow: 0 0 20rpx rgba(231, 76, 60, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30rpx rgba(231, 76, 60, 0.8);
+  }
+}
+
+.modal-title-section {
+  flex: 1;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #2D3436;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.modal-rarity-tag {
+  display: inline-block;
+  padding: 6rpx 16rpx;
+  border-radius: 16rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: white;
+}
+
+.modal-rarity-tag.rarity-common {
+  background: rgba(135, 168, 164, 0.8);
+}
+
+.modal-rarity-tag.rarity-uncommon {
+  background: rgba(107, 138, 156, 0.8);
+}
+
+.modal-rarity-tag.rarity-rare {
+  background: rgba(135, 168, 164, 0.9);
+}
+
+.modal-rarity-tag.rarity-epic {
+  background: rgba(188, 160, 188, 0.9);
+}
+
+.modal-rarity-tag.rarity-legendary {
+  background: rgba(231, 76, 60, 0.9);
+}
+
+.modal-close {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  background: rgba(135, 168, 164, 0.1);
+  border: none;
+  color: #2D3436;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close:active {
+  background: rgba(135, 168, 164, 0.2);
+  transform: scale(0.95);
+}
+
+.modal-body {
+  color: #2D3436;
+}
+
+.modal-desc {
+  font-size: 28rpx;
+  line-height: 1.6;
+  margin-bottom: 32rpx;
+  display: block;
+}
+
+.modal-progress {
+  margin: 24rpx 0;
+  padding: 20rpx;
+  background: rgba(135, 168, 164, 0.08);
+  border-radius: 20rpx;
+}
+
+.progress-bar {
+  height: 8rpx;
+  background: rgba(135, 168, 164, 0.2);
+  border-radius: 4rpx;
+  overflow: hidden;
+  margin-bottom: 12rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 24rpx;
+  color: rgba(45, 52, 54, 0.8);
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.progress-percent {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2D3436;
+  display: block;
+}
+
+.modal-status {
+  margin: 24rpx 0;
+}
+
+.status-unlocked, .status-locked {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.status-unlocked {
+  background: rgba(135, 168, 164, 0.15);
+  border: 1rpx solid rgba(135, 168, 164, 0.3);
+}
+
+.status-locked {
+  background: rgba(107, 138, 156, 0.15);
+  border: 1rpx solid rgba(107, 138, 156, 0.3);
+}
+
+.status-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+
+.status-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.modal-time {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid rgba(135, 168, 164, 0.2);
+  display: flex;
+  align-items: center;
+}
+
+.time-label {
+  font-size: 24rpx;
+  color: rgba(45, 52, 54, 0.7);
+  margin-right: 8rpx;
+}
+
+.time-value {
+  font-size: 24rpx;
+  color: #2D3436;
+  font-weight: 500;
 }

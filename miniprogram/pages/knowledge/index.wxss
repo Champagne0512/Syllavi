@@ -640,6 +640,15 @@ page {
   border-color: rgba(224, 142, 121, 0.3);
 }
 
+.batch-btn.create-btn {
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.2), rgba(162, 177, 138, 0.2));
+  border-color: rgba(135, 168, 164, 0.4);
+}
+
+.batch-btn.create-btn:active {
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.3), rgba(162, 177, 138, 0.3));
+}
+
 .batch-icon {
   font-size: 24rpx;
   line-height: 1;

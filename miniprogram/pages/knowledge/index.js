@@ -358,8 +358,6 @@ Page({
       return;
     }
 
-    console.log('预览文件:', file.url, '文件名:', file.name, '文件类型:', file.type);
-
     this.persistLastOpenedFile(file);
 
     if ((file.type || '').toLowerCase() === 'pdf') {
@@ -374,7 +372,6 @@ Page({
   async uploadResource() {
     // 防止重复上传
     if (this._uploading) {
-      console.log('上传进行中，请勿重复操作');
       return;
     }
     
@@ -391,9 +388,6 @@ Page({
         return;
       }
       const file = tempFiles[0];
-      
-      // 调试日志：检查文件对象结构
-      console.log('选择的文件对象:', file);
       
       wx.showLoading({ title: '上传中...' });
 
@@ -849,6 +843,85 @@ Page({
     });
   },
   
+  // 批量创建新文件夹
+  batchCreateFolder() {
+    wx.showModal({
+      title: '新建文件夹',
+      editable: true,
+      placeholderText: '输入文件夹名称',
+      success: async (res) => {
+        if (!res.confirm) return;
+        const folderName = (res.content || '').trim();
+        if (!folderName) {
+          wx.showToast({ title: '文件夹名称不能为空', icon: 'none' });
+          return;
+        }
+        
+        // 检查文件夹是否已存在
+        const { folders } = this.data;
+        if (folders.some(f => f.name === folderName)) {
+          wx.showToast({ title: '文件夹已存在', icon: 'none' });
+          return;
+        }
+        
+        // 如果没有选中文件，只创建空文件夹
+        if (this.data.selectedFiles.length === 0) {
+          wx.showToast({ title: '文件夹创建成功', icon: 'success' });
+          // 刷新文件夹列表
+          this.loadResources();
+          return;
+        }
+        
+        // 如果有选中文件，询问是否移动到新文件夹
+        wx.showModal({
+          title: '移动文件',
+          content: `是否将选中的 ${this.data.selectedFiles.length} 个文件移动到新创建的「${folderName}」文件夹？`,
+          success: async (modalRes) => {
+            if (!modalRes.confirm) {
+              // 只创建文件夹，不移动文件
+              wx.showToast({ title: '文件夹创建成功', icon: 'success' });
+              this.loadResources();
+              return;
+            }
+            
+            // 移动文件到新文件夹
+            await this.moveFilesToNewFolder(folderName);
+          }
+        });
+      }
+    });
+  },
+
+  // 移动文件到新文件夹
+  async moveFilesToNewFolder(folderName) {
+    wx.showLoading({ title: '移动文件中...' });
+    try {
+      const { selectedFiles } = this.data;
+      const updatePromises = selectedFiles.map(file => 
+        updateResource(file.id, { subject: folderName })
+      );
+      
+      await Promise.all(updatePromises);
+      
+      // 退出选择模式并刷新数据
+      this.exitSelectionMode();
+      this.loadResources();
+      
+      wx.hideLoading();
+      wx.showToast({ 
+        title: `成功移动 ${selectedFiles.length} 个文件`, 
+        icon: 'success' 
+      });
+    } catch (err) {
+      console.error('move files to new folder failed', err);
+      wx.hideLoading();
+      wx.showToast({ 
+        title: '移动失败，请重试', 
+        icon: 'none' 
+      });
+    }
+  },
+
   // 为批量操作创建新分类
   createNewCategoryForBatch() {
     wx.showModal({

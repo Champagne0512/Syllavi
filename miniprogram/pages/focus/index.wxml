@@ -14,26 +14,6 @@
       <button class="exit-btn" bindtap="exitFocus" wx:if="{{!running}}">✕</button>
     </view>
 
-    <!-- 数据概览 -->
-    <view class="stats-overview" wx:if="{{!running}}">
-      <view class="stat-item">
-        <text class="stat-value">{{stats.todayMinutes || 0}}</text>
-        <text class="stat-label">今日专注</text>
-      </view>
-      <view class="stat-item">
-        <text class="stat-value">{{stats.streakDays || 0}}</text>
-        <text class="stat-label">连续天数</text>
-      </view>
-      <view class="stat-item">
-        <text class="stat-value">{{stats.totalSessions || 0}}</text>
-        <text class="stat-label">总次数</text>
-      </view>
-      <view class="stat-item" bindtap="goToStats">
-        <text class="stat-value">→</text>
-        <text class="stat-label">详细统计</text>
-      </view>
-    </view>
-
     <view class="course-pill" wx:if="{{courseName}}">
       <view class="pill-dot"></view>
       <text class="label">当前课程</text>
@@ -52,11 +32,31 @@
       </view>
     </view>
 
-    <view class="controls-panel">
-      <view class="controls">
-        <button class="primary" bindtap="startFocus" disabled="{{running}}">开始专注</button>
-        <button class="ghost" bindtap="stopFocus" disabled="{{!running}}">结束</button>
+    <!-- 主要操作区 - 独立在最顶层 -->
+    <view class="main-action-area" wx:if="{{!running}}">
+      <view class="action-card" bindtap="startFocus">
+        <view class="action-content">
+          <view class="action-icon">
+            <text class="play-icon">▶</text>
+          </view>
+          <view class="action-text">
+            <text class="action-title">开始专注</text>
+            <text class="action-subtitle">{{minutes}} 分钟</text>
+          </view>
+        </view>
+        <view class="action-arrow">→</view>
       </view>
+    </view>
+
+    <!-- 运行中的控制面板 -->
+    <view class="running-panel" wx:if="{{running}}">
+      <view class="stop-card" bindtap="stopFocus">
+        <text class="stop-text">结束专注</text>
+      </view>
+    </view>
+
+    <!-- 时长调节器 -->
+    <view class="controls-panel" wx:if="{{!running}}">
 
       <view class="slider-block" wx:if="{{!running}}">
         <view class="slider-head">
@@ -93,25 +93,6 @@
       </view>
     </view>
 
-    <!-- 成就展示区 -->
-    <view class="achievements-section" wx:if="{{!running}}">
-      <view class="section-header">
-        <text class="section-title">成就徽章</text>
-        <text class="section-desc">记录你的专注成长</text>
-      </view>
-      <scroll-view class="achievements-scroll" scroll-x="true">
-        <view class="achievements-list">
-          <holo-badge 
-            wx:for="{{achievements}}" 
-            wx:key="key"
-            achievement="{{item}}"
-            size="medium"
-            bind:badgeTap="onBadgeTap"
-          ></holo-badge>
-        </view>
-      </scroll-view>
-    </view>
-
     <view class="summary-card" wx:if="{{summaryCard}}">
       <view class="summary-head">
         <text>专注卡片</text>
@@ -131,16 +112,16 @@
       </view>
       <button class="ghost secondary" bindtap="saveCard">保存到相册</button>
       
-      <!-- 新解锁成就展示 -->
-      <view class="new-achievements" wx:if="{{newAchievements.length > 0}}">
-        <text class="new-achievements-title">🎉 新成就解锁</text>
-        <view class="new-achievements-list">
-          <view class="new-achievement-item" wx:for="{{newAchievements}}" wx:key="*this">
-            <text class="achievement-icon">{{focusService.getAchievementInfo(item).icon}}</text>
-            <text class="achievement-name">{{focusService.getAchievementInfo(item).name}}</text>
+        <!-- 新解锁成就展示 -->
+        <view class="new-achievements" wx:if="{{newAchievements.length > 0}}">
+          <text class="new-achievements-title">🎉 新成就解锁</text>
+          <view class="new-achievements-list">
+            <view class="new-achievement-item" wx:for="{{newAchievements}}" wx:key="*this">
+              <text class="achievement-icon">{{getAchievementInfo(item).icon}}</text>
+              <text class="achievement-name">{{getAchievementInfo(item).name}}</text>
+            </view>
           </view>
         </view>
-      </view>
     </view>
   </view>
 

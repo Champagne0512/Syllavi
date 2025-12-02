@@ -50,7 +50,7 @@
       },
       {
         "pagePath": "pages/tools/index",
-        "text": "工具",
+        "text": "专注",
         "iconPath": "static/tab/placeholder.png",
         "selectedIconPath": "static/tab/placeholder.png"
       },

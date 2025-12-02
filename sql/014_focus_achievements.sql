@@ -117,7 +117,7 @@ DECLARE
   v_continuous_days INT;
   v_total_sessions INT;
   v_achievement RECORD;
-  v_is_new BOOLEAN;
+  v_is_new INT;
   v_longest_session INTEGER;
   v_night_owl_sessions INTEGER;
   v_early_bird_sessions INTEGER;
@@ -171,7 +171,7 @@ BEGIN
       -- 尝试插入成就，如果已存在则忽略
       INSERT INTO public.achievements (user_id, achievement_id, achievement_name, achievement_desc, achievement_icon)
       VALUES (p_user_id, v_achievement.ach_id, v_achievement.ach_name, v_achievement.ach_desc, v_achievement.ach_icon)
-      ON CONFLICT (user_id, achievement_id) DO NOTHING;
+      ON CONFLICT ON CONSTRAINT achievements_user_id_achievement_id_key DO NOTHING;
       
       GET DIAGNOSTICS v_is_new = ROW_COUNT;
       

@@ -10,20 +10,14 @@ const {
   uploadToStorage
 } = supabaseApi;
 
-// 内联年级选项，避免模块依赖问题
-const ALLOWED_GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士'];
-const GRADE_OPTION_NONE = '暂不填写';
-const GRADE_PICKER_OPTIONS = [...ALLOWED_GRADES, GRADE_OPTION_NONE];
-
-const normalizeGradeInput = (grade) => {
-  if (!grade) return '';
-  return ALLOWED_GRADES.includes(grade) ? grade : '';
-};
+// 使用Supabase工具中的年级验证函数
+const { normalizeGradeInput } = supabaseApi;
 
 const DEFAULT_STATS = {
   today_focus_minutes: 0,
   week_focus_minutes: 0,
   total_focus_minutes: 0,
+  total_focus_hours: 0,
   total_sessions: 0,
   completed_tasks: 0,
   total_tasks: 0,
@@ -32,6 +26,9 @@ const DEFAULT_STATS = {
   continuous_days: 0
 };
 
+// 年级选择器选项
+const GRADE_OPTION_NONE = '暂不填写';
+const GRADE_PICKER_OPTIONS = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士', GRADE_OPTION_NONE];
 
 const sanitizeGrade = (grade) => {
   if (typeof grade !== 'string') return '';
@@ -45,11 +42,6 @@ const getGradePickerIndex = (grade) => {
   if (!normalized) return fallbackIndex;
   const idx = options.indexOf(normalized);
   return idx >= 0 ? idx : fallbackIndex;
-};
-
-const formatGradeForSave = (grade) => {
-  const normalized = sanitizeGrade(grade);
-  return normalized || null;
 };
 
 Page({
@@ -67,7 +59,6 @@ Page({
     quickActions: [
       { id: 'courses', name: '我的课程', iconToken: 'courses', path: '/pages/hub/index' },
       { id: 'resources', name: '资源库', iconToken: 'resources', path: '/pages/knowledge/index' },
-      { id: 'tools', name: '专注工具', iconToken: 'focus', path: '/pages/tools/index' },
       { id: 'settings', name: '设置', iconToken: 'settings', path: '/pages/settings/index' }
     ],
     editModalVisible: false,
@@ -177,16 +168,22 @@ Page({
         fetchResources(userId).catch(() => [])
       ]);
 
+      const todayMinutes = Number(focusStats?.today_minutes) || 0;
+      const weekMinutes = Number(focusStats?.week_minutes) || 0;
+      const totalFocusMinutes = Math.max(0, Math.floor(Number(focusStats?.total_minutes) || 0));
+      const totalSessions = Number(focusStats?.total_sessions) || 0;
+      const continuousDays = Number(focusStats?.continuous_days) || 0;
       const stats = {
-        today_focus_minutes: focusStats?.today_minutes || 0,
-        week_focus_minutes: focusStats?.week_minutes || 0,
-        total_focus_minutes: focusStats?.total_minutes || 0,
-        total_sessions: focusStats?.total_sessions || 0,
+        today_focus_minutes: todayMinutes,
+        week_focus_minutes: weekMinutes,
+        total_focus_minutes: totalFocusMinutes,
+        total_focus_hours: Math.floor(totalFocusMinutes / 60),
+        total_sessions: totalSessions,
         completed_tasks: Array.isArray(tasks) ? tasks.filter(t => t.is_completed).length : 0,
         total_tasks: Array.isArray(tasks) ? tasks.length : 0,
         total_resources: Array.isArray(resources) ? resources.length : 0,
         total_courses: Array.isArray(courses) ? courses.length : 0,
-        continuous_days: focusStats?.continuous_days || 0
+        continuous_days: continuousDays
       };
 
       this.setData({ stats });
@@ -218,12 +215,7 @@ Page({
     });
   },
 
-  goToTools() {
-    wx.vibrateShort({ type: 'light' });
-    wx.switchTab({
-      url: '/pages/tools/index'
-    });
-  },
+  
 
   editProfile() {
     const { profile } = this.data;
@@ -449,10 +441,8 @@ Page({
 
   onShareAppMessage() {
     const { stats } = this.data;
-    const totalHours = Math.floor(stats.total_focus_minutes / 60);
-
     return {
-      title: `我在 Syllaby 已累计专注 ${totalHours} 小时，一起来学习吧！`,
+      title: `我在 Syllaby 已累计专注 ${stats.total_focus_hours || 0} 小时，一起来学习吧！`,
       path: '/pages/login/index'
     };
   }

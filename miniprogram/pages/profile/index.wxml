@@ -102,7 +102,7 @@
       <view class="total-focus">
         <view class="total-focus-label muted">累计专注时长</view>
         <view class="total-focus-value">
-          <text class="focus-hours">{{stats.total_focus_minutes / 60}}</text>
+          <text class="focus-hours">{{stats.total_focus_hours}}</text>
           <text class="focus-unit">小时</text>
         </view>
       </view>
@@ -141,28 +141,7 @@
       </view>
     </view>
 
-    <!-- 专注工具入口提示 -->
-    <view class="card focus-redirect-card">
-      <view class="section-head">
-        <text>专注工具入口</text>
-        <text class="muted mono">Focus Suite</text>
-      </view>
-      <view class="focus-redirect-content">
-        <view class="focus-redirect-metric">
-          <text class="redirect-value">{{stats.total_focus_minutes}}</text>
-          <text class="redirect-label muted">累计专注(分钟)</text>
-        </view>
-        <view class="focus-redirect-metric">
-          <text class="redirect-value">{{stats.continuous_days}}</text>
-          <text class="redirect-label muted">连续天数</text>
-        </view>
-        <view class="focus-redirect-cta" bindtap="goToTools">
-          <text>前往工具模块</text>
-          <text class="cta-arrow">→</text>
-        </view>
-      </view>
-      <view class="focus-redirect-tip muted">专注徽章、热力图等功能已集中到「工具」页面。</view>
-    </view>
+    
 
     <!-- 快捷操作 -->
     <view class="card actions-card">

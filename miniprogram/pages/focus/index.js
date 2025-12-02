@@ -1,5 +1,6 @@
 const { createFocusSession, fetchFocusStats } = require('../../utils/supabase');
 const focusService = require('../../utils/focusService');
+const app = getApp();
 
 const gradients = [
   ['#92B4EC', '#F7F7F5'],
@@ -41,20 +42,8 @@ Page({
     achievements: {},
     newAchievements: []
   },
-  onLoad(query) {
-    if (query.course) {
-      this.setData({ courseName: decodeURIComponent(query.course) });
-    }
-    if (query.minutes) {
-      const preset = this.normalizeMinutes(query.minutes);
-      this.setFocusMinutes(preset);
-      this.setData({
-        customMinutes: preset,
-        customMinutesDraft: String(preset)
-      });
-    }
+  onLoad() {
     this.loadFocusData();
-    this.rollGradient();
   },
 
   onShow() {
@@ -69,7 +58,9 @@ Page({
     this.setData({ gradientIndex });
   },
   startFocus() {
-    if (this.data.running) return;
+    if (this.data.running) {
+      return;
+    }
     wx.vibrateShort({ type: 'light' });
     this.setData({ running: true });
     this.gradientTicker = setInterval(() => this.rollGradient(), 15000);
@@ -196,7 +187,7 @@ Page({
   showAchievementNotifications(achievementKeys) {
     achievementKeys.forEach((key, index) => {
       setTimeout(() => {
-        const info = focusService.getAchievementInfo(key);
+        const info = this.getAchievementInfo(key);
         wx.showModal({
           title: '🎉 成就解锁',
           content: `${info.name}\n${info.desc}`,
@@ -208,6 +199,50 @@ Page({
         });
       }, index * 2000);
     });
+  },
+
+  // 获取成就信息（供WXML使用）
+  getAchievementInfo(key) {
+    const achievementMap = {
+      spark: {
+        name: '星火',
+        desc: '第一次完成专注',
+        icon: '✨',
+        color: '#E2C2A4'
+      },
+      deepDiver: {
+        name: '潜行者',
+        desc: '单次专注超过60分钟',
+        icon: '🌊',
+        color: '#87A8A4'
+      },
+      timeLord: {
+        name: '时间领主',
+        desc: '累计专注100小时',
+        icon: '⏰',
+        color: '#BCA0BC'
+      },
+      weekWarrior: {
+        name: '周战士',
+        desc: '连续7天专注',
+        icon: '🔥',
+        color: '#E08E79'
+      },
+      nightOwl: {
+        name: '夜猫子',
+        desc: '晚上10点后专注',
+        icon: '🦉',
+        color: '#6B8A9C'
+      },
+      earlyBird: {
+        name: '早鸟',
+        desc: '早上6点前专注',
+        icon: '🌅',
+        color: '#A2B18A'
+      }
+    };
+    
+    return achievementMap[key] || { name: '未知', desc: '', icon: '🎯', color: '#87A8A4' };
   },
 
   // 跳转到统计页面
