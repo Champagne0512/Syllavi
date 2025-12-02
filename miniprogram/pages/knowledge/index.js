@@ -38,7 +38,7 @@ Page({
     selectedFiles: [],
     lastOpenedFile: null,
     actionableInsight: null
-  },,
+  },
 
   // 增加一个辅助函数用于 CSS 类名映射
   getFileTypeClass(type) {
