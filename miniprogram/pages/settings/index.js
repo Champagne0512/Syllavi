@@ -1,14 +1,8 @@
-const { DEMO_USER_ID, fetchProfile, updateProfile } = require('../../utils/supabase');
+const { DEMO_USER_ID, fetchProfile, updateProfile, normalizeGradeInput } = require('../../utils/supabase');
 
-// 内联年级选项，避免模块依赖问题
-const ALLOWED_GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士'];
+// 年级选择器选项
 const GRADE_OPTION_NONE = '暂不填写';
-const GRADE_PICKER_OPTIONS = [...ALLOWED_GRADES, GRADE_OPTION_NONE];
-
-const normalizeGradeInput = (grade) => {
-  if (!grade) return '';
-  return ALLOWED_GRADES.includes(grade) ? grade : '';
-};
+const GRADE_PICKER_OPTIONS = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '博士', GRADE_OPTION_NONE];
 
 const sanitizeGrade = (grade) => {
   if (typeof grade !== 'string') return '';
@@ -89,7 +83,6 @@ Page({
     const accessToken =
       wx.getStorageSync('access_token') || app?.globalData?.supabase?.accessToken;
     
-    console.log('saveProfile debug:', { userId, accessToken: !!accessToken, isDemo: userId === DEMO_USER_ID });
     if (!userId || userId === DEMO_USER_ID || !accessToken) {
       wx.showModal({
         title: '请先登录',
@@ -122,9 +115,7 @@ Page({
       bio
     };
     try {
-      console.log('Saving payload:', payload);
       const result = await updateProfile(userId, payload);
-      console.log('Save result:', result);
       wx.hideLoading();
       wx.showToast({ title: '已保存', icon: 'success' });
       this.setData({

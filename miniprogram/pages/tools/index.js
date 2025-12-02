@@ -102,7 +102,8 @@ Page({
           focusStats: {
             todayFocus: mergedStats.todayMinutes,
             totalSessions: mergedStats.totalSessions,
-            streakDays: mergedStats.streakDays
+            streakDays: mergedStats.streakDays,
+            longestSession: mergedStats.longestSession
           },
           heatmapData: remoteHeatmap,
           distributionData: remoteDistribution,

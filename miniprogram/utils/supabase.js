@@ -435,33 +435,39 @@ function fetchFocusStatsFallback(userId) {
     .catch(() => ({ ...EMPTY_FOCUS_STATS }));
 }
 
-function fetchFocusStats(userId = DEMO_USER_ID) {
+function callFocusStatsEndpoint(url, data, sourceLabel) {
   return new Promise((resolve, reject) => {
     wx.request({
-      url: `${SUPABASE_URL}/rest/v1/rpc/get_focus_stats`,
+      url,
       method: 'POST',
-      data: { p_user_id: userId },
+      data,
       header: buildHeaders(),
       success(res) {
-        if (res.statusCode === 404) {
-          // 函数未部署时，回退到直接读取表并计算
-          fetchFocusStatsFallback(userId)
-            .then((stats) => resolve(stats))
-            .catch(() => resolve({ ...EMPTY_FOCUS_STATS }));
-          return;
-        }
         if (res.statusCode >= 200 && res.statusCode < 300) {
           const payload = Array.isArray(res.data) ? res.data[0] : res.data;
-          resolve(normalizeFocusStats(payload));
-        } else {
-          reject(res.data || res);
+          resolve(payload || {});
+          return;
         }
+        const error = new Error(`focus stats request failed: ${res.statusCode}`);
+        error.statusCode = res.statusCode;
+        error.data = res.data;
+        error.source = sourceLabel;
+        reject(error);
       },
       fail(err) {
+        if (sourceLabel) {
+          err.source = sourceLabel;
+        }
         reject(err);
       }
     });
   });
+}
+
+function fetchFocusStats(userId = DEMO_USER_ID) {
+  return fetchFocusStatsFallback(userId)
+    .then((stats) => stats)
+    .catch(() => ({ ...EMPTY_FOCUS_STATS }));
 }
 
 function fetchFocusSessions(userId = DEMO_USER_ID) {
@@ -525,8 +531,6 @@ function fetchProfile(userId = DEMO_USER_ID) {
 }
 
 function updateProfile(userId, patch) {
-  console.log('updateProfile called with:', { userId, patch });
-  
   const payload = {
     p_nickname: normalizeTextField(patch?.nickname),
     p_school_name: normalizeTextField(patch?.school_name),
@@ -534,8 +538,6 @@ function updateProfile(userId, patch) {
     p_bio: normalizeTextField(patch?.bio),
     p_avatar_url: normalizeTextField(patch?.avatar_url)
   };
-
-  console.log('Sending payload to database:', payload);
 
   return new Promise((resolve, reject) => {
     wx.request({

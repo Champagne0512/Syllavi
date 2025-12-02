@@ -1,5 +1,20 @@
 <view class="tasks-page">
-  <custom-navbar title="所有待办" subtitle="Task Management" />
+  <view class="custom-navbar-container">
+    <view class="navbar" style="padding-top: {{statusBarHeight}}px;">
+      <view class="navbar-left">
+        <button class="back-btn" bindtap="goBack">
+          <view class="back-icon">←</view>
+        </button>
+      </view>
+      <view class="titles">
+        <text class="title">所有待办</text>
+        <text class="subtitle">Task Management</text>
+      </view>
+      <view class="navbar-right">
+        <slot name="right"></slot>
+      </view>
+    </view>
+  </view>
 
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
     <!-- 批量操作工具栏 -->

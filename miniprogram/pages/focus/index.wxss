@@ -3,7 +3,8 @@
   padding: 48rpx 32rpx 120rpx;
   color: #f5f6fb;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   justify-content: center;
   background: radial-gradient(circle at 20% 20%, rgba(135, 168, 164, 0.25), transparent 45%),
@@ -12,10 +13,11 @@
 }
 
 .floating-field {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 0;
   overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .mesh-orb {
@@ -146,6 +148,8 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(28rpx);
   overflow: hidden;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .halo-layer {
@@ -237,6 +241,122 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* 主要操作区 - 独立在顶层 */
+.main-action-area {
+  margin: 32rpx;
+  position: relative;
+  z-index: 9999;
+}
+
+.action-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 40rpx;
+  padding: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2rpx solid rgba(135, 168, 164, 0.3);
+  box-shadow: 
+    0 16rpx 48rpx rgba(31, 38, 135, 0.15),
+    0 0 0 1rpx rgba(255, 255, 255, 0.2) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.action-card:active {
+  transform: scale(0.98);
+  box-shadow: 
+    0 8rpx 24rpx rgba(31, 38, 135, 0.1),
+    0 0 0 1rpx rgba(255, 255, 255, 0.2) inset;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.action-content {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  flex: 1;
+}
+
+.action-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #87A8A4, #A2B18A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(135, 168, 164, 0.3);
+}
+
+.play-icon {
+  font-size: 36rpx;
+  color: white;
+  margin-left: 4rpx;
+}
+
+.action-text {
+  flex: 1;
+}
+
+.action-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #2D3436;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.action-subtitle {
+  font-size: 24rpx;
+  color: rgba(45, 52, 54, 0.7);
+  display: block;
+}
+
+.action-arrow {
+  font-size: 32rpx;
+  color: #87A8A4;
+  font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+.action-card:active .action-arrow {
+  transform: translateX(8rpx);
+}
+
+/* 运行中的面板 */
+.running-panel {
+  margin: 32rpx;
+  position: relative;
+  z-index: 9999;
+}
+
+.stop-card {
+  background: rgba(224, 142, 121, 0.8);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 40rpx;
+  padding: 32rpx;
+  text-align: center;
+  border: 2rpx solid rgba(224, 142, 121, 0.5);
+  box-shadow: 0 16rpx 48rpx rgba(224, 142, 121, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stop-card:active {
+  transform: scale(0.98);
+  background: rgba(224, 142, 121, 0.9);
+}
+
+.stop-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: white;
+}
+
 .controls-panel {
   display: flex;
   flex-direction: column;
@@ -246,6 +366,8 @@
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(24rpx);
+  position: relative;
+  z-index: 50;
 }
 
 .controls {
@@ -253,35 +375,17 @@
   gap: 24rpx;
 }
 
-.primary,
-.ghost {
+.button-wrapper {
   flex: 1;
-  border-radius: 999rpx;
-  font-size: 28rpx;
-  padding: 28rpx 0;
-  font-weight: 600;
-  border: none;
+  position: relative;
+  z-index: 200;
 }
 
-.primary {
-  background: linear-gradient(135deg, #fefefe, #dfe8f4);
-  color: #111827;
-  box-shadow: 0 28rpx 60rpx rgba(15, 23, 42, 0.45);
-}
 
-.primary:disabled {
-  opacity: 0.4;
-}
 
-.ghost {
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: transparent;
-  color: #f5f6fb;
-}
 
-.ghost:disabled {
-  opacity: 0.4;
-}
+
+
 
 .slider-block {
   display: flex;

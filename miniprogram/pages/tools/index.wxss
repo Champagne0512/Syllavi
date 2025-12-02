@@ -52,6 +52,14 @@
 
 scroll-view {
   height: calc(100vh - 80rpx);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
 }
 
 /* 玻璃拟态卡片设计 */
@@ -129,6 +137,8 @@ scroll-view {
   font-weight: 600;
   color: #1c1c1e;
   box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  cursor: pointer;
 }
 
 .background-orb {
@@ -164,6 +174,7 @@ scroll-view {
   border: 1rpx solid rgba(255, 255, 255, 0.18);
   position: relative;
   overflow: hidden;
+  z-index: 10;
 }
 
 .section-header {
@@ -200,6 +211,9 @@ scroll-view {
   background: rgba(242, 244, 246, 0.85);
   border: 2rpx solid rgba(135, 168, 164, 0.25);
   transition: transform 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  z-index: 100;
+  cursor: pointer;
 }
 
 .focus-pill:active {
@@ -268,6 +282,10 @@ scroll-view {
     0 16rpx 40rpx rgba(15, 23, 42, 0.06),
     inset 0 1rpx 2rpx rgba(255, 255, 255, 0.8);
   border: 1rpx solid rgba(135, 168, 164, 0.1);
+  overflow: hidden;
+  min-height: 400rpx;
+  position: relative;
+  contain: layout;
 }
 
 .card-head {
@@ -298,6 +316,57 @@ scroll-view {
 .heat-card heatmap-chart {
   width: 100%;
   display: block;
+}
+
+/* 确保全天节奏图表在卡片中正确显示 */
+.data-card .focus-distribution-container.embedded {
+  width: 100%;
+  height: auto;
+  min-height: 360rpx;
+  overflow: hidden;
+  position: relative;
+  will-change: transform;
+  contain: layout;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.data-card .focus-distribution-container.embedded .chart-wrapper {
+  width: 100%;
+  height: 360rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  transform: none !important;
+  will-change: transform;
+  contain: layout;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.data-card .focus-distribution-container.embedded .focus-chart {
+  width: 340rpx !important;
+  height: 340rpx !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 340rpx !important;
+  min-height: 340rpx !important;
+  border-radius: 0;
+  overflow: hidden;
+  display: block;
+  position: relative;
+  transform: none !important;
+  left: 0 !important;
+  top: 0 !important;
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .achievements-container {

@@ -98,6 +98,10 @@
           <text class="batch-icon">📁</text>
           <text class="batch-text">移动</text>
         </view>
+        <view class="batch-btn create-btn" bindtap="batchCreateFolder">
+          <text class="batch-icon">➕</text>
+          <text class="batch-text">新建文件夹</text>
+        </view>
         <view class="batch-btn close-btn" bindtap="exitSelectionMode">
           <text class="batch-icon">✕</text>
           <text class="batch-text">取消</text>

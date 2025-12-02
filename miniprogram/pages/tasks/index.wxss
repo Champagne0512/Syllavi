@@ -9,6 +9,78 @@
   overflow-x: hidden;
 }
 
+/* 自定义导航栏容器 */
+.custom-navbar-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.18);
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+  height: 88rpx;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.back-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  background: rgba(135, 168, 164, 0.1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.back-btn:active {
+  background: rgba(135, 168, 164, 0.2);
+  transform: scale(0.95);
+}
+
+.back-icon {
+  font-size: 32rpx;
+  color: #2D3436;
+  font-weight: 600;
+}
+
+.titles {
+  flex: 1;
+  text-align: center;
+  margin: 0 20rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #2D3436;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.subtitle {
+  font-size: 22rpx;
+  color: rgba(45, 52, 54, 0.6);
+  display: block;
+}
+
+.navbar-right {
+  width: 60rpx;
+  height: 60rpx;
+}
+
 /* 弥散背景 */
 .background-blob {
   position: absolute;
@@ -99,33 +171,52 @@
 
 /* 任务容器 */
 .tasks-container {
-  margin: 0 32rpx 120rpx;
+  margin: 24rpx 32rpx 120rpx;
 }
 
 .tasks-list {
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(20rpx);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 32rpx;
+  -webkit-backdrop-filter: blur(20rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
+  border-radius: 40rpx;
   overflow: hidden;
-  box-shadow: 0 8rpx 32rpx rgba(31, 38, 135, 0.07);
+  box-shadow: 0 8rpx 32rpx 0 rgba(31, 38, 135, 0.07);
 }
 
 .task-item {
   display: flex;
   align-items: center;
   gap: 24rpx;
-  padding: 28rpx 32rpx;
-  border-bottom: 1px solid rgba(45, 52, 54, 0.06);
-  transition: all 0.2s ease;
+  padding: 32rpx;
+  border-bottom: 1rpx solid rgba(135, 168, 164, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  background: transparent;
 }
 
 .task-item:last-child {
   border-bottom: none;
 }
 
+.task-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6rpx;
+  background: transparent;
+  border-radius: 0 3rpx 3rpx 0;
+  transition: all 0.3s ease;
+}
+
+.task-item:not(.completed)::before {
+  background: linear-gradient(180deg, #87A8A4 0%, #A2B18A 100%);
+}
+
 .task-item.completed {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .task-item.completed .task-title {
@@ -188,49 +279,56 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 12rpx;
 }
 
 .task-title {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
-  color: #1C1C1E;
+  color: #2D3436;
   line-height: 1.4;
+  letter-spacing: 0.5rpx;
 }
 
 .task-meta {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  font-size: 24rpx;
+  gap: 12rpx;
+  flex-wrap: wrap;
 }
 
 .task-type {
-  padding: 4rpx 12rpx;
-  border-radius: 12rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 16rpx;
   font-size: 22rpx;
   font-weight: 500;
+  letter-spacing: 0.5rpx;
 }
 
 .task-type.homework {
-  background: rgba(135, 168, 164, 0.15);
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.15), rgba(162, 177, 138, 0.15));
   color: #87A8A4;
+  border: 1rpx solid rgba(135, 168, 164, 0.2);
 }
 
 .task-type.exam {
-  background: rgba(224, 142, 121, 0.15);
+  background: linear-gradient(135deg, rgba(224, 142, 121, 0.15), rgba(188, 160, 188, 0.15));
   color: #E08E79;
+  border: 1rpx solid rgba(224, 142, 121, 0.2);
 }
 
 .task-deadline {
-  color: rgba(28, 28, 30, 0.6);
+  color: rgba(45, 52, 54, 0.6);
+  font-size: 22rpx;
 }
 
 .task-course {
-  color: rgba(28, 28, 30, 0.5);
-  background: rgba(135, 168, 164, 0.1);
-  padding: 2rpx 8rpx;
-  border-radius: 8rpx;
+  color: rgba(45, 52, 54, 0.7);
+  background: rgba(135, 168, 164, 0.08);
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  border: 1rpx solid rgba(135, 168, 164, 0.15);
 }
 
 /* 加载状态 */
@@ -345,11 +443,23 @@
 
 .batch-mode-btn {
   width: 100%;
-  padding: 24rpx;
-  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
-  border-radius: 32rpx;
+  padding: 28rpx;
+  background: linear-gradient(135deg, rgba(135, 168, 164, 0.9), rgba(107, 138, 156, 0.9));
+  backdrop-filter: blur(10rpx);
+  -webkit-backdrop-filter: blur(10rpx);
+  border-radius: 40rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  box-shadow: 0 8rpx 32rpx rgba(31, 38, 135, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.batch-mode-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(31, 38, 135, 0.1);
   justify-content: center;
   gap: 12rpx;
   box-shadow: 0 8rpx 32rpx rgba(135, 168, 164, 0.3);
