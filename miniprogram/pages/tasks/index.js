@@ -202,7 +202,6 @@ Page({
       wx.showToast({ title: '删除失败', icon: 'none' });
     }
   }
-}
   },
 
   goBack() {
