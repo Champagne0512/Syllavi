@@ -8,19 +8,25 @@
     "pages/profile/index",
     "pages/settings/index",
     "pages/tools/index",
-    "pages/web-view/web-view"
+    "pages/web-view/web-view",
+    "pages/groups/index",
+    "pages/groups/create",
+    "pages/groups/detail",
+    "pages/groups/members",
+    "pages/groups/tasks",
+    "pages/groups/batch-tasks"
   ],
   "window": {
-    "backgroundColor": "#F7F7F5",
-    "backgroundTextStyle": "light",
+    "backgroundColor": "#F2F4F6",
+    "backgroundTextStyle": "dark",
     "navigationStyle": "custom",
     "enablePullDownRefresh": true
   },
   "tabBar": {
     "custom": true,
-    "color": "#8C8C8C",
-    "selectedColor": "#1C1C1E",
-    "backgroundColor": "#F7F7F5",
+    "color": "#2D3436",
+    "selectedColor": "#87A8A4",
+    "backgroundColor": "#F2F4F6",
     "borderStyle": "white",
     "list": [
       {
@@ -32,6 +38,12 @@
       {
         "pagePath": "pages/knowledge/index",
         "text": "资料",
+        "iconPath": "static/tab/placeholder.png",
+        "selectedIconPath": "static/tab/placeholder.png"
+      },
+      {
+        "pagePath": "pages/groups/index",
+        "text": "学习小组",
         "iconPath": "static/tab/placeholder.png",
         "selectedIconPath": "static/tab/placeholder.png"
       },

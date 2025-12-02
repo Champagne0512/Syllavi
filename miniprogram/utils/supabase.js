@@ -48,17 +48,42 @@ function buildHeaders(extra = {}) {
 function request(path, { method = 'GET', data = null, query = '', headers = {} } = {}) {
   const url = `${SUPABASE_URL}/rest/v1/${path}${query ? `?${query}` : ''}`;
 
+  // 确保数据被正确序列化
+  let requestData = data
+  if (data && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
+    requestData = JSON.stringify(data)
+  }
+
+  const finalHeaders = buildHeaders(headers);
+  
+  // 添加调试信息
+  if (method === 'POST' && (path === 'group_tasks' || path === 'group_task_members')) {
+    console.log('请求URL:', url);
+    console.log('请求方法:', method);
+    console.log('请求头:', finalHeaders);
+    console.log('请求数据:', requestData);
+  }
+
   return new Promise((resolve, reject) => {
     wx.request({
       url,
       method,
-      data,
-      header: buildHeaders(headers),
+      data: requestData,
+      header: finalHeaders,
       success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(res.data);
+          // 对于 DELETE 请求，即使没有数据返回也视为成功
+          if (method === 'DELETE' && (res.data === null || res.data === '')) {
+            resolve({ success: true, deleted: true });
+          } else {
+            resolve(res.data);
+          }
         } else {
           console.error('Supabase error', res);
+          // 添加更多错误信息
+          if (res.statusCode === 400 || res.statusCode === 401) {
+            console.error('权限或数据格式错误:', res.data);
+          }
           reject(res);
         }
       },
@@ -257,6 +282,163 @@ function fetchTasks(userId = DEMO_USER_ID) {
     'order=deadline.asc'
   ].join('&');
   return request('tasks', { query });
+}
+
+// 获取包含小组任务的完整任务列表
+async function fetchAllTasks(userId = DEMO_USER_ID) {
+  try {
+    // 获取个人任务（包括标记为小组任务的）
+    const personalTasks = await fetchTasks(userId);
+    
+    // 处理标记为小组任务的个人任务
+    const markedGroupTasks = (personalTasks || []).map(task => {
+      if (task.title && task.title.startsWith('[小组任务]')) {
+        return {
+          ...task,
+          type: 'group_task', // 标记为小组任务
+          // 从描述中提取小组信息
+          groupInfo: {
+            groupId: extractGroupIdFromDescription(task.description) || null,
+            groupName: extractGroupNameFromDescription(task.description) || '学习小组'
+          }
+        };
+      }
+      return task;
+    });
+    
+    try {
+      // 尝试获取用户的小组任务（如果表存在）
+      const groupTaskQuery = [
+        `user_id=eq.${userId}`,
+        'select=task_id,is_completed,completed_at,assigned_at',
+        'order=assigned_at.desc'
+      ].join('&');
+      
+      const groupTaskMembers = await request('group_task_members', { query: groupTaskQuery });
+      
+      if (groupTaskMembers && groupTaskMembers.length > 0) {
+        try {
+          // 获取任务详细信息
+          const taskIds = groupTaskMembers.map(member => member.task_id).join(',');
+          
+          // 先尝试使用关联查询
+          let taskDetailsQuery = [
+            `id=in.(${taskIds})`,
+            'select=id,title,description,deadline,created_at,group_id,created_by,study_groups:study_groups(id,name,description)'
+          ].join('&');
+          
+          let taskDetails = [];
+          
+          try {
+            taskDetails = await request('group_tasks', { query: taskDetailsQuery });
+          } catch (relError) {
+            console.warn('关联查询失败，尝试分离查询:', relError);
+            
+            // 如果关联查询失败，则分开查询任务和小组信息
+            const taskDetailsOnlyQuery = [
+              `id=in.(${taskIds})`,
+              'select=id,title,description,deadline,created_at,group_id,created_by'
+            ].join('&');
+            
+            taskDetails = await request('group_tasks', { query: taskDetailsOnlyQuery });
+            
+            // 获取小组信息
+            const groupIds = [...new Set(taskDetails.map(t => t.group_id).filter(Boolean))];
+            if (groupIds.length > 0) {
+              const groupIdsStr = groupIds.join(',');
+              const groupsQuery = [
+                `id=in.(${groupIdsStr})`,
+                'select=id,name,description'
+              ].join('&');
+              
+              const groups = await request('study_groups', { query: groupsQuery });
+              
+              // 手动关联小组信息
+              taskDetails = taskDetails.map(task => {
+                const group = groups.find(g => g.id === task.group_id);
+                return {
+                  ...task,
+                  study_groups: group || { id: task.group_id, name: '学习小组', description: '' }
+                };
+              });
+            }
+          }
+          
+          // 组合数据
+          const groupTasks = groupTaskMembers.map(member => {
+            const taskDetail = taskDetails.find(t => t.id === member.task_id);
+            if (!taskDetail) return null;
+            
+            return {
+              id: taskDetail.id,
+              type: 'group_task', // 标记为小组任务
+              title: taskDetail.title,
+              description: taskDetail.description,
+              deadline: taskDetail.deadline,
+              is_completed: member.is_completed,
+              progress: member.is_completed ? 1 : 0,
+              related_course_id: null,
+              course: null,
+              // 添加小组相关信息
+              groupInfo: {
+                groupId: taskDetail.group_id,
+                groupName: taskDetail.study_groups?.name || '学习小组',
+                groupDescription: taskDetail.study_groups?.description || ''
+              },
+              // 添加小组任务特有字段
+              task_member_id: member.id,
+              assigned_at: member.assigned_at,
+              completed_at: member.completed_at
+            };
+          }).filter(Boolean); // 过滤掉null值
+          
+          // 合并个人任务和小组任务，按截止时间排序
+          const allTasks = markedGroupTasks.concat(groupTasks).sort((a, b) => {
+            return new Date(a.deadline) - new Date(b.deadline);
+          });
+          
+          return allTasks;
+        } catch (groupTaskError) {
+          console.warn('处理小组任务时出错，降级到只使用标记的个人任务:', groupTaskError);
+        }
+      }
+    } catch (groupTaskError) {
+      console.warn('无法获取小组任务表，只返回标记为小组任务的个人任务:', groupTaskError);
+    }
+    
+    // 如果没有小组任务表或者获取失败，只返回标记为小组任务的个人任务
+    return markedGroupTasks;
+  } catch (error) {
+    console.error('获取所有任务失败:', error);
+    // 降级到只返回个人任务
+    return fetchTasks(userId);
+  }
+}
+
+// 从任务描述中提取小组名称
+function extractGroupNameFromDescription(description) {
+  if (!description) return null;
+  
+  // 查找"分配给: xxx"模式
+  const match = description.match(/分配给:\s*(.+?)(?:\n|$)/);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  
+  return null;
+}
+
+// 从任务描述中提取小组ID
+function extractGroupIdFromDescription(description) {
+  if (!description) return null;
+  
+  // 查找"小组ID: xxx"模式
+  const match = description.match(/小组ID:\s*(.+?)(?:\n|$)/);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  
+  return null;
 }
 
 function createTask(payload) {
@@ -968,6 +1150,7 @@ function updateLearningHeatmap(userId, date, focusMinutes, tasksCompleted) {
 }
 
 module.exports = {
+  request,
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   DEMO_USER_ID,
@@ -982,6 +1165,7 @@ module.exports = {
   deleteCourse,
   createCourseSchedules,
   fetchTasks,
+  fetchAllTasks,
   createTask,
   updateTask,
   updateTaskCompletion,

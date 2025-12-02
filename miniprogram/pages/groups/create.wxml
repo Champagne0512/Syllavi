@@ -1,0 +1,70 @@
+<!--pages/groups/create.wxml-->
+<view class="container">
+  <form bindsubmit="onSubmit">
+    <!-- 小组名称 -->
+    <view class="form-group">
+      <label class="form-label">小组名称</label>
+      <input 
+        class="form-input" 
+        name="name" 
+        value="{{form.name}}" 
+        placeholder="请输入小组名称（最多50字）"
+        maxlength="50"
+        data-field="name"
+        bindinput="onInputChange"
+      />
+    </view>
+
+    <!-- 小组描述 -->
+    <view class="form-group">
+      <label class="form-label">小组描述</label>
+      <textarea 
+        class="form-textarea" 
+        name="description" 
+        value="{{form.description}}" 
+        placeholder="请输入小组描述（选填，最多200字）"
+        maxlength="200"
+        data-field="description"
+        bindinput="onInputChange"
+      />
+    </view>
+
+    <!-- 最大人数 -->
+    <view class="form-group">
+      <label class="form-label">最大人数</label>
+      <picker 
+        range="{{[10, 15, 20, 25, 30, 40, 50]}}" 
+        value="{{[10, 15, 20, 25, 30, 40, 50].indexOf(form.maxMembers)}}"
+        bindchange="onMaxMembersChange"
+      >
+        <view class="picker">{{form.maxMembers}}人</view>
+      </picker>
+    </view>
+
+    <!-- 公开设置 -->
+    <view class="form-group">
+      <label class="form-label">小组类型</label>
+      <view class="switch-group">
+        <text class="switch-label">{{form.isPublic ? '公开小组' : '私密小组'}}</text>
+        <switch 
+          checked="{{form.isPublic}}" 
+          bindchange="togglePublic"
+          color="#1c1c1e"
+        />
+      </view>
+      <view class="form-tip">{{form.isPublic ? '公开小组可被其他用户搜索到' : '私密小组只能通过小组码加入'}}</view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="form-actions">
+      <button 
+        class="btn-primary" 
+        form-type="submit" 
+        disabled="{{submitting}}"
+        loading="{{submitting}}"
+      >
+        {{submitting ? '创建中...' : '创建小组'}}
+      </button>
+    </view>
+  </form>
+</view>

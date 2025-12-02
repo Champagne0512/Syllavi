@@ -1293,7 +1293,34 @@
 
 .task-info { display: flex; flex-direction: column; }
 .task-text { font-size: 30rpx; color: #1C1C1E; margin-bottom: 4rpx; }
+.task-meta-row { display: flex; flex-direction: column; gap: 8rpx; }
 .task-meta { font-size: 22rpx; font-weight: 500; }
+
+/* 小组任务来源样式 */
+.task-source-tag {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: rgba(135, 168, 164, 0.1);
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  color: #87A8A4;
+}
+
+.group-avatar-small {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+}
+
+.group-name-small {
+  font-weight: 600;
+}
+
+.from-text {
+  color: #8E8E93;
+}
 
 .empty-tip {
   text-align: center;

@@ -1,0 +1,120 @@
+<!--pages/groups/batch-tasks.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 主要内容 -->
+  <view wx:else class="content">
+    <!-- 标题栏 -->
+    <view class="header">
+      <text class="title">批量安排小组任务</text>
+      <text class="subtitle">{{groupInfo.name}}</text>
+    </view>
+
+    <!-- 任务表单 -->
+    <view class="form-section">
+      <view class="form-item">
+        <text class="label">任务标题 *</text>
+        <input 
+          class="input" 
+          placeholder="请输入任务标题" 
+          value="{{taskForm.title}}"
+          data-field="title"
+          bindinput="onInputChange"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="label">任务描述</text>
+        <textarea 
+          class="textarea" 
+          placeholder="请输入任务描述（可选）" 
+          value="{{taskForm.description}}"
+          data-field="description"
+          bindinput="onInputChange"
+          maxlength="500"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="label">截止日期 *</text>
+        <picker 
+          mode="date" 
+          value="{{taskForm.deadline}}"
+          bindchange="onDateChange"
+        >
+          <view class="picker">
+            {{taskForm.deadline ? taskForm.deadline : '请选择截止日期'}}
+          </view>
+        </picker>
+      </view>
+
+      <!-- 分配方式 -->
+      <view class="form-item">
+        <view class="switch-container">
+          <text class="label">分配给全体成员</text>
+          <switch 
+            checked="{{taskForm.assignToAll}}"
+            bindchange="onAssignToAllChange"
+            color="#1989fa"
+          />
+        </view>
+      </view>
+
+      <!-- 成员选择（当不选择全体成员时显示） -->
+      <view wx:if="{{!taskForm.assignToAll}}" class="members-section">
+        <text class="section-title">选择要分配的成员 ({{taskForm.selectedMembers.length}}/{{members.length}})</text>
+        <view class="members-list">
+          <view 
+            wx:for="{{members}}" 
+            wx:key="id"
+            class="member-item {{item.selected ? 'selected' : ''}}"
+            data-index="{{index}}"
+            bindtap="onMemberSelect"
+          >
+            <view class="member-info">
+              <text class="member-name">{{item.role === 'leader' ? '👑 ' : ''}}{{item.nickname}}</text>
+              <text class="member-role">{{item.role === 'leader' ? '组长' : item.role === 'deputy_leader' ? '副组长' : '成员'}}</text>
+            </view>
+            <view class="checkbox {{item.selected ? 'checked' : ''}}">
+              <text wx:if="{{item.selected}}">✓</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 快速填写示例 -->
+      <view class="example-section">
+        <button class="example-btn" bindtap="fillExampleTask" size="mini">
+          快速填写示例任务
+        </button>
+      </view>
+
+      <!-- 提交按钮 -->
+      <view class="submit-section">
+        <button 
+          class="submit-btn" 
+          bindtap="createBatchTasks"
+          disabled="{{submitting}}"
+          loading="{{submitting}}"
+        >
+          {{submitting ? '创建中...' : '创建批量任务'}}
+        </button>
+      </view>
+    </view>
+
+    <!-- 统计信息 -->
+    <view class="stats-section">
+      <view class="stats-item">
+        <text class="stats-value">{{members.length}}</text>
+        <text class="stats-label">小组成员</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-value">{{taskForm.assignToAll ? members.length : taskForm.selectedMembers.length}}</text>
+        <text class="stats-label">将分配任务</text>
+      </view>
+    </view>
+  </view>
+</view>

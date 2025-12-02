@@ -1,5 +1,5 @@
 const { MORANDI_COLORS } = require('../../utils/colors');
-const { fetchWeekSchedule, fetchTasks } = require('../../utils/supabase');
+const { fetchWeekSchedule, fetchAllTasks } = require('../../utils/supabase');
 
 // 模拟课程数据 (实际开发中应从数据库加载)
 const MOCK_COURSES = [
@@ -367,7 +367,32 @@ Page({
     try {
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
-      const rows = await fetchTasks(userId);
+      
+      // 添加调试信息
+      console.log('首页加载任务 - 用户ID:', userId);
+      console.log('首页加载任务 - fetchAllTasks函数:', typeof fetchAllTasks);
+      
+      // 添加强制刷新选项
+      const forceRefresh = wx.getStorageSync('force_refresh_tasks') || false;
+      if (forceRefresh) {
+        console.log('首页加载任务 - 强制刷新任务缓存');
+        wx.removeStorageSync('tasks_cache');
+        wx.setStorageSync('force_refresh_tasks', false);
+      }
+      
+      const rows = await fetchAllTasks(userId);
+      
+      // 添加调试信息
+      console.log('首页加载任务 - 获取到的任务数量:', rows?.length);
+      console.log('首页加载任务 - 任务详情:', rows);
+      
+      // 检查小组任务
+      const groupTasks = rows?.filter(task => 
+        task.type === 'group_task' || 
+        (task.title && task.title.startsWith('[小组任务]'))
+      );
+      console.log('首页加载任务 - 小组任务数量:', groupTasks?.length);
+      console.log('首页加载任务 - 小组任务详情:', groupTasks);
       
       if (!rows || !rows.length) throw new Error('empty');
 
@@ -389,10 +414,19 @@ Page({
           deadlineKey,
           description: row.description,
           progress: row.is_completed ? 1 : 0,
-          course: row.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN',
-          accent: MORANDI_COLORS[idx % MORANDI_COLORS.length],
+          // 小组任务使用特殊的课程标识
+          course: row.type === 'group_task' ? '小组' : (row.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN'),
+          // 小组任务使用特殊的颜色
+          accent: row.type === 'group_task' ? '#FF6B6B' : MORANDI_COLORS[idx % MORANDI_COLORS.length],
           completed: row.is_completed,
-          urgent: row.type === 'exam' // 简单标记
+          // 标记小组任务和考试任务
+          urgent: row.type === 'exam' || row.type === 'group_task', // 小组任务也标记为紧急
+          // 添加小组任务支持
+          groupDetails: row.groupInfo ? {
+            groupId: row.groupInfo.groupId,
+            groupName: row.groupInfo.groupName || '学习小组',
+            groupDescription: row.groupInfo.groupDescription || ''
+          } : null
         };
       });
       

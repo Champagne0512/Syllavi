@@ -1,0 +1,215 @@
+<!--pages/groups/detail.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 小组信息 -->
+  <view wx:if="{{!loading && groupInfo !== null}}" class="group-detail">
+    <!-- 顶部导航栏 -->
+    <view class="nav-bar">
+      <view class="nav-back" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <view class="nav-title">小组详情</view>
+      <view class="nav-placeholder"></view>
+    </view>
+    
+    <!-- 小组头部信息 -->
+    <view class="group-header">
+      <image class="group-avatar" src="{{groupInfo.avatar_url || '/static/default-avatar.png'}}"></image>
+      <view class="group-basic-info">
+        <view class="group-name">{{groupInfo.group_name}}</view>
+        <view class="group-code" bindtap="copyGroupCode">
+          小组码：{{groupInfo.group_code}}
+          <text class="copy-tip">点击复制</text>
+        </view>
+        <view class="group-meta">
+          <text class="member-count">{{groupInfo.member_count}}人</text>
+          <text class="group-type">{{groupInfo.is_public ? '公开小组' : '私密小组'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 用户角色显示 -->
+    <view wx:if="{{isMember && userRole}}" class="user-role">
+      <text class="role-tag {{userRole}}">
+        {{userRole === 'leader' ? '组长' : userRole === 'deputy_leader' ? '副组长' : '组员'}}
+      </text>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button wx:if="{{isMember && (userRole === 'leader' || userRole === 'deputy_leader')}}" class="btn-primary" bindtap="batchAssignTasks">批量安排任务</button>
+      <button wx:if="{{isMember && (userRole === 'leader' || userRole === 'deputy_leader')}}" class="btn-secondary" bindtap="inviteMember">邀请成员</button>
+      <button wx:if="{{!isMember && groupInfo}}" class="btn-primary" bindtap="joinGroup">申请加入</button>
+    </view>
+
+    <!-- 导航标签 -->
+    <view class="detail-tabs">
+      <view 
+        class="detail-tab {{currentTab === 'info' ? 'active' : ''}}"
+        data-tab="info"
+        bindtap="switchTab"
+      >
+        小组信息
+      </view>
+      <view 
+        wx:if="{{isMember}}"
+        class="detail-tab {{currentTab === 'members' ? 'active' : ''}}"
+        data-tab="members"
+        bindtap="switchTab"
+      >
+        成员列表
+      </view>
+      <view 
+        wx:if="{{isMember}}"
+        class="detail-tab {{currentTab === 'tasks' ? 'active' : ''}}"
+        data-tab="tasks"
+        bindtap="switchTab"
+      >
+        小组任务
+      </view>
+    </view>
+
+    <!-- 小组信息 -->
+    <view wx:if="{{currentTab === 'info'}}" class="tab-content">
+      <view class="info-section">
+        <view class="section-title">小组描述</view>
+        <view class="section-content">{{groupInfo.description || '暂无描述'}}</view>
+      </view>
+      
+      <view class="info-section">
+        <view class="section-title">基本信息</view>
+        <view class="info-item">
+          <text class="info-label">创建时间</text>
+          <text class="info-value">{{groupInfo.created_at}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">最大人数</text>
+          <text class="info-value">{{groupInfo.max_members}}人</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">小组类型</text>
+          <text class="info-value">{{groupInfo.is_public ? '公开小组' : '私密小组'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 成员列表 -->
+    <view wx:if="{{currentTab === 'members' && isMember}}" class="tab-content">
+      <view class="members-list">
+        <view class="member-item" wx:for="{{members}}" wx:key="id">
+          <image class="member-avatar" src="/static/default-avatar.png"></image>
+          <view class="member-info">
+            <view class="member-name">用户 {{item.user_id}}</view>
+            <view class="member-meta">
+              <text class="member-role {{item.role}}">
+                {{item.role === 'leader' ? '组长' : item.role === 'deputy_leader' ? '副组长' : '组员'}}
+              </text>
+              <text class="join-time">加入时间：{{item.joined_at}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <view class="section-actions">
+        <button class="btn-link" bindtap="viewMembers">查看完整成员管理</button>
+      </view>
+    </view>
+
+    <!-- 小组任务 -->
+    <view wx:if="{{currentTab === 'tasks' && isMember}}" class="tab-content">
+      <!-- 任务统计信息 -->
+      <view class="task-stats">
+        <view class="stats-group">
+          <view class="stat-item">
+            <text class="stat-value">{{taskStats.total}}</text>
+            <text class="stat-label">总任务数</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-value completed">{{taskStats.completed}}</text>
+            <text class="stat-label">已完成</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-value pending">{{taskStats.pending}}</text>
+            <text class="stat-label">进行中</text>
+          </view>
+        </view>
+        <view class="stats-group">
+          <view class="stat-item">
+            <text class="stat-value">{{taskStats.myTotal}}</text>
+            <text class="stat-label">我的任务</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-value completed">{{taskStats.myCompleted}}</text>
+            <text class="stat-label">已完成</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-value" style="color: {{taskStats.myTotal > 0 ? '#1989fa' : '#999'}}">{{taskStats.myTotal > 0 ? Math.round((taskStats.myCompleted / taskStats.myTotal) * 100) : 0}}%</text>
+            <text class="stat-label">完成率</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="tasks-list">
+        <block wx:if="{{tasks.length === 0}}">
+          <view class="empty-tasks">
+            <text class="empty-text">暂无小组任务</text>
+          </view>
+        </block>
+        <block wx:else>
+          <view 
+            class="task-item {{item.status === 'completed' ? 'completed' : ''}} {{item.isMyTask ? 'my-task' : ''}}"
+            wx:for="{{tasks}}" 
+            wx:key="id"
+          >
+            <view class="task-header">
+              <view class="task-title">
+                <text class="task-status {{item.status === 'completed' ? 'completed' : ''}}">
+                  {{item.status === 'completed' ? '✓' : '○'}}
+                </text>
+                {{item.title}}
+                <text wx:if="{{item.isMyTask}}" class="my-task-badge">我的任务</text>
+                <text wx:if="{{item.isCreator}}" class="creator-badge">我创建的</text>
+              </view>
+              <button 
+                wx:if="{{item.isMyTask}}"
+                class="status-btn {{item.status === 'completed' ? 'undo-btn' : 'complete-btn'}}"
+                data-id="{{item.id}}"
+                data-index="{{index}}"
+                data-status="{{item.status}}"
+                bindtap="toggleTaskStatus"
+                size="mini"
+              >
+                {{item.status === 'completed' ? '标记未完成' : '标记完成'}}
+              </button>
+            </view>
+            <view class="task-meta">
+              <text class="task-description">{{item.description}}</text>
+              <view class="task-details">
+                <text wx:if="{{item.deadline}}" class="task-deadline">截止：{{item.deadline}}</text>
+                <text class="task-created">创建：{{item.created_at}}</text>
+                <text wx:if="{{item.completed_at}}" class="task-completed">完成：{{item.completed_at}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+      
+      <view class="section-actions">
+        <button class="btn-link" bindtap="viewTasks">查看完整任务管理</button>
+      </view>
+    </view>
+
+    <!-- 底部操作 -->
+    <view wx:if="{{isMember}}" class="bottom-actions">
+      <button wx:if="{{userRole === 'leader'}}" class="btn-danger" bindtap="disbandGroup">解散小组</button>
+      <button class="btn-secondary" bindtap="leaveGroup">退出小组</button>
+    </view>
+    
+    <!-- 底部安全区域占位 -->
+    <view style="height: calc(20rpx + env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.85); position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;"></view>
+  </view>
+</view>

@@ -1,0 +1,88 @@
+<!--pages/groups/members.wxml-->
+<view class="container">
+  <!-- 导航标签 -->
+  <view class="nav-tabs">
+    <view 
+      class="nav-tab {{currentTab === 'members' ? 'active' : ''}}"
+      data-tab="members"
+      bindtap="switchTab"
+    >
+      成员管理
+    </view>
+    <view 
+      class="nav-tab {{currentTab === 'invitations' ? 'active' : ''}}"
+      data-tab="invitations"
+      bindtap="switchTab"
+    >
+      加入申请
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 成员管理 -->
+  <view wx:if="{{!loading && currentTab === 'members'}}" class="tab-content">
+    <view class="members-list">
+      <view class="member-item" wx:for="{{members}}" wx:key="id">
+        <image class="member-avatar" src="{{item.profiles.avatar_url || '/static/default-avatar.png'}}"></image>
+        <view class="member-info">
+          <view class="member-name">
+            {{item.profiles.nickname}}
+            <text wx:if="{{item.profiles.id === app.globalData.user.id}}" class="self-tag">(我)</text>
+          </view>
+          <view class="member-meta">
+            <text class="member-role {{item.role}}">
+              {{item.role === 'leader' ? '组长' : item.role === 'deputy_leader' ? '副组长' : '组员'}}
+            </text>
+            <text class="join-time">加入时间：{{item.joined_at}}</text>
+          </view>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view wx:if="{{userRole === 'leader' && item.role === 'member'}}" class="member-actions">
+          <button class="btn-small" data-id="{{item.id}}" bindtap="setDeputyLeader">设为副组长</button>
+          <button class="btn-small danger" data-id="{{item.id}}" data-name="{{item.profiles.nickname}}" bindtap="removeMember">请出</button>
+        </view>
+        
+        <view wx:if="{{userRole === 'leader' && item.role === 'deputy_leader'}}" class="member-actions">
+          <button class="btn-small" data-id="{{item.id}}" bindtap="removeDeputyLeader">移除副组长</button>
+          <button class="btn-small danger" data-id="{{item.id}}" data-name="{{item.profiles.nickname}}" bindtap="removeMember">请出</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{members.length === 0}}" class="empty-state">
+      <text class="empty-icon">👥</text>
+      <view class="empty-text">暂无成员</view>
+    </view>
+  </view>
+
+  <!-- 加入申请 -->
+  <view wx:if="{{!loading && currentTab === 'invitations'}}" class="tab-content">
+    <view class="invitations-list">
+      <view class="invitation-item" wx:for="{{invitations}}" wx:key="id">
+        <image class="invitation-avatar" src="{{item.profiles.avatar_url || '/static/default-avatar.png'}}"></image>
+        <view class="invitation-info">
+          <view class="invitation-name">{{item.profiles.nickname}}</view>
+          <view class="invitation-time">申请时间：{{item.created_at}}</view>
+        </view>
+        
+        <!-- 处理按钮 -->
+        <view wx:if="{{userRole === 'leader' || userRole === 'deputy_leader'}}" class="invitation-actions">
+          <button class="btn-small success" data-id="{{item.id}}" data-action="accept" bindtap="handleInvitation">同意</button>
+          <button class="btn-small danger" data-id="{{item.id}}" data-action="reject" bindtap="handleInvitation">拒绝</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{invitations.length === 0}}" class="empty-state">
+      <text class="empty-icon">📨</text>
+      <view class="empty-text">暂无加入申请</view>
+    </view>
+  </view>
+</view>

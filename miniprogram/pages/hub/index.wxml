@@ -66,7 +66,14 @@
             <view class="check-circle {{item.completed ? 'checked' : ''}}"></view>
             <view class="task-info">
               <text class="task-text">{{item.title}}</text>
-              <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadline}}</text>
+              <view class="task-meta-row">
+                <text class="task-meta" style="color: {{item.accent}}">{{item.course}} · {{item.deadline}}</text>
+                <view class="task-source-tag" wx:if="{{item.groupDetails}}">
+                  <image class="group-avatar-small" src="{{item.groupDetails.groupAvatar || '/images/default-group.png'}}"></image>
+                  <text class="group-name-small">{{item.groupDetails.groupName}}</text>
+                  <text class="from-text">来自: {{item.groupDetails.createdBy}}</text>
+                </view>
+              </view>
             </view>
           </view>
         </block>

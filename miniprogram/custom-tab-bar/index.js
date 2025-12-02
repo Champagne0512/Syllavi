@@ -4,6 +4,7 @@ Component({
     list: [
       { pagePath: 'pages/hub/index', text: '课程与待办' },
       { pagePath: 'pages/knowledge/index', text: '资料' },
+      { pagePath: 'pages/groups/index', text: '学习小组' },
       { pagePath: 'pages/tools/index', text: '工具' },
       { pagePath: 'pages/profile/index', text: '个人' }
     ],

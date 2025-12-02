@@ -1,0 +1,151 @@
+<!-- pages/groups/tasks.wxml -->
+<view class="container">
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">
+      <text class="nav-icon">←</text>
+    </view>
+    <view class="nav-title">任务管理</view>
+    <view class="nav-placeholder"></view>
+  </view>
+  
+  <!-- 任务统计卡片 -->
+  <view class="stats-card" wx:if="{{taskStats}}">
+    <view class="stats-title">任务概览</view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{taskStats.total}}</text>
+        <text class="stat-label">总任务</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value completed">{{taskStats.completed}}</text>
+        <text class="stat-label">已完成</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value pending">{{taskStats.pending}}</text>
+        <text class="stat-label">进行中</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value overdue">{{taskStats.overdue}}</text>
+        <text class="stat-label">已过期</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速操作按钮 -->
+  <view class="quick-actions">
+    <button wx:if="{{userRole === 'leader' || userRole === 'deputy_leader'}}" class="action-btn primary" bindtap="showCreateTask">
+      <text class="btn-icon">+</text>
+      <text>创建任务</text>
+    </button>
+    <button wx:if="{{userRole === 'leader' || userRole === 'deputy_leader'}}" class="action-btn secondary" bindtap="quickCreateTasks">
+      <text class="btn-icon">⚡</text>
+      <text>快速创建示例</text>
+    </button>
+    <button class="action-btn secondary" bindtap="refreshTasks">
+      <text class="btn-icon">⟳</text>
+      <text>刷新</text>
+    </button>
+  </view>
+
+  <!-- 任务列表 -->
+  <view class="tasks-section">
+    <view class="section-header">
+      <text class="section-title">小组任务</text>
+      <text class="task-count">{{tasks.length}} 个任务</text>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-container" wx:if="{{loading}}">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 任务列表 -->
+    <view class="tasks-list" wx:if="{{!loading}}">
+      <view class="empty-state" wx:if="{{tasks.length === 0}}">
+        <text class="empty-icon">📋</text>
+        <text class="empty-text">暂无小组任务</text>
+        <text class="empty-tip">点击上方"创建任务"按钮创建第一个任务</text>
+      </view>
+
+      <view class="task-item" wx:for="{{tasks}}" wx:key="id" bindtap="viewTaskDetail" data-id="{{item.id}}">
+        <view class="task-header">
+          <view class="task-title-section">
+            <text class="task-title {{item.isCompleted ? 'completed' : ''}}">{{item.title}}</text>
+            <view class="task-source">
+              <text class="source-text">创建于: {{item.created_at}}</text>
+            </view>
+          </view>
+          <view class="task-status {{item.status}}">
+            <text>{{item.isCompleted ? '已完成' : item.isOverdue ? '已过期' : '进行中'}}</text>
+          </view>
+        </view>
+
+        <view class="task-content">
+          <text class="task-description" wx:if="{{item.description}}">{{item.description}}</text>
+          
+          <view class="task-meta">
+            <view class="meta-item" wx:if="{{item.deadline}}">
+              <text class="meta-icon">⏰</text>
+              <text class="meta-text {{item.isOverdue ? 'overdue' : ''}}">{{item.formattedDeadline}}</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">👥</text>
+              <text class="meta-text">状态: {{item.status === 'completed' ? '已完成' : '进行中'}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="task-actions" wx:if="{{userRole === 'leader' || userRole === 'deputy_leader' || item.status !== 'completed'}}">
+          <button class="btn-action complete" wx:if="{{!item.isCompleted}}" 
+                  bindtap="toggleTaskStatus" data-id="{{item.id}}" data-index="{{index}}" data-status="{{item.status}}" catchtap>
+            {{item.status === 'completed' ? '标记未完成' : '标记完成'}}
+          </button>
+          <button class="btn-action delete" wx:if="{{userRole === 'leader' || userRole === 'deputy_leader'}}" 
+                  bindtap="deleteTask" data-id="{{item.id}}" catchtap>
+            删除
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 创建任务模态框 -->
+  <view class="modal-overlay" wx:if="{{showCreateModal}}" bindtap="hideCreateTask">
+    <view class="modal-content" catchtap>
+      <view class="modal-header">
+        <text class="modal-title">创建小组任务</text>
+        <text class="modal-close" bindtap="hideCreateTask">×</text>
+      </view>
+
+      <view class="modal-body">
+        <view class="form-group">
+          <label class="form-label">任务标题</label>
+          <input class="form-input" placeholder="请输入任务标题" 
+                 value="{{newTaskTitle}}" bindinput="onTitleInput" />
+        </view>
+
+        <view class="form-group">
+          <label class="form-label">任务描述（可选）</label>
+          <textarea class="form-textarea" placeholder="请输入任务描述" 
+                    value="{{newTaskDescription}}" bindinput="onDescriptionInput" />
+        </view>
+
+        <view class="form-group">
+          <label class="form-label">截止时间（可选）</label>
+          <picker mode="date" value="{{newTaskDeadline}}" bindchange="onDeadlineChange">
+            <view class="date-picker">
+              <text class="date-text" wx:if="{{newTaskDeadline}}">{{newTaskDeadline}}</text>
+              <text class="date-placeholder" wx:else>选择截止日期</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="modal-footer">
+        <button class="btn-cancel" bindtap="hideCreateTask">取消</button>
+        <button class="btn-confirm" bindtap="createTask">创建任务</button>
+      </view>
+    </view>
+  </view>
+</view>
