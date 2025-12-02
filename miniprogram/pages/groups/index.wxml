@@ -7,32 +7,44 @@
     <view class="mesh-orb orb-d"></view>
   </view>
 
-  <!-- 页面头部 -->
-  <view class="zen-header">
-    <view class="header-eyebrow">学习社区</view>
-    <view class="header-title">Study Groups</view>
-    <view class="header-quote">Flow stays when breathing stays.</view>
-  </view>
+  <!-- 顶部导航 - 统一设计 -->
+  <custom-navbar title="Study Groups" subtitle="学习社区">
+    <view slot="right" class="profile-avatar" bindtap="goToProfile">
+      <image wx:if="{{profile.avatar_url}}" src="{{profile.avatar_url}}" class="avatar-img"></image>
+      <view wx:else class="avatar-placeholder">👤</view>
+    </view>
+  </custom-navbar>
 
-  <!-- 玻璃拟态导航栏 -->
-  <view class="glass-navbar">
-    <view class="nav-tabs">
+  <!-- 操作区域 -->
+  <view class="action-section">
+    <!-- Tab切换 -->
+    <view class="tab-switch glass">
       <view 
-        class="nav-tab {{currentTab === 'myGroups' ? 'active' : ''}}"
+        class="tab-item {{currentTab === 'myGroups' ? 'active' : ''}}"
         data-tab="myGroups"
         bindtap="switchTab"
       >
-        <view class="tab-indicator"></view>
         <text class="tab-text">我的小组</text>
       </view>
       <view 
-        class="nav-tab {{currentTab === 'publicGroups' ? 'active' : ''}}"
+        class="tab-item {{currentTab === 'publicGroups' ? 'active' : ''}}"
         data-tab="publicGroups"
         bindtap="switchTab"
       >
-        <view class="tab-indicator"></view>
         <text class="tab-text">公开小组</text>
       </view>
+    </view>
+    
+    <!-- 快捷操作按钮 -->
+    <view class="quick-actions glass">
+      <button class="action-btn primary" bindtap="createGroup">
+        <text class="btn-icon">+</text>
+        <text class="btn-text">创建小组</text>
+      </button>
+      <button class="action-btn secondary" bindtap="joinGroup">
+        <text class="btn-icon">🔍</text>
+        <text class="btn-text">发现小组</text>
+      </button>
     </view>
   </view>
 
@@ -148,19 +160,5 @@
     </view>
   </view>
 
-  <!-- 悬浮操作按钮 -->
-  <view wx:if="{{!loading}}" class="zen-floating-actions">
-    <button class="zen-fab primary" bindtap="createGroup">
-      <view class="fab-content">
-        <view class="fab-icon create"></view>
-      </view>
-      <view class="fab-label">创建</view>
-    </button>
-    <button class="zen-fab secondary" bindtap="joinGroup">
-      <view class="fab-content">
-        <view class="fab-icon join"></view>
-      </view>
-      <view class="fab-label">发现</view>
-    </button>
-  </view>
+  
 </view>

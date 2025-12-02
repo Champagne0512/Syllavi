@@ -1,6 +1,6 @@
 // pages/groups/index.js
 const app = getApp()
-const { request } = require('../../utils/supabase')
+const { request, SUPABASE_URL, SUPABASE_ANON_KEY } = require('../../utils/supabase')
 
 Page({
   data: {
@@ -69,17 +69,41 @@ Page({
         console.warn('获取用户小组失败:', err)
       }
       
-      // 获取公开小组
-      const publicGroupsQuery = [
-        'select=*',
-        'is_public=eq.true',
-        'limit=20',
-        'order=created_at.desc'
-      ].join('&')
-      
+      // 获取公开小组 - 不需要认证的查询
       let publicGroups = []
       try {
-        publicGroups = await request('study_groups', { query: publicGroupsQuery })
+        // 使用匿名访问获取公开小组
+        const publicGroupsQuery = [
+          'select=*',
+          'is_public=eq.true',
+          'limit=20',
+          'order=created_at.desc'
+        ].join('&')
+        
+        // 创建匿名请求头
+        const anonymousHeaders = {
+          apikey: SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Prefer': 'return=representation'
+        }
+        
+        publicGroups = await wx.request({
+          url: `${SUPABASE_URL}/rest/v1/study_groups?${publicGroupsQuery}`,
+          method: 'GET',
+          header: anonymousHeaders
+        }).then(res => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            return res.data;
+          } else {
+            console.warn('公开小组查询失败:', res);
+            return [];
+          }
+        }).catch(err => {
+          console.warn('获取公开小组失败:', err);
+          return [];
+        });
+        
       } catch (err) {
         console.warn('获取公开小组失败:', err)
       }

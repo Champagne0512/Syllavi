@@ -37,12 +37,31 @@ const normalizeGradeField = (value) => {
 
 function buildHeaders(extra = {}) {
   const token = wx.getStorageSync('access_token');
+  const refreshToken = wx.getStorageSync('refresh_token');
+  
+  // 检查token是否过期
+  const expiresAt = wx.getStorageSync('token_expires_at');
+  const now = Date.now();
+  
+  let authToken = token;
+  
+  // 如果token即将过期或已过期，尝试刷新
+  if (expiresAt && (expiresAt - now) < 5 * 60 * 1000 && refreshToken) {
+    // 这里异步刷新token会导致问题，暂时使用现有token
+    console.warn('Token即将过期，但同步刷新会导致问题');
+  }
+  
+  // 如果没有token，使用匿名密钥
+  if (!authToken) {
+    authToken = SUPABASE_ANON_KEY;
+  }
+  
   return {
     apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
+    Authorization: `Bearer ${authToken}`,
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'Prefer': 'return=representation', // 确保返回创建的数据
+    'Prefer': 'return=representation',
     ...extra
   };
 }
@@ -58,8 +77,12 @@ function request(path, { method = 'GET', data = null, query = '', headers = {} }
 
   const finalHeaders = buildHeaders(headers);
   
-  // 添加调试信息
-  console.log(`[Supabase请求] ${method} ${url}`);
+  // 添加调试信息和认证状态
+  const authStatus = checkAuthStatus();
+  console.log(`[Supabase请求] ${method} ${url}`, {
+    authenticated: authStatus.isAuthenticated,
+    userId: authStatus.userId
+  });
   
   return new Promise((resolve, reject) => {
     wx.request({
@@ -250,6 +273,9 @@ async function refreshToken() {
   try {
     const refresh_token = wx.getStorageSync('refresh_token');
     if (!refresh_token) {
+      console.log('没有refresh token，清除过期的access token');
+      wx.removeStorageSync('access_token');
+      wx.removeStorageSync('token_expires_at');
       return { success: false, error: 'No refresh token' };
     }
 
@@ -264,17 +290,56 @@ async function refreshToken() {
     });
     
     if (response.statusCode >= 200 && response.statusCode < 300 && response.data) {
-      const { access_token, refresh_token: new_refresh_token } = response.data;
+      const { access_token, refresh_token: new_refresh_token, expires_in } = response.data;
       wx.setStorageSync('access_token', access_token);
-      wx.setStorageSync('refresh_token', new_refresh_token);
+      wx.setStorageSync('refresh_token', new_refresh_token || refresh_token);
+      
+      // 设置新的过期时间
+      if (expires_in) {
+        const expiresAt = Date.now() + expires_in * 1000;
+        wx.setStorageSync('token_expires_at', expiresAt);
+      }
+      
+      console.log('Token刷新成功');
       return { success: true };
     } else {
+      console.warn('Token刷新失败:', response);
+      // 清除无效的token
+      wx.removeStorageSync('access_token');
+      wx.removeStorageSync('refresh_token');
+      wx.removeStorageSync('token_expires_at');
       return { success: false, error: response };
     }
   } catch (error) {
     console.error('刷新令牌失败:', error);
+    // 清除无效的token
+    wx.removeStorageSync('access_token');
+    wx.removeStorageSync('refresh_token');
+    wx.removeStorageSync('token_expires_at');
     return { success: false, error };
   }
+}
+
+// 检查用户认证状态
+function checkAuthStatus() {
+  const token = wx.getStorageSync('access_token');
+  const refreshToken = wx.getStorageSync('refresh_token');
+  const expiresAt = wx.getStorageSync('token_expires_at');
+  const userId = wx.getStorageSync('user_id');
+  
+  console.log('认证状态检查:', {
+    hasToken: !!token,
+    hasRefreshToken: !!refreshToken,
+    expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+    userId: userId
+  });
+  
+  return {
+    isAuthenticated: !!token && !!userId,
+    hasRefreshToken: !!refreshToken,
+    tokenExpiresAt: expiresAt,
+    userId
+  };
 }
 
 // 从冲突文件中提取的课程管理函数
@@ -838,6 +903,7 @@ module.exports = {
   emailPasswordLogin,
   emailPasswordSignUp,
   refreshToken,
+  checkAuthStatus,
   fetchWeekSchedule,
   fetchCourses,
   createCourse,
