@@ -1,7 +1,8 @@
 const {
   DEMO_USER_ID,
   fetchTasks,
-  updateTaskCompletion
+  updateTaskCompletion,
+  deleteTask
 } = require('../../utils/supabase');
 
 Page({
@@ -11,6 +12,7 @@ Page({
     selectionMode: false,
     selectedTasks: [],
     showCompleteConfirm: false,
+    showDeleteConfirm: false,
     statusBarHeight: 0
   },
 
@@ -148,12 +150,59 @@ Page({
       // 退出选择模式并重新加载
       this.exitSelectionMode();
       this.loadTasks();
+      
     } catch (err) {
-      console.error('complete tasks failed', err);
+      console.error('完成任务失败:', err);
       wx.hideLoading();
       wx.showToast({ title: '操作失败', icon: 'none' });
     }
   },
+
+  // 显示删除确认弹窗
+  showDeleteConfirm() {
+    if (this.data.tasks.length === 0) {
+      wx.showToast({ title: '暂无任务可删除', icon: 'none' });
+      return;
+    }
+    
+    this.setData({ showDeleteConfirm: true });
+  },
+
+  // 隐藏删除确认弹窗
+  hideDeleteConfirm() {
+    this.setData({ showDeleteConfirm: false });
+  },
+
+  // 删除所有任务
+  async deleteAllTasks() {
+    const { tasks } = this.data;
+    if (tasks.length === 0) return;
+    
+    wx.showLoading({ title: '删除中...' });
+    
+    try {
+      // 批量删除所有任务
+      await Promise.all(
+        tasks.map(task => deleteTask(task.id))
+      );
+      
+      wx.hideLoading();
+      wx.showToast({ 
+        title: `已删除 ${tasks.length} 个任务`, 
+        icon: 'success' 
+      });
+      
+      // 隐藏弹窗并重新加载
+      this.hideDeleteConfirm();
+      this.loadTasks();
+      
+    } catch (err) {
+      console.error('删除任务失败:', err);
+      wx.hideLoading();
+      wx.showToast({ title: '删除失败', icon: 'none' });
+    }
+  }
+});,
   
   goBack() {
     wx.vibrateShort({ type: 'light' });

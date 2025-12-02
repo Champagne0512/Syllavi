@@ -1197,7 +1197,7 @@ Page({
     this.cancelAiPollingTimer();
     this.aiPollAttempts = 0;
     const DEFAULT_CLIENT_POLL_INTERVAL = Math.max(500, delay);
-    const maxAttempts = Math.max(10, Math.ceil(10000 / DEFAULT_CLIENT_POLL_INTERVAL));
+    const maxAttempts = Math.max(15, Math.ceil(20000 / DEFAULT_CLIENT_POLL_INTERVAL));
 
     const pollOnce = async () => {
       if (this.aiPollAttempts >= maxAttempts) {

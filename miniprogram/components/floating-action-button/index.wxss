@@ -28,6 +28,7 @@
   transform: scale(1);
   z-index: 100;
   overflow: hidden;
+  animation: breathe 4s ease-in-out infinite;
 }
 
 /* 悬浮球背景色块 */
@@ -46,15 +47,6 @@
   z-index: -1;
 }
 
-.fab-main.expanded {
-  transform: scale(1.08);
-  box-shadow: 
-    0 24rpx 60rpx rgba(45, 52, 54, 0.18),
-    0 8rpx 24rpx rgba(45, 52, 54, 0.12),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
-}
-
-/* 果冻效果 */
 .fab-main:active {
   transform: scale(0.92);
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -77,117 +69,7 @@
   line-height: 1;
   font-family: var(--main-font);
 }
-
-.fab-icon-text.add {
-  transform: rotate(0deg);
-  opacity: 0.8;
-}
-
-.fab-icon-text.close {
-  transform: rotate(135deg);
-  opacity: 1;
-  font-weight: 400;
-}
-
-/* 菜单项容器 */
-.fab-menu-item {
-  position: absolute;
-  bottom: 140rpx;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-  opacity: 0;
-  transform: translateY(40rpx) scale(0.8);
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  pointer-events: none;
-}
-
-.fab-menu-item.show {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-/* 菜单项 - 玻璃拟态 */
-.menu-item {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20rpx);
-  -webkit-backdrop-filter: blur(20rpx);
-  border-radius: 24rpx; /* 大圆角 */
-  padding: 20rpx 28rpx;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 
-    0 12rpx 32rpx rgba(45, 52, 54, 0.1),
-    0 4rpx 12rpx rgba(45, 52, 54, 0.06);
-  transition: all 0.3s ease;
-  min-width: 180rpx;
-}
-
-.menu-item:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.95);
-}
-
-/* 菜单图标 */
-.menu-icon {
-  width: 52rpx;
-  height: 52rpx;
-  border-radius: 26rpx;
-  background: linear-gradient(135deg, 
-    rgba(135, 168, 164, 0.9) 0%, /* Sage Green */
-    rgba(188, 160, 188, 0.8) 100% /* Dusty Lilac */
-  );
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26rpx;
-  font-weight: 600;
-  margin-right: 20rpx;
-  flex-shrink: 0;
-  font-family: var(--main-font);
-}
-
-.menu-label {
-  font-size: 28rpx;
-  color: #2D3436;
-  font-weight: 500;
-  white-space: nowrap;
-  font-family: var(--main-font);
-  letter-spacing: 0.02em;
-}
-
-/* 背景遮罩 - 弥散效果 */
-.fab-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(242, 244, 246, 0.6); /* 冷调灰白背景 */
-  backdrop-filter: blur(4rpx);
-  -webkit-backdrop-filter: blur(4rpx);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: 99;
-  pointer-events: none;
-}
-
-.fab-overlay.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 呼吸点动画 */
 @keyframes breathe {
   0%, 100% { transform: scale(1); opacity: 0.6; }
   50% { transform: scale(1.1); opacity: 1; }
-}
-
-/* 为悬浮球添加微妙的呼吸效果 */
-.fab-main:not(.expanded) {
-  animation: breathe 4s ease-in-out infinite;
 }

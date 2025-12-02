@@ -27,6 +27,48 @@
   </view>
 
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex>
+    <view class="ai-panel-wrapper" wx:if="{{aiPolling || aiScanPreview || aiScanError}}">
+      <view class="ai-panel loading" wx:if="{{aiPolling}}">
+        <view class="panel-header">
+          <text class="panel-title">AI 正在解析</text>
+          <text class="panel-subtitle">请稍候，平均 1-2 秒</text>
+        </view>
+        <view class="panel-progress">
+          <view class="pulse"></view>
+        </view>
+      </view>
+
+      <view class="ai-panel error" wx:elif="{{aiScanError}}">
+        <view class="panel-header">
+          <text class="panel-title">解析失败</text>
+          <text class="panel-subtitle">{{aiScanError}}</text>
+        </view>
+        <view class="panel-actions">
+          <view class="panel-btn ghost" bindtap="copyAiScanJson">复制日志</view>
+        </view>
+      </view>
+
+      <view class="ai-panel success" wx:elif="{{aiScanPreview}}">
+        <view class="panel-header">
+          <view>
+            <text class="panel-title">AI 识别完成 ({{aiScanPreview.count}})</text>
+            <text class="panel-subtitle">类型：{{aiScanPreview.type || '未知'}} </text>
+          </view>
+          <view class="panel-actions">
+            <view class="panel-btn primary" bindtap="importAiScanResult">导入</view>
+            <view class="panel-btn ghost" bindtap="copyAiScanJson">复制 JSON</view>
+          </view>
+        </view>
+        <view class="panel-list">
+          <block wx:for="{{aiScanPreview.items}}" wx:key="id">
+            <view class="panel-item">
+              <view class="panel-item-title">{{item.title}}</view>
+              <view class="panel-item-subtitle">{{item.subtitle || '—'}} </view>
+            </view>
+          </block>
+        </view>
+      </view>
+    </view>
     
     <!-- === 日视图 (Day) === -->
     <view wx:if="{{viewMode === 'day'}}" class="view-container day-view fade-in">
