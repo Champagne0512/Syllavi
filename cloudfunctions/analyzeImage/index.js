@@ -418,7 +418,7 @@ function buildAdditionalMessages(imageUrl) {
         },
         {
           type: 'image_url',
-          image_url: { url: imageUrl }
+          image_url: imageUrl
         }
       ])
     }
