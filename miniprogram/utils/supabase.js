@@ -126,6 +126,71 @@ async function wechatLoginWithCode(code) {
   }
 }
 
+async function emailPasswordLogin(email, password) {
+  try {
+    const response = await wx.request({
+      url: `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      method: 'POST',
+      header: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        email,
+        password
+      }
+    });
+    
+    if (response.statusCode >= 200 && response.statusCode < 300 && response.data) {
+      const { access_token, refresh_token, user } = response.data;
+      wx.setStorageSync('access_token', access_token);
+      wx.setStorageSync('refresh_token', refresh_token);
+      wx.setStorageSync('user_id', user.id);
+      return { success: true, user };
+    } else {
+      console.error('邮箱登录失败:', response);
+      return { success: false, error: response.data || response };
+    }
+  } catch (error) {
+    console.error('邮箱登录请求失败:', error);
+    return { success: false, error };
+  }
+}
+
+async function emailPasswordSignUp(email, password, options = {}) {
+  try {
+    const response = await wx.request({
+      url: `${SUPABASE_URL}/auth/v1/signup`,
+      method: 'POST',
+      header: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        email,
+        password,
+        data: options.data || {}
+      }
+    });
+    
+    if (response.statusCode >= 200 && response.statusCode < 300 && response.data) {
+      const { access_token, refresh_token, user } = response.data;
+      if (access_token) {
+        wx.setStorageSync('access_token', access_token);
+        wx.setStorageSync('refresh_token', refresh_token);
+        wx.setStorageSync('user_id', user.id);
+      }
+      return { success: true, user };
+    } else {
+      console.error('邮箱注册失败:', response);
+      return { success: false, error: response.data || response };
+    }
+  } catch (error) {
+    console.error('邮箱注册请求失败:', error);
+    return { success: false, error };
+  }
+}
+
 async function refreshToken() {
   try {
     const refresh_token = wx.getStorageSync('refresh_token');
@@ -400,6 +465,8 @@ module.exports = {
   SUPABASE_ANON_KEY,
   DEMO_USER_ID,
   wechatLoginWithCode,
+  emailPasswordLogin,
+  emailPasswordSignUp,
   refreshToken,
   fetchWeekSchedule,
   fetchCourses,
