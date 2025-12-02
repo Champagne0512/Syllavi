@@ -507,8 +507,6 @@ Page({
           deadlineKey,
           description: row.description,
           progress: row.is_completed ? 1 : 0,
-<<<<<<< HEAD
-          // 小组任务使用特殊的课程标识
           // 小组任务使用特殊的课程标识
           course: row.type === 'group_task' ? '小组' : (row.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN'),
           courseName: row.course?.name || '',
