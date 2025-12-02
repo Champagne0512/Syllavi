@@ -126,69 +126,99 @@ async function wechatLoginWithCode(code) {
   }
 }
 
-async function emailPasswordLogin(email, password) {
-  try {
-    const response = await wx.request({
+function emailPasswordLogin(email, password) {
+  return new Promise((resolve, reject) => {
+    wx.request({
       url: `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
       method: 'POST',
+      data: { email, password },
       header: {
         apikey: SUPABASE_ANON_KEY,
         'Content-Type': 'application/json'
       },
-      data: {
-        email,
-        password
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          // 处理登录成功，存储token
+          if (res.data && res.data.access_token) {
+            wx.setStorageSync('access_token', res.data.access_token);
+            wx.setStorageSync('refresh_token', res.data.refresh_token);
+            wx.setStorageSync('user_id', res.data.user.id);
+          }
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
       }
     });
-    
-    if (response.statusCode >= 200 && response.statusCode < 300 && response.data) {
-      const { access_token, refresh_token, user } = response.data;
-      wx.setStorageSync('access_token', access_token);
-      wx.setStorageSync('refresh_token', refresh_token);
-      wx.setStorageSync('user_id', user.id);
-      return { success: true, user };
-    } else {
-      console.error('邮箱登录失败:', response);
-      return { success: false, error: response.data || response };
-    }
-  } catch (error) {
-    console.error('邮箱登录请求失败:', error);
-    return { success: false, error };
-  }
+  });
 }
 
-async function emailPasswordSignUp(email, password, options = {}) {
-  try {
-    const response = await wx.request({
-      url: `${SUPABASE_URL}/auth/v1/signup`,
+function emailPasswordSignUp(email, password) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/functions/v1/email-signup`,
       method: 'POST',
+      data: { email, password },
       header: {
         apikey: SUPABASE_ANON_KEY,
         'Content-Type': 'application/json'
       },
-      data: {
-        email,
-        password,
-        data: options.data || {}
+      success(res) {
+        if (res.statusCode === 404) {
+          // 如果自定义函数不存在，回退到直接使用Auth API
+          signupViaAuth(email, password).then(resolve).catch(reject);
+          return;
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          // 处理注册成功，存储token
+          if (res.data && res.data.access_token) {
+            wx.setStorageSync('access_token', res.data.access_token);
+            wx.setStorageSync('refresh_token', res.data.refresh_token);
+            wx.setStorageSync('user_id', res.data.user.id);
+          }
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
       }
     });
-    
-    if (response.statusCode >= 200 && response.statusCode < 300 && response.data) {
-      const { access_token, refresh_token, user } = response.data;
-      if (access_token) {
-        wx.setStorageSync('access_token', access_token);
-        wx.setStorageSync('refresh_token', refresh_token);
-        wx.setStorageSync('user_id', user.id);
+  });
+}
+
+function signupViaAuth(email, password) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/auth/v1/signup`,
+      method: 'POST',
+      data: { email, password },
+      header: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          // 处理注册成功，存储token
+          if (res.data && res.data.access_token) {
+            wx.setStorageSync('access_token', res.data.access_token);
+            wx.setStorageSync('refresh_token', res.data.refresh_token);
+            wx.setStorageSync('user_id', res.data.user.id);
+          }
+          resolve(res.data);
+        } else {
+          reject(res.data || res);
+        }
+      },
+      fail(err) {
+        reject(err);
       }
-      return { success: true, user };
-    } else {
-      console.error('邮箱注册失败:', response);
-      return { success: false, error: response.data || response };
-    }
-  } catch (error) {
-    console.error('邮箱注册请求失败:', error);
-    return { success: false, error };
-  }
+    });
+  });
 }
 
 async function refreshToken() {
