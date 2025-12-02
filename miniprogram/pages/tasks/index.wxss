@@ -126,21 +126,21 @@
 
 /* 批量操作工具栏 */
 .batch-toolbar {
-  margin: 0 32rpx 24rpx;
-  padding: 24rpx;
-  border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20rpx);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8rpx 32rpx rgba(31, 38, 135, 0.07);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15rpx);
+  -webkit-backdrop-filter: blur(15rpx);
+  padding: 24rpx 32rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1rpx solid rgba(45, 52, 54, 0.1);
+  box-shadow: 0 4rpx 20rpx rgba(45, 52, 54, 0.08);
 }
 
 .batch-info {
   display: flex;
   align-items: center;
+  gap: 12rpx;
 }
 
 .selected-count {
@@ -157,16 +157,31 @@
 .batch-action-btn {
   padding: 12rpx 20rpx;
   border-radius: 20rpx;
+  border: none;
   font-size: 24rpx;
   font-weight: 500;
-  background: linear-gradient(135deg, #87A8A4 0%, #6B8A9C 100%);
-  color: white;
-  border: none;
+  transition: all 0.2s;
   min-width: 120rpx;
 }
 
-.batch-action-btn.cancel-btn {
-  background: linear-gradient(135deg, #BCA0BC 0%, #A2B18A 100%);
+.complete-btn {
+  background: linear-gradient(135deg, #87A8A4, #6B8A9C);
+  color: white;
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #E08E79, #CB6B6B);
+  color: white;
+}
+
+.cancel-btn {
+  background: rgba(45, 52, 54, 0.1);
+  color: #2D3436;
+  border: 1rpx solid rgba(45, 52, 54, 0.2);
+}
+
+.batch-action-btn:active {
+  transform: scale(0.95);
 }
 
 /* 任务容器 */
@@ -226,14 +241,19 @@
 
 .task-item.selection-mode {
   padding-left: 24rpx;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+  transition: all 0.2s ease;
+  border: 1rpx solid rgba(45, 52, 54, 0.1);
 }
 
 .task-item.selected {
-  background: rgba(75, 123, 236, 0.1) !important;
-  border-left: 6rpx solid #4B7BEC !important;
-  transform: scale(1.01) !important;
-  box-shadow: 0 8rpx 16rpx rgba(75, 123, 236, 0.2) !important;
+  background: rgba(135, 168, 164, 0.15) !important;
+  border-left: 6rpx solid #87A8A4 !important;
+  transform: scale(1.02) !important;
+  box-shadow: 0 8rpx 16rpx rgba(135, 168, 164, 0.2) !important;
+  border-color: rgba(135, 168, 164, 0.3) !important;
 }
 
 .task-checkbox {
@@ -257,9 +277,9 @@
 }
 
 .checkbox-inner.checked {
-  border-color: #4B7BEC !important;
-  background: #4B7BEC !important;
-  box-shadow: 0 2rpx 8rpx rgba(75, 123, 236, 0.4) !important;
+  border-color: #87A8A4 !important;
+  background: #87A8A4 !important;
+  box-shadow: 0 2rpx 8rpx rgba(135, 168, 164, 0.4) !important;
   transform: scale(1.1);
 }
 

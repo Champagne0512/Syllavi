@@ -13,6 +13,7 @@ Page({
     selectedTasks: [],
     showCompleteConfirm: false,
     showDeleteConfirm: false,
+    showDeleteSelectedConfirm: false,
     statusBarHeight: 0
   },
 
@@ -173,6 +174,52 @@ Page({
     this.setData({ showDeleteConfirm: false });
   },
 
+  // 显示删除选中项确认弹窗
+  showDeleteSelectedConfirm() {
+    if (this.data.selectedTasks.length === 0) {
+      wx.showToast({ title: '请先选择要删除的任务', icon: 'none' });
+      return;
+    }
+    
+    this.setData({ showDeleteSelectedConfirm: true });
+  },
+
+  // 隐藏删除选中项确认弹窗
+  hideDeleteSelectedConfirm() {
+    this.setData({ showDeleteSelectedConfirm: false });
+  },
+
+  // 删除选中的任务
+  async deleteSelectedTasks() {
+    const { selectedTasks } = this.data;
+    if (selectedTasks.length === 0) return;
+    
+    wx.showLoading({ title: '删除中...' });
+    
+    try {
+      // 批量删除选中的任务
+      await Promise.all(
+        selectedTasks.map(taskId => deleteTask(taskId))
+      );
+      
+      wx.hideLoading();
+      wx.showToast({ 
+        title: `已删除 ${selectedTasks.length} 个任务`, 
+        icon: 'success' 
+      });
+      
+      // 隐藏弹窗，退出选择模式并重新加载
+      this.hideDeleteSelectedConfirm();
+      this.exitSelectionMode();
+      this.loadTasks();
+      
+    } catch (err) {
+      console.error('删除任务失败:', err);
+      wx.hideLoading();
+      wx.showToast({ title: '删除失败', icon: 'none' });
+    }
+  },
+
   // 删除所有任务
   async deleteAllTasks() {
     const { tasks } = this.data;
@@ -201,7 +248,6 @@ Page({
       wx.hideLoading();
       wx.showToast({ title: '删除失败', icon: 'none' });
     }
-  }
   },
 
   goBack() {
