@@ -301,7 +301,12 @@ async function refreshToken() {
       }
       
       console.log('Token刷新成功');
-      return { success: true };
+      return { 
+        success: true, 
+        access_token, 
+        refresh_token: new_refresh_token || refresh_token, 
+        expires_in 
+      };
     } else {
       console.warn('Token刷新失败:', response);
       // 清除无效的token
@@ -853,6 +858,334 @@ async function fetchResources(userId) {
   }
 }
 
+async function createResource(resourceData) {
+  try {
+    return await request('resources', {
+      method: 'POST',
+      data: resourceData
+    });
+  } catch (error) {
+    console.error('创建资源失败:', error);
+    throw error;
+  }
+}
+
+async function updateResource(id, updates) {
+  try {
+    const query = `id=eq.${id}`;
+    return await request('resources', {
+      method: 'PATCH',
+      query,
+      data: updates
+    });
+  } catch (error) {
+    console.error('更新资源失败:', error);
+    throw error;
+  }
+}
+
+async function deleteResource(id) {
+  try {
+    const query = `id=eq.${id}`;
+    return await request('resources', {
+      method: 'DELETE',
+      query
+    });
+  } catch (error) {
+    console.error('删除资源失败:', error);
+    throw error;
+  }
+}
+
+function deleteFromStorage(bucket, path) {
+  if (!bucket || !path) {
+    return Promise.reject(new Error('缺少存储路径信息'));
+  }
+
+  const token = wx.getStorageSync('access_token') || SUPABASE_ANON_KEY;
+  const normalizedPath = path.replace(/^\/+/, '');
+
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/storage/v1/object/${bucket}/${normalizedPath}`,
+      method: 'DELETE',
+      header: {
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY
+      },
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data || null);
+        } else {
+          reject(res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+function summarizeFile(fileUrl, fileType = 'pdf') {
+  if (!fileUrl) {
+    return Promise.reject(new Error('缺少文件地址'));
+  }
+
+  const token = wx.getStorageSync('access_token') || SUPABASE_ANON_KEY;
+  const payload = {
+    file_url: fileUrl,
+    file_type: fileType
+  };
+
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${SUPABASE_URL}/functions/v1/summarize-file`,
+      method: 'POST',
+      data: payload,
+      header: {
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          const summaryText = res.data?.summary || '';
+          resolve(summaryText);
+        } else {
+          reject(res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+async function parseImageWithAI(imageUrl, mode = 'task', options = {}) {
+  if (!imageUrl) {
+    throw new Error('缺少图片地址');
+  }
+  if (!wx.cloud || typeof wx.cloud.callFunction !== 'function') {
+    throw new Error('当前环境未启用云开发能力');
+  }
+
+  const { userId = wx.getStorageSync('user_id') || DEMO_USER_ID, maxAttempts = 18, pollInterval = 800 } = options;
+
+  const startResult = await callAnalyzeImageFunction({
+    action: 'start',
+    imageUrl,
+    userId
+  });
+
+  if (!startResult) {
+    throw new Error('云函数无响应');
+  }
+
+  if (!startResult.success) {
+    throw new Error(startResult.error || 'AI 解析失败');
+  }
+
+  if (!startResult.pending) {
+    return normalizeAiPayload(startResult.data, mode);
+  }
+
+  const job = {
+    chatId: startResult.chatId,
+    conversationId: startResult.conversationId
+  };
+
+  if (!job.chatId || !job.conversationId) {
+    throw new Error('AI 任务缺少标识');
+  }
+
+  let interval = startResult.retryAfter || pollInterval;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    await wait(interval);
+    const pollResult = await callAnalyzeImageFunction({
+      action: 'poll',
+      chatId: job.chatId,
+      conversationId: job.conversationId
+    });
+
+    if (!pollResult) {
+      continue;
+    }
+
+    if (pollResult.success && !pollResult.pending) {
+      return normalizeAiPayload(pollResult.data, mode);
+    }
+
+    if (!pollResult.success && !pollResult.pending) {
+      throw new Error(pollResult.error || 'AI 解析失败');
+    }
+
+    interval = pollResult.retryAfter || pollInterval;
+  }
+
+  throw new Error('AI 解析超时，请稍后再试');
+}
+
+function callAnalyzeImageFunction(data) {
+  return wx.cloud
+    .callFunction({
+      name: 'analyzeImage',
+      data
+    })
+    .then((res) => res?.result)
+    .catch((error) => {
+      console.error('[AI] 云函数调用失败', error);
+      throw error;
+    });
+}
+
+function normalizeAiPayload(raw = {}, preferredMode = 'task') {
+  const aiType = typeof raw?.type === 'string' ? raw.type.toLowerCase() : '';
+  let normalizedType = null;
+  if (aiType === 'todo') {
+    normalizedType = 'task';
+  } else if (aiType === 'schedule') {
+    normalizedType = 'course';
+  }
+  if (!normalizedType) {
+    normalizedType = preferredMode === 'course' ? 'course' : 'task';
+  }
+
+  const sourceList = Array.isArray(raw?.data) ? raw.data : [];
+  const normalizedData = normalizedType === 'task'
+    ? sourceList.map(normalizeAiTask).filter(Boolean)
+    : sourceList.map(normalizeAiCourse).filter(Boolean);
+
+  return {
+    type: normalizedType,
+    rawType: aiType || null,
+    data: normalizedData,
+    raw
+  };
+}
+
+function normalizeAiTask(item = {}) {
+  const title = sanitizeText(item.title || item.name || item.subject);
+  if (!title) return null;
+
+  return {
+    kind: 'task',
+    title,
+    type: mapTaskType(item.type),
+    deadline: normalizeAiDeadline(item.deadline || item.due || item.date || item.deadline_date),
+    course: sanitizeText(item.course || item.subject || ''),
+    priority: (item.priority || 'medium').toLowerCase()
+  };
+}
+
+function normalizeAiCourse(item = {}) {
+  const name = sanitizeText(item.name || item.subject || item.title);
+  if (!name) return null;
+
+  const day = normalizeWeekdayNumber(item.day || item.day_of_week || item.weekday) || 1;
+  const start = toFiniteNumber(item.start_section || item.startSection || item.start || 1) || 1;
+  const endSection = toFiniteNumber(item.end_section || item.endSection || item.end) || start;
+  const length = Math.max(1, toFiniteNumber(item.length) || endSection - start + 1);
+  let weeks = Array.isArray(item.weeks)
+    ? item.weeks
+        .map((week) => toFiniteNumber(week))
+        .filter((week) => typeof week === 'number' && week > 0)
+    : [];
+
+  return {
+    kind: 'course',
+    name,
+    day_of_week: day,
+    start_section: start,
+    length,
+    location: sanitizeText(item.location || item.room || ''),
+    teacher: sanitizeText(item.teacher || ''),
+    weeks
+  };
+}
+
+function wait(duration = 600) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(200, duration)));
+}
+
+function mapTaskType(value) {
+  if (!value) return 'homework';
+  const text = String(value).toLowerCase();
+  if (text.includes('exam') || text.includes('test')) {
+    return 'exam';
+  }
+  if (text.includes('event') || text.includes('lecture')) {
+    return 'event';
+  }
+  return 'homework';
+}
+
+function normalizeWeekdayNumber(value) {
+  if (typeof value === 'number' && value >= 1 && value <= 7) {
+    return value;
+  }
+  const map = {
+    '周一': 1,
+    '星期一': 1,
+    monday: 1,
+    mon: 1,
+    '周二': 2,
+    '星期二': 2,
+    tuesday: 2,
+    tue: 2,
+    '周三': 3,
+    '星期三': 3,
+    wednesday: 3,
+    wed: 3,
+    '周四': 4,
+    '星期四': 4,
+    thursday: 4,
+    thu: 4,
+    '周五': 5,
+    '星期五': 5,
+    friday: 5,
+    fri: 5,
+    '周六': 6,
+    '星期六': 6,
+    saturday: 6,
+    sat: 6,
+    '周日': 7,
+    '星期日': 7,
+    sunday: 7,
+    sun: 7
+  };
+  const key = sanitizeText(value).toLowerCase();
+  return map[key] || null;
+}
+
+function sanitizeText(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+}
+
+function normalizeAiDeadline(value) {
+  if (!value && value !== 0) return '';
+  if (typeof value === 'number') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+  const text = sanitizeText(value);
+  if (!text) return '';
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) {
+    return date.toISOString();
+  }
+  return text;
+}
+
+function toFiniteNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
 // 上传文件到存储
 async function uploadToStorage(bucket, filePath, fileName, options = {}) {
   try {
@@ -899,6 +1232,7 @@ module.exports = {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   DEMO_USER_ID,
+  normalizeGradeInput,
   wechatLoginWithCode,
   emailPasswordLogin,
   emailPasswordSignUp,
@@ -922,5 +1256,11 @@ module.exports = {
   fetchProfile,
   updateProfile,
   fetchResources,
+  createResource,
+  updateResource,
+  deleteResource,
+  deleteFromStorage,
+  summarizeFile,
+  parseImageWithAI,
   uploadToStorage
 };
