@@ -20,11 +20,67 @@ Page({
   },
   onLoad() {
     this.loadingOverlayVisible = false;
+    this.checkExistingLogin();
+  },
+
+  // 检查现有登录状态
+  checkExistingLogin() {
     const token = wx.getStorageSync('access_token');
-    const userId =
-      wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id');
-    if (token && userId) {
+    const refreshToken = wx.getStorageSync('refresh_token');
+    const userId = wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id');
+    const expiresAt = wx.getStorageSync('token_expires_at');
+    
+    // 如果没有用户信息，跳过检查
+    if (!userId) {
+      return;
+    }
+    
+    // 如果是演示用户，直接跳转
+    if (userId === DEMO_USER_ID) {
       wx.switchTab({ url: '/pages/hub/index' });
+      return;
+    }
+    
+    // 检查 token 状态
+    if (token) {
+      const now = Date.now();
+      const tokenExpired = expiresAt ? now >= expiresAt : false;
+      
+      // 如果 token 没有过期，直接跳转
+      if (!tokenExpired) {
+        wx.switchTab({ url: '/pages/hub/index' });
+        return;
+      }
+      
+      // 如果 token 过期但有 refresh token，尝试刷新
+      if (tokenExpired && refreshToken) {
+        this.tryRefreshTokenAndLogin();
+        return;
+      }
+    }
+    
+    // 如果有 userId 但没有有效 token，可能是演示模式，允许继续使用
+    if (!token && userId === DEMO_USER_ID) {
+      wx.switchTab({ url: '/pages/hub/index' });
+      return;
+    }
+  },
+
+  // 尝试刷新 token 并登录
+  async tryRefreshTokenAndLogin() {
+    const refreshToken = wx.getStorageSync('refresh_token');
+    if (!refreshToken) return;
+    
+    try {
+      const { refreshToken } = require('../../utils/supabase');
+      const result = await refreshToken();
+      
+      if (result && result.success) {
+        wx.switchTab({ url: '/pages/hub/index' });
+      }
+    } catch (error) {
+      console.warn('自动刷新 token 失败:', error);
+      // 刷新失败时不做任何操作，让用户手动登录
     }
   },
   isFormComplete(form, mode) {

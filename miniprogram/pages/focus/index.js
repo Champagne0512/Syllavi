@@ -173,14 +173,58 @@ Page({
     wx.navigateBack();
   },
   // 加载专注数据
-  loadFocusData() {
-    const stats = focusService.getStats();
-    const achievements = focusService.getAchievements();
-    
-    this.setData({
-      stats: stats,
-      achievements: achievements
-    });
+  async loadFocusData() {
+    try {
+      // 先获取本地数据作为默认值
+      const localStats = focusService.getStats();
+      const achievements = focusService.getAchievements();
+      
+      // 尝试从数据库获取最新数据
+      const app = getApp();
+      const userId = app?.globalData?.supabase?.userId;
+      
+      if (userId) {
+        try {
+          const remoteStats = await fetchFocusStats(userId);
+          if (remoteStats) {
+            // 合并本地和远程数据，优先使用远程数据
+            const stats = {
+              totalMinutes: remoteStats.total_minutes || localStats.totalMinutes,
+              streakDays: remoteStats.continuous_days || localStats.streakDays,
+              todayMinutes: remoteStats.today_minutes || localStats.todayMinutes,
+              totalSessions: remoteStats.total_sessions || localStats.totalSessions
+            };
+            
+            this.setData({
+              stats: stats,
+              achievements: achievements
+            });
+            
+            console.log('专注数据已从数据库同步:', stats);
+            return;
+          }
+        } catch (error) {
+          console.warn('从数据库获取专注数据失败，使用本地数据:', error);
+        }
+      }
+      
+      // 如果无法获取远程数据，使用本地数据
+      this.setData({
+        stats: localStats,
+        achievements: achievements
+      });
+      
+    } catch (error) {
+      console.error('加载专注数据失败:', error);
+      // 降级到本地数据
+      const localStats = focusService.getStats();
+      const achievements = focusService.getAchievements();
+      
+      this.setData({
+        stats: localStats,
+        achievements: achievements
+      });
+    }
   },
 
   // 显示成就通知
