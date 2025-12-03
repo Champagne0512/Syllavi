@@ -8,7 +8,7 @@
   </view>
 
   <!-- 顶部导航 - 统一设计 -->
-  <custom-navbar title="Study Groups" subtitle="学习社区">
+  <custom-navbar title="Syllavi" subtitle="学习社区">
     <view slot="right" class="profile-avatar" bindtap="goToProfile">
       <image wx:if="{{profile.avatar_url}}" src="{{profile.avatar_url}}" class="avatar-img"></image>
       <view wx:else class="avatar-placeholder">👤</view>

@@ -2012,19 +2012,14 @@
   border-radius: 999rpx;
   font-size: 28rpx;
   font-weight: 600;
-  background: linear-gradient(120deg, #87A8A4, #BCA0BC 55%, #E08E79);
+  background: #87A8A4;
   color: #FCFDFD;
-  text-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 16rpx 40rpx rgba(135, 168, 164, 0.35);
-  backdrop-filter: blur(12rpx);
-  -webkit-backdrop-filter: blur(12rpx);
   transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .add-course-btn:active {
   transform: scale(0.94);
-  box-shadow: 0 10rpx 24rpx rgba(135, 168, 164, 0.35);
 }
 
 .add-icon {

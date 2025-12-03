@@ -199,125 +199,49 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 18rpx 36rpx rgba(15, 23, 42, 0.12);
-  border: 1rpx solid rgba(255, 255, 255, 0.4);
-}
-
-.row-icon::after {
-  content: '';
-  position: absolute;
-  inset: 2rpx;
-  border-radius: 24rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.5);
-  pointer-events: none;
-}
-
-.row-icon-core,
-.row-icon-spark {
-  position: absolute;
-  border-radius: 999rpx;
-  pointer-events: none;
+  background: #F2F4F6; /* 背景使用规范中的灰白色 */
 }
 
 .row-icon-courses {
-  background: linear-gradient(135deg, rgba(135, 168, 164, 0.95), rgba(188, 160, 188, 0.75));
+  background: #F2F4F6;
 }
 
-.row-icon-courses .row-icon-core {
-  width: 14rpx;
-  height: 56rpx;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 8rpx;
-  box-shadow: 0 0 20rpx rgba(255, 255, 255, 0.45);
-}
-
-.row-icon-courses .row-icon-spark {
-  width: 34rpx;
-  height: 34rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.75);
-  background: transparent;
-  top: 14rpx;
-  right: 10rpx;
-  transform: translate(4rpx, -4rpx);
+.row-icon-courses::before {
+  content: '';
+  position: absolute;
+  width: 40rpx;
+  height: 40rpx;
+  background: #87A8A4; /* 莫兰迪色系 - 鼠尾草绿 */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21l-4-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v2'/%3E%3Cpath d='M17 13v6'/%3E%3Cpath d='M14 16h6'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21l-4-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2v2'/%3E%3Cpath d='M17 13v6'/%3E%3Cpath d='M14 16h6'/%3E%3C/svg%3E");
 }
 
 .row-icon-tasks {
-  background: linear-gradient(140deg, rgba(224, 142, 121, 0.95), rgba(226, 194, 164, 0.82));
+  background: #F2F4F6;
 }
 
-.row-icon-tasks .row-icon-core {
-  width: 46rpx;
-  height: 46rpx;
-  border-radius: 18rpx;
-  border: 2rpx solid rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.12);
-  transform: rotate(-6deg);
-}
-
-.row-icon-tasks .row-icon-core::before,
-.row-icon-tasks .row-icon-core::after {
+.row-icon-tasks::before {
   content: '';
   position: absolute;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 999rpx;
-}
-
-.row-icon-tasks .row-icon-core::before {
-  width: 24rpx;
-  height: 6rpx;
-  left: 10rpx;
-  top: 22rpx;
-  transform: rotate(42deg);
-}
-
-.row-icon-tasks .row-icon-core::after {
-  width: 12rpx;
-  height: 6rpx;
-  left: 18rpx;
-  top: 32rpx;
-  transform: rotate(-40deg);
-}
-
-.row-icon-tasks .row-icon-spark {
-  width: 12rpx;
-  height: 32rpx;
-  border-radius: 6rpx;
-  background: rgba(255, 255, 255, 0.8);
-  transform: rotate(48deg) translate(10rpx, -12rpx);
-  box-shadow: 0 0 18rpx rgba(255, 255, 255, 0.35);
+  width: 40rpx;
+  height: 40rpx;
+  background: #E08E79; /* 莫兰迪色系 - 哑光珊瑚 */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 11 12 14 22 4'/%3E%3Cpath d='M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 11 12 14 22 4'/%3E%3Cpath d='M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11'/%3E%3C/svg%3E");
 }
 
 .row-icon-resources {
-  background: linear-gradient(135deg, rgba(188, 160, 188, 0.9), rgba(135, 168, 164, 0.7));
+  background: #F2F4F6;
 }
 
-.row-icon-resources .row-icon-core {
-  width: 54rpx;
-  height: 42rpx;
-  border-radius: 16rpx;
-  background: rgba(255, 255, 255, 0.92);
-  bottom: 8rpx;
-  box-shadow: inset 0 -4rpx 8rpx rgba(0, 0, 0, 0.08);
-}
-
-.row-icon-resources .row-icon-core::before {
+.row-icon-resources::before {
   content: '';
   position: absolute;
-  width: 32rpx;
-  height: 14rpx;
-  border-radius: 10rpx;
-  background: rgba(255, 255, 255, 0.82);
-  top: -10rpx;
-  left: 4rpx;
-}
-
-.row-icon-resources .row-icon-spark {
-  width: 10rpx;
-  height: 28rpx;
-  border-radius: 8rpx;
-  background: rgba(224, 142, 121, 0.45);
-  right: 14rpx;
-  top: 12rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: #BCA0BC; /* 莫兰迪色系 - 灰紫 */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 22h-4a2 2 0 01-2-2v-2.7a2 2 0 00-.677-1.532l-1.81-1.81a2 2 0 00-1.414-.586H8a2 2 0 01-2-2V9a2 2 0 01.586-1.414l1.81-1.81A2 2 0 008 5.3V4a2 2 0 012-2h4a2 2 0 012 2v1.7a2 2 0 00.677 1.532l1.81 1.81a2 2 0 001.414.586h.1a2 2 0 012 2v1.5a2 2 0 01-2 2v5a2 2 0 01-2 2z'/%3E%3Cpath d='M10 16l1-3 3 1'/%3E%3Cpath d='M8 10l1-2 2 1'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 22h-4a2 2 0 01-2-2v-2.7a2 2 0 00-.677-1.532l-1.81-1.81a2 2 0 00-1.414-.586H8a2 2 0 01-2-2V9a2 2 0 01.586-1.414l1.81-1.81A2 2 0 008 5.3V4a2 2 0 012-2h4a2 2 0 012 2v1.7a2 2 0 00.677 1.532l1.81 1.81a2 2 0 001.414.586h.1a2 2 0 012 2v1.5a2 2 0 01-2 2v5a2 2 0 01-2 2z'/%3E%3Cpath d='M10 16l1-3 3 1'/%3E%3Cpath d='M8 10l1-2 2 1'/%3E%3C/svg%3E");
 }
 
 .row-info {
@@ -405,155 +329,58 @@
   height: 92rpx;
   border-radius: 32rpx;
   position: relative;
-  overflow: hidden;
-  border: 1rpx solid rgba(255, 255, 255, 0.42);
-  box-shadow: 0 18rpx 38rpx rgba(15, 23, 42, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.action-icon::after {
-  content: '';
-  position: absolute;
-  inset: 2rpx;
-  border-radius: 28rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.35);
-  pointer-events: none;
-}
-
-.action-icon-core,
-.action-icon-glow {
-  position: absolute;
-  pointer-events: none;
-}
-
-.action-icon-core {
-  width: 68rpx;
-  height: 68rpx;
-  border-radius: 22rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.12);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.action-icon-glow {
-  width: 22rpx;
-  height: 22rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 12rpx 24rpx rgba(255, 255, 255, 0.5);
-  top: 18rpx;
-  right: 18rpx;
-}
-
-.action-icon-neutral {
-  background: linear-gradient(135deg, rgba(188, 160, 188, 0.65), rgba(135, 168, 164, 0.6));
+  background: #F2F4F6; /* 背景使用规范中的灰白色 */
 }
 
 .action-icon-courses {
-  background: linear-gradient(135deg, rgba(135, 168, 164, 0.85), rgba(129, 140, 248, 0.7));
+  background: #F2F4F6;
 }
 
-.action-icon-courses .action-icon-core {
-  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 10rpx, transparent 10rpx),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.4) 10rpx, transparent 10rpx);
-  background-size: 18rpx 18rpx;
-  border-radius: 24rpx;
+.action-icon-courses::before {
+  content: '';
+  position: absolute;
+  width: 50rpx;
+  height: 50rpx;
+  background: #87A8A4; /* 莫兰迪色系 - 鼠尾草绿 */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 010-5H20'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 010-5H20'/%3E%3C/svg%3E");
 }
 
 .action-icon-resources {
-  background: linear-gradient(135deg, rgba(188, 160, 188, 0.85), rgba(226, 194, 164, 0.85));
+  background: #F2F4F6;
 }
 
-.action-icon-resources .action-icon-core {
-  width: 72rpx;
-  height: 48rpx;
-  border-radius: 18rpx;
-  background: rgba(255, 255, 255, 0.9);
-  bottom: 12rpx;
-  top: auto;
-  left: 50%;
-  transform: translateX(-50%);
-  box-shadow: inset 0 -4rpx 8rpx rgba(0, 0, 0, 0.08);
-}
-
-.action-icon-resources .action-icon-core::before {
+.action-icon-resources::before {
   content: '';
   position: absolute;
-  width: 48rpx;
-  height: 14rpx;
-  border-radius: 10rpx;
-  background: rgba(255, 255, 255, 0.85);
-  top: -10rpx;
-  left: 6rpx;
-}
-
-.action-icon-focus {
-  background: linear-gradient(150deg, rgba(129, 140, 248, 0.9), rgba(224, 142, 121, 0.8));
-}
-
-.action-icon-focus .action-icon-core {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  border: 3rpx solid rgba(255, 255, 255, 0.85);
-  background: transparent;
-}
-
-.action-icon-focus .action-icon-core::after {
-  content: '';
-  position: absolute;
-  width: 38rpx;
-  height: 38rpx;
-  border-radius: 50%;
-  border: 2rpx solid rgba(255, 255, 255, 0.6);
-  inset: 10rpx;
-}
-
-.action-icon-focus .action-icon-glow {
-  width: 10rpx;
-  height: 36rpx;
-  border-radius: 6rpx;
-  background: rgba(255, 255, 255, 0.9);
-  transform: rotate(45deg);
+  width: 50rpx;
+  height: 50rpx;
+  background: #BCA0BC; /* 莫兰迪色系 - 灰紫 */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='12'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='12'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E");
 }
 
 .action-icon-settings {
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(129, 140, 248, 0.7));
+  background: #F2F4F6;
 }
 
-.action-icon-settings .action-icon-core {
-  width: 68rpx;
-  height: 68rpx;
-  border-radius: 20rpx;
-  border: 2rpx dashed rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.action-icon-settings .action-icon-core::before,
-.action-icon-settings .action-icon-core::after {
+.action-icon-settings::before {
   content: '';
   position: absolute;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.6);
-}
-
-.action-icon-settings .action-icon-core::before {
   width: 50rpx;
   height: 50rpx;
-  top: 6rpx;
-  left: 6rpx;
+  background: #E2C2A4; /* 莫兰迪色系 - 暖沙 */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z'/%3E%3C/svg%3E");
 }
 
-.action-icon-settings .action-icon-core::after {
-  width: 18rpx;
-  height: 18rpx;
-  top: 24rpx;
-  left: 24rpx;
-  background: rgba(255, 255, 255, 0.3);
+/* 旧的元素保持兼容性，但不再使用 */
+.action-icon-core,
+.action-icon-glow {
+  display: none;
 }
 
 .action-name {
@@ -791,23 +618,88 @@
   justify-content: center;
 }
 
-.btn-icon-shape {
+.btn-icon::before {
+  content: '';
+  position: absolute;
   width: 32rpx;
   height: 32rpx;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: 8rpx;
-  position: relative;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
 }
 
-.btn-icon-shape::before {
-  content: '';
-  position: absolute;
-  top: 8rpx;
-  left: 8rpx;
-  width: 16rpx;
-  height: 16rpx;
-  border: 2rpx solid #87A8A4;
-  border-radius: 2rpx;
+/* 旧的元素保持兼容性，但不再使用 */
+.btn-icon-shape {
+  display: none;
+}
+
+/* 暗夜模式支持 */
+@media (prefers-color-scheme: dark) {
+  .row-icon,
+  .action-icon,
+  .profile-page {
+    color: #E2E8F0; /* 暗色模式文本颜色 */
+  }
+
+  .row-icon,
+  .action-icon {
+    background: #334155; /* 暗色模式背景 */
+  }
+
+  .row-icon-courses::before {
+    background: #86EFAC; /* 亮色系的鼠尾草绿对应 */
+  }
+
+  .row-icon-tasks::before {
+    background: #FCA5A5; /* 亮色系的哑光珊瑚对应 */
+  }
+
+  .row-icon-resources::before {
+    background: #C4B5FD; /* 亮色系的灰紫对应 */
+  }
+
+  .action-icon-courses::before {
+    background: #86EFAC; /* 亮色系的鼠尾草绿对应 */
+  }
+
+  .action-icon-resources::before {
+    background: #C4B5FD; /* 亮色系的灰紫对应 */
+  }
+
+  .action-icon-settings::before {
+    background: #FBCB8B; /* 亮色系的暖沙对应 */
+  }
+}
+
+/* 自定义主题变量 */
+:root {
+  --day-text: #2D3436;
+  --night-text: #E2E8F0;
+  --day-bg: #F2F4F6;
+  --night-bg: #0F172A;
+}
+
+.profile-page {
+  color: var(--day-text);
+}
+
+/* 适配系统主题变化 */
+.profile-page {
+  color: var(--day-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .profile-page {
+    color: var(--night-text);
+  }
+
+  .row-icon,
+  .action-item,
+  .stats-card,
+  .tasks-entry-card,
+  .actions-card {
+    background: rgba(30, 41, 59, 0.7);
+  }
 }
 
 .btn-text {

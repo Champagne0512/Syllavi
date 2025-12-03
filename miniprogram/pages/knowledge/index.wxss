@@ -692,7 +692,7 @@ page {
 }
 
 .ai-summary-tag {
-  background: linear-gradient(90deg, #E2C2A4, #E08E79);
+  background: #E2C2A4;
   color: white;
   display: flex;
   align-items: center;

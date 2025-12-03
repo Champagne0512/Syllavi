@@ -157,9 +157,8 @@
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #87A8A4, #BCA0BC);
+  background: #87A8A4;
   color: white;
-  box-shadow: 0 6rpx 20rpx rgba(135, 168, 164, 0.3);
 }
 
 .action-btn.secondary {
@@ -310,9 +309,8 @@
 }
 
 .zen-btn.primary {
-  background: linear-gradient(135deg, #87A8A4, #BCA0BC);
+  background: #87A8A4;
   color: white;
-  box-shadow: 0 8rpx 24rpx rgba(135, 168, 164, 0.3);
 }
 
 .zen-btn.primary:active {
@@ -421,15 +419,15 @@
 }
 
 .status-indicator.leader {
-  background: linear-gradient(135deg, #E2C2A4, #E08E79);
+  background: #E2C2A4;
 }
 
 .status-indicator.deputy_leader {
-  background: linear-gradient(135deg, #BCA0BC, #87A8A4);
+  background: #BCA0BC;
 }
 
 .status-indicator.member {
-  background: linear-gradient(135deg, #87A8A4, #BCA0BC);
+  background: #87A8A4;
 }
 
 .public-badge {
@@ -438,7 +436,7 @@
   right: 0;
   width: 24rpx;
   height: 24rpx;
-  background: linear-gradient(135deg, #E08E79, #E2C2A4);
+  background: #E08E79;
   border-radius: 50%;
   border: 2rpx solid rgba(255, 255, 255, 0.9);
 }
@@ -561,7 +559,7 @@
 
 .join-btn {
   width: 100%;
-  background: linear-gradient(135deg, #87A8A4, #BCA0BC);
+  background: #87A8A4;
   color: white;
   border: none;
   padding: 20rpx;
@@ -570,7 +568,6 @@
   font-weight: 600;
   letter-spacing: 0.5rpx;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  box-shadow: 0 4rpx 15rpx rgba(135, 168, 164, 0.3);
 }
 
 .join-btn:active {
