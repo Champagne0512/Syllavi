@@ -90,7 +90,10 @@ Page({
     app.syncTabBar(); // 使用全局同步方法
     // 刷新数据
     if (!this.data.loading) {
-      this.loadStats();
+      // 只有在非游客模式下才加载统计数据
+      if (!guestMode) {
+        this.loadStats();
+      }
     }
   },
 
@@ -109,12 +112,40 @@ Page({
     const userId = supabase.userId || wx.getStorageSync('user_id') || wx.getStorageSync('syllaby_user_id');
     const token = supabase.accessToken || wx.getStorageSync('access_token');
     if (!userId) return true;
-    if (userId === DEMO_USER_ID) return true;
+    // 仅当userId为DEMO_USER_ID且没有token时才算游客模式
+    // 如果有有效的token，即使是DEMO_USER_ID也不算游客
+    if (userId === DEMO_USER_ID && !token) return true;
     return !token;
   },
 
   async loadProfile() {
     try {
+      const isGuest = this.detectGuestMode();
+
+      // 如果是游客模式，使用默认的游客数据
+      if (isGuest) {
+        const defaultGuestProfile = {
+          nickname: '游客用户',
+          school_name: '',
+          grade: '',
+          avatar_url: '/static/default-avatar.png',
+          bio: '当前为游客模式，登录后可同步个人数据'
+        };
+
+        this.setData({
+          profile: defaultGuestProfile,
+          editForm: {
+            ...defaultGuestProfile,
+            avatar_temp_path: '',
+            avatar_temp_name: ''
+          },
+          gradePickerIndex: getGradePickerIndex('')
+        });
+
+        // 不缓存游客数据
+        return;
+      }
+
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
       const rows = await fetchProfile(userId);
@@ -137,7 +168,9 @@ Page({
           school_name: profile.school_name || '',
           grade: normalizedGrade,
           bio: profile.bio || '让学习成为一种习惯',
-          avatar_url: profile.avatar_url || userInfo?.avatarUrl || ''
+          avatar_url: profile.avatar_url || userInfo?.avatarUrl || '',
+          avatar_temp_path: '',
+          avatar_temp_name: ''
         },
         gradePickerIndex: getGradePickerIndex(normalizedGrade)
       });
@@ -156,6 +189,27 @@ Page({
 
   async loadStats() {
     try {
+      const isGuest = this.detectGuestMode();
+
+      // 如果是游客模式，使用默认统计数据
+      if (isGuest) {
+        const defaultGuestStats = {
+          today_focus_minutes: 0,
+          week_focus_minutes: 0,
+          total_focus_minutes: 0,
+          total_focus_hours: 0,
+          total_sessions: 0,
+          completed_tasks: 0,
+          total_tasks: 0,
+          total_resources: 0,
+          total_courses: 0,
+          continuous_days: 0
+        };
+
+        this.setData({ stats: defaultGuestStats });
+        return;
+      }
+
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
 
@@ -199,7 +253,7 @@ Page({
       const totalFocusMinutes = Math.max(0, Math.floor(Number(focusStats?.total_minutes) || 0));
       const totalSessions = Number(focusStats?.total_sessions) || 0;
       const continuousDays = Number(focusStats?.continuous_days) || 0;
-      
+
       const stats = {
         today_focus_minutes: todayMinutes,
         week_focus_minutes: weekMinutes,
