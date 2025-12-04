@@ -1,52 +1,143 @@
 /* pages/groups/detail.wxss */
-/* 弥散背景 */
-.container {
+/* 流动的秩序 - 遵循艺术设计规范 */
+.zen-container {
   min-height: 100vh;
-  background-color: #F2F4F6;
+  background: linear-gradient(135deg, #F2F4F6 0%, #F8F9FA 100%); /* 艺术设计规范中的白昼模式渐变背景 */
   position: relative;
-  padding-bottom: 140rpx;
+  padding: 40rpx;
   overflow-x: hidden;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
 }
 
-.container::before {
+/* 弥散光影背景 - 符合艺术设计规范的超级椭圆效果 */
+.zen-container::before {
   content: '';
   position: absolute;
-  top: -10%;
-  right: -10%;
+  top: -15%;
+  right: -15%;
+  width: 600rpx;
+  height: 600rpx;
+  background: radial-gradient(ellipse at 30% 30%, #BCA0BC 0%, transparent 80%); /* 艺术设计规范中的灰紫色 */
+  opacity: 0.25; /* 更符合艺术设计规范的透气感 */
+  filter: blur(80px); /* 增强弥散效果 */
+  animation: float-orbital 25s infinite ease-in-out;
+  z-index: -1;
+}
+
+.zen-container::after {
+  content: '';
+  position: absolute;
+  bottom: -15%;
+  left: -15%;
   width: 500rpx;
   height: 500rpx;
-  background: radial-gradient(circle, #E2C2A4 0%, transparent 70%);
-  opacity: 0.3;
-  filter: blur(60px);
-  animation: float 12s infinite ease-in-out;
-  z-index: 0;
+  background: radial-gradient(ellipse at 70% 70%, #87A8A4 0%, transparent 80%); /* 艺术设计规范中的鼠尾草绿 */
+  opacity: 0.2; /* 更符合艺术设计规范的透气感 */
+  filter: blur(70px); /* 增强弥散效果 */
+  animation: float-orbital 20s infinite ease-in-out reverse;
+  z-index: -1;
 }
 
-.container::after {
-  content: '';
+/* 新增第三个背景球体 - 增加视觉层次 */
+.zen-container .floating-field {
   position: absolute;
-  bottom: -10%;
-  left: -10%;
-  width: 400rpx;
-  height: 400rpx;
-  background: radial-gradient(circle, #E08E79 0%, transparent 70%);
-  opacity: 0.2;
-  filter: blur(50px);
-  animation: float 15s infinite ease-in-out reverse;
-  z-index: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: -1;
 }
 
-@keyframes float {
+.mesh-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  animation-duration: 15s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.mesh-orb.orb-a {
+  width: 300rpx;
+  height: 300rpx;
+  background: radial-gradient(circle, #E2C2A4 0%, transparent 70%); /* 艺术设计规范中的暖沙色 */
+  opacity: 0.15;
+  top: -200rpx;
+  left: -100rpx;
+  animation-name: float-orbit-1;
+}
+
+.mesh-orb.orb-b {
+  width: 250rpx;
+  height: 250rpx;
+  background: radial-gradient(circle, #E08E79 0%, transparent 70%); /* 艺术设计规范中的哑光珊瑚 */
+  opacity: 0.12;
+  top: 150rpx;
+  right: -150rpx;
+  animation-name: float-orbit-2;
+}
+
+.mesh-orb.orb-c {
+  width: 200rpx;
+  height: 200rpx;
+  background: radial-gradient(circle, #87A8A4 0%, transparent 70%); /* 艺术设计规范中的鼠尾草绿 */
+  opacity: 0.1;
+  bottom: -100rpx;
+  left: 50rpx;
+  animation-name: float-orbit-3;
+}
+
+.mesh-orb.orb-d {
+  width: 180rpx;
+  height: 180rpx;
+  background: radial-gradient(circle, #BCA0BC 0%, transparent 70%); /* 艺术设计规范中的灰紫色 */
+  opacity: 0.08;
+  bottom: -150rpx;
+  right: 100rpx;
+  animation-name: float-orbit-4;
+}
+
+/* 流动的动画效果 - 符合艺术设计规范的流动秩序 */
+@keyframes float-orbital {
   0%, 100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translate(30rpx, -40rpx) rotate(90deg) scale(1.1);
   }
   50% {
-    transform: translate(20rpx, -20rpx) scale(1.05);
+    transform: translate(20rpx, 30rpx) rotate(180deg) scale(0.95);
   }
+  75% {
+    transform: translate(-40rpx, -20rpx) rotate(270deg) scale(1.05);
+  }
+}
+
+@keyframes float-orbit-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(50rpx, -30rpx) scale(1.2); }
+  66% { transform: translate(-30rpx, 40rpx) scale(0.9); }
+}
+
+@keyframes float-orbit-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-40rpx, 20rpx) scale(1.1); }
+  66% { transform: translate(30rpx, -40rpx) scale(0.95); }
+}
+
+@keyframes float-orbit-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20rpx, -50rpx) scale(1.15); }
+  66% { transform: translate(-40rpx, 30rpx) scale(0.9); }
+}
+
+@keyframes float-orbit-4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30rpx, -20rpx) scale(1.05); }
+  66% { transform: translate(40rpx, 30rpx) scale(0.95); }
 }
 
 /* 加载状态 */
-.loading-container {
+.zen-loading {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -57,24 +148,36 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 0.8;
 }
 
-/* 顶部导航栏 */
-.nav-bar {
+/* 玻璃拟态页面头部 - 符合艺术设计规范 */
+.zen-navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 30rpx;
-  padding-top: calc(20rpx + env(safe-area-inset-top));
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 60rpx 40rpx 30rpx;
+  margin-bottom: 32rpx;
+  position: relative;
+  background: rgba(255, 255, 255, 0.55); /* 增强玻璃拟态效果 */
+  backdrop-filter: blur(30px); /* 符合艺术设计规范中的玻璃拟态 */
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.5); /* 增强边框效果 */
+  border-radius: 40rpx; /* 更大的圆角符合超级椭圆理念 */
+  box-shadow:
+    0 12px 50px rgba(31, 38, 135, 0.1), /* 增强柔和阴影 */
+    0 0 0 1px rgba(255, 255, 255, 0.9), /* 内发光效果 */
+    inset 0 2px 4px rgba(255, 255, 255, 0.7); /* 增强内阴影立体感 */
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.zen-navbar:active {
+  transform: scale(0.98); /* 果冻效果 */
+  box-shadow:
+    0 4px 24px rgba(31, 38, 135, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.95),
+    inset 0 1px 3px rgba(255, 255, 255, 0.8);
 }
 
 .nav-back, .nav-placeholder {
@@ -83,52 +186,97 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
+  border-radius: 32rpx; /* 符合艺术设计规范中的超级椭圆理念 */
+  background: rgba(255, 255, 255, 0.35); /* 增强透明度 */
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.3); /* 增强边框效果 */
+  backdrop-filter: blur(15px); /* 增强玻璃拟态效果 */
+  -webkit-backdrop-filter: blur(15px);
+  position: relative; /* 保持相对定位，避免覆盖其他内容 */
 }
 
 .nav-back:active {
-  transform: scale(0.9);
-  background: rgba(255, 255, 255, 0.4);
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .nav-icon {
   font-size: 32rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   font-weight: bold;
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 600;
-  color: #2D3436;
-  opacity: 0.9;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  opacity: 0.95;
 }
 
-/* 小组头部 */
-.group-header {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 40rpx 30rpx;
+/* 超级椭圆小组头部卡片 - 符合艺术设计规范 */
+.zen-group-header {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(255, 255, 255, 0.55) 100%); /* 艺术设计规范中的微渐变 */
+  box-shadow:
+    0 12px 50px rgba(31, 38, 135, 0.1), /* 增强柔和阴影 */
+    0 0 0 1px rgba(255, 255, 255, 0.9), /* 内发光效果 */
+    inset 0 2px 4px rgba(255, 255, 255, 0.8); /* 增强内阴影立体感 */
+  backdrop-filter: blur(30px); /* 增强玻璃拟态效果 */
+  -webkit-backdrop-filter: blur(30px);
+  padding: 48rpx 36rpx;
   display: flex;
   align-items: center;
   position: relative;
   z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.6); /* 增强边框效果 */
+  border-radius: 40rpx; /* 更大的圆角符合超级椭圆理念 */
   margin: 20rpx;
-  margin-top: 0;
-  border-radius: 24rpx;
+  margin-top: 20rpx;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  overflow: hidden;
+  cursor: pointer; /* 添加指针样式 */
+}
+
+/* 果冻效果 - 符合艺术设计规范 */
+.zen-group-header:active {
+  transform: scale(0.97); /* 符合艺术设计规范中的果冻效果 */
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.65) 100%);
+  box-shadow:
+    0 6px 25px rgba(31, 38, 135, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.95),
+    inset 0 2px 4px rgba(255, 255, 255, 0.9);
+}
+
+/* 左侧色条设计 - 符合艺术设计规范 */
+.zen-group-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 8rpx;
+  background: linear-gradient(180deg,
+    #87A8A4 0%,
+    #BCA0BC 50%,
+    #E2C2A4 100%); /* 使用艺术设计规范中的莫兰迪色系 */
+  border-radius: 0 12rpx 12rpx 0;
 }
 
 .group-avatar {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 24rpx;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 28rpx; /* 符合艺术设计规范中的超级椭圆理念 */
   margin-right: 30rpx;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25); /* 符合规范：使用边框替代实线 */
+  transition: all 0.3s ease;
+}
+
+.group-avatar:active {
+  transform: scale(0.95); /* 增强交互果冻效果 */
 }
 
 .group-basic-info {
@@ -136,16 +284,16 @@
 }
 
 .group-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #2D3436;
+  font-size: 40rpx;
+  font-weight: 700; /* 增强字重符合艺术设计规范 */
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   margin-bottom: 10rpx;
 }
 
 .group-code {
-  font-size: 28rpx;
-  color: #2D3436;
-  opacity: 0.8;
+  font-size: 30rpx;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  opacity: 0.85;
   margin-bottom: 10rpx;
   display: flex;
   align-items: center;
@@ -153,128 +301,204 @@
 }
 
 .copy-tip {
-  font-size: 22rpx;
-  color: #2D3436;
-  background: rgba(135, 168, 164, 0.2);
-  padding: 4rpx 12rpx;
-  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  background: rgba(135, 168, 164, 0.25); /* 使用艺术设计规范中的鼠尾草绿 */
+  padding: 6rpx 14rpx;
+  border-radius: 16rpx;
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.25); /* 符合规范：使用边框替代实线 */
+  backdrop-filter: blur(10px); /* 增强玻璃拟态效果 */
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .copy-tip:active {
-  background: rgba(135, 168, 164, 0.3);
+  background: rgba(135, 168, 164, 0.35); /* 使用艺术设计规范中的鼠尾草绿 */
   transform: scale(0.95);
 }
 
 .group-meta {
   display: flex;
-  gap: 20rpx;
+  gap: 24rpx;
 }
 
 .member-count, .group-type {
-  font-size: 24rpx;
-  color: #2D3436;
+  font-size: 26rpx;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 0.7;
 }
 
 /* 用户角色 */
-.user-role {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 20rpx 30rpx;
+.zen-role-card {
+  background: rgba(255, 255, 255, 0.7); /* 增强玻璃拟态效果 */
+  backdrop-filter: blur(25px); /* 符合艺术设计规范中的玻璃拟态 */
+  -webkit-backdrop-filter: blur(25px);
+  padding: 24rpx 36rpx;
   position: relative;
   z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* 增强边框效果 */
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1); /* 增强阴影效果 */
   margin: 20rpx;
   margin-top: 0;
-  border-radius: 24rpx;
+  border-radius: 28rpx; /* 符合艺术设计规范中的超级椭圆理念 */
+  transition: all 0.3s ease;
+}
+
+.zen-role-card:active {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(0.99);
 }
 
 .role-tag {
-  font-size: 24rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 12rpx;
-  background: rgba(135, 168, 164, 0.2);
-  color: #87A8A4;
+  font-size: 26rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 16rpx;
+  background: rgba(135, 168, 164, 0.25); /* 使用艺术设计规范中的鼠尾草绿 */
+  color: #87A8A4; /* 艺术设计规范中的鼠尾草绿 */
+  font-weight: 600;
+  backdrop-filter: blur(10px); /* 增强玻璃拟态效果 */
+  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.role-tag::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4rpx;
+  height: 100%;
+  background: #87A8A4; /* 使用指定的 #87A8A4 颜色 */
 }
 
 .role-tag.leader {
-  background: rgba(226, 194, 164, 0.2);
-  color: #E2C2A4;
+  background: rgba(226, 194, 164, 0.25); /* 使用艺术设计规范中的暖沙色 */
+  color: #E2C2A4; /* 艺术设计规范中的暖沙色 */
+}
+
+.role-tag.leader::before {
+  background: #E2C2A4; /* 使用暖沙色作为组长的标识色 */
 }
 
 .role-tag.deputy_leader {
-  background: rgba(188, 160, 188, 0.2);
-  color: #BCA0BC;
+  background: rgba(188, 160, 188, 0.25); /* 使用艺术设计规范中的灰紫色 */
+  color: #BCA0BC; /* 艺术设计规范中的灰紫色 */
+}
+
+.role-tag.deputy_leader::before {
+  background: #BCA0BC; /* 使用灰紫色作为副组长的标识色 */
 }
 
 /* 操作按钮 */
-.action-buttons {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 30rpx;
+.zen-quick-actions {
+  background: rgba(255, 255, 255, 0.7); /* 增强玻璃拟态效果 */
+  backdrop-filter: blur(25px); /* 符合艺术设计规范中的玻璃拟态 */
+  -webkit-backdrop-filter: blur(25px);
+  padding: 36rpx;
   display: flex;
   gap: 20rpx;
   position: relative;
   z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* 增强边框效果 */
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1); /* 增强阴影效果 */
   margin: 20rpx;
   margin-top: 0;
-  border-radius: 24rpx;
+  border-radius: 28rpx; /* 符合艺术设计规范中的超级椭圆理念 */
 }
 
-.btn-primary {
+.zen-action-btn.primary {
   flex: 1;
-  background: linear-gradient(135deg, #87A8A4, #BCA0BC);
+  background: linear-gradient(135deg, #87A8A4, #BCA0BC); /* 使用艺术设计规范中的莫兰迪色系 */
   color: white;
   border: none;
-  border-radius: 24rpx;
-  padding: 20rpx;
-  font-size: 28rpx;
+  border-radius: 28rpx; /* 符合艺术设计规范中的超级椭圆理念 */
+  padding: 24rpx;
+  font-size: 30rpx;
+  font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  box-shadow: 0 4rpx 15rpx rgba(135, 168, 164, 0.3);
+  box-shadow: 0 8rpx 20rpx rgba(135, 168, 164, 0.4); /* 增强阴影效果 */
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(15px); /* 增强玻璃拟态效果 */
+  -webkit-backdrop-filter: blur(15px);
 }
 
-.btn-primary:active {
-  transform: scale(0.95);
-  box-shadow: 0 2rpx 8rpx rgba(135, 168, 164, 0.2);
+.zen-action-btn.primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%);
+  transition: left 0.6s ease;
 }
 
-.btn-secondary {
+.zen-action-btn.primary:active {
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
+  box-shadow: 0 4rpx 12rpx rgba(135, 168, 164, 0.3); /* 减少阴影 */
+}
+
+.zen-action-btn.primary:active::before {
+  left: 100%;
+}
+
+.zen-action-btn.secondary {
   flex: 1;
-  background: rgba(255, 255, 255, 0.25);
-  color: #2D3436;
-  border: 1rpx solid rgba(255, 255, 255, 0.3);
-  border-radius: 24rpx;
-  padding: 20rpx;
-  font-size: 28rpx;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.35); /* 增强透明度 */
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  border: 1rpx solid rgba(255, 255, 255, 0.4); /* 增强边框效果 */
+  border-radius: 28rpx; /* 符合艺术设计规范中的超级椭圆理念 */
+  padding: 24rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  backdrop-filter: blur(15px); /* 符合艺术设计规范中的玻璃拟态 */
+  -webkit-backdrop-filter: blur(15px);
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.btn-secondary:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.4);
+.zen-action-btn.secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%);
+  transition: left 0.6s ease;
+}
+
+.zen-action-btn.secondary:active {
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.zen-action-btn.secondary:active::before {
+  left: 100%;
 }
 
 /* 任务统计样式 */
-.task-stats {
+.zen-stats-cards {
   padding: 30rpx;
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.65); /* 艺术设计规范中的卡片背景 */
+  backdrop-filter: blur(20px); /* 符合艺术设计规范中的玻璃拟态 */
   -webkit-backdrop-filter: blur(20px);
   position: relative;
   z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* 符合艺术设计规范 */
   margin: 20rpx;
   margin-top: 0;
-  border-radius: 24rpx;
+  border-radius: 24rpx; /* 符合艺术设计规范中的大圆角 */
 }
 
 .stats-group {
@@ -283,84 +507,88 @@
   margin-bottom: 20rpx;
 }
 
-.stat-item {
+.stat-card {
   text-align: center;
   padding: 15rpx;
-  border-radius: 16rpx;
-  background: rgba(255, 255, 255, 0.3);
+  border-radius: 16rpx; /* 符合艺术设计规范中的大圆角 */
+  background: rgba(255, 255, 255, 0.3); /* 保持透明度符合艺术设计规范 */
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
 }
 
-.stat-item:active {
-  transform: scale(0.95);
+.stat-card:active {
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
 }
 
-.stat-value {
+.stat-number {
   display: block;
   font-size: 36rpx;
   font-weight: bold;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   margin-bottom: 5rpx;
+  font-family: 'JetBrains Mono', 'Gotham', sans-serif; /* 符合艺术设计规范中的数字艺术 */
 }
 
-.stat-value.completed {
-  color: #87A8A4;
+.stat-number.completed {
+  color: #87A8A4; /* 艺术设计规范中的鼠尾草绿 */
 }
 
-.stat-value.pending {
-  color: #E08E79;
+.stat-number.pending {
+  color: #E08E79; /* 艺术设计规范中的哑光珊瑚 */
 }
 
 .stat-label {
   font-size: 24rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 0.7;
 }
 
-/* 增强的任务项样式 */
-.task-item {
+/* 增强的任务项样式 - 符合艺术设计规范 */
+.zen-task-card {
   padding: 25rpx;
   border-bottom: none;
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.65); /* 艺术设计规范中的卡片背景 */
+  backdrop-filter: blur(20px); /* 符合艺术设计规范中的玻璃拟态 */
   -webkit-backdrop-filter: blur(20px);
   margin: 20rpx;
-  border-radius: 24rpx;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24rpx; /* 符合艺术设计规范中的大圆角 */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* 符合艺术设计规范 */
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  cursor: pointer; /* 添加指针样式 */
 }
 
-.task-item.completed {
-  background: rgba(135, 168, 164, 0.1);
+.zen-task-card.completed {
+  background: rgba(135, 168, 164, 0.1); /* 使用艺术设计规范中的鼠尾草绿 */
 }
 
-.task-item.my-task {
-  background: rgba(226, 194, 164, 0.1);
+.zen-task-card.my-task {
+  background: rgba(226, 194, 164, 0.1); /* 使用艺术设计规范中的暖沙色 */
 }
 
-.task-item::before {
+.zen-task-card::before {
   content: '';
   position: absolute;
   left: 0;
   top: 0;
   height: 100%;
-  width: 4px;
+  width: 4px; /* 符合艺术设计规范中的左侧色条设计 */
 }
 
-.task-item.completed::before {
-  background: #87A8A4;
+.zen-task-card.completed::before {
+  background: #87A8A4; /* 艺术设计规范中的鼠尾草绿 */
 }
 
-.task-item.my-task::before {
-  background: #E2C2A4;
+.zen-task-card.my-task::before {
+  background: #E2C2A4; /* 艺术设计规范中的暖沙色 */
 }
 
-.task-item:active {
-  transform: scale(0.98);
-  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1);
+.zen-task-card:active {
+  transform: scale(0.98); /* 符合艺术设计规范中的果冻效果 */
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1); /* 符合艺术设计规范 */
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .task-header {
@@ -373,7 +601,7 @@
 
 .task-title {
   font-size: 28rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   flex: 1;
   display: flex;
   align-items: center;
@@ -386,7 +614,7 @@
 }
 
 .task-status.completed {
-  color: #87A8A4;
+  color: #87A8A4; /* 艺术设计规范中的鼠尾草绿 */
 }
 
 .my-task-badge, .creator-badge {
@@ -394,42 +622,44 @@
   padding: 4rpx 8rpx;
   border-radius: 8rpx;
   margin-left: 10rpx;
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
 }
 
 .my-task-badge {
-  background: rgba(226, 194, 164, 0.2);
-  color: #E2C2A4;
+  background: rgba(226, 194, 164, 0.2); /* 使用艺术设计规范中的暖沙色 */
+  color: #E2C2A4; /* 艺术设计规范中的暖沙色 */
 }
 
 .creator-badge {
-  background: rgba(224, 142, 121, 0.2);
-  color: #E08E79;
+  background: rgba(224, 142, 121, 0.2); /* 使用艺术设计规范中的哑光珊瑚 */
+  color: #E08E79; /* 艺术设计规范中的哑光珊瑚 */
 }
 
-.status-btn {
+.zen-task-btn {
   margin-left: 20rpx;
   font-size: 24rpx !important;
-  border-radius: 12rpx;
+  border-radius: 12rpx; /* 符合艺术设计规范中的大圆角 */
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
 }
 
-.complete-btn {
-  background: #87A8A4;
+.zen-task-btn.complete {
+  background: #87A8A4; /* 艺术设计规范中的鼠尾草绿 */
   color: white;
 }
 
-.undo-btn {
-  background: #E08E79;
+.zen-task-btn.undo {
+  background: #E08E79; /* 艺术设计规范中的哑光珊瑚 */
   color: white;
 }
 
-.status-btn:active {
-  transform: scale(0.95);
+.zen-task-btn:active {
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
 }
 
 .task-meta {
   font-size: 24rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 0.7;
 }
 
@@ -455,39 +685,39 @@
 }
 
 /* 导航标签 */
-.detail-tabs {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
+.zen-tabs {
+  background: rgba(255, 255, 255, 0.65); /* 艺术设计规范中的卡片背景 */
+  backdrop-filter: blur(20px); /* 符合艺术设计规范中的玻璃拟态 */
   -webkit-backdrop-filter: blur(20px);
   display: flex;
   position: relative;
   z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* 符合艺术设计规范 */
   margin: 20rpx;
   margin-top: 0;
-  border-radius: 24rpx;
+  border-radius: 24rpx; /* 符合艺术设计规范中的大圆角 */
   overflow: hidden;
 }
 
-.detail-tab {
+.zen-tab {
   flex: 1;
   text-align: center;
   padding: 30rpx 0;
   font-size: 28rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 0.7;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   position: relative;
 }
 
-.detail-tab.active {
-  color: #2D3436;
+.zen-tab.active {
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 1;
   font-weight: 600;
 }
 
-.detail-tab.active::after {
+.zen-tab.active::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -495,46 +725,46 @@
   transform: translateX(-50%);
   width: 40rpx;
   height: 4rpx;
-  background: linear-gradient(90deg, #87A8A4, #BCA0BC);
+  background: linear-gradient(90deg, #87A8A4, #BCA0BC); /* 使用艺术设计规范中的莫兰迪色系 */
   border-radius: 2rpx;
 }
 
-.detail-tab:not(.active):active {
-  transform: scale(0.95);
+.zen-tab:not(.active):active {
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
 }
 
 /* 标签内容 */
-.tab-content {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
+.zen-content {
+  background: rgba(255, 255, 255, 0.65); /* 艺术设计规范中的卡片背景 */
+  backdrop-filter: blur(20px); /* 符合艺术设计规范中的玻璃拟态 */
   -webkit-backdrop-filter: blur(20px);
   min-height: 400rpx;
   position: relative;
   z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* 符合艺术设计规范 */
   margin: 20rpx;
   margin-top: 0;
-  border-radius: 24rpx;
+  border-radius: 24rpx; /* 符合艺术设计规范中的大圆角 */
 }
 
-.info-section {
+.zen-section {
   padding: 30rpx;
   border-bottom: none;
 }
 
-.section-title {
+.card-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   margin-bottom: 20rpx;
   padding-left: 10rpx;
-  border-left: 4px solid #87A8A4;
+  border-left: 4px solid #87A8A4; /* 使用艺术设计规范中的鼠尾草绿 */
 }
 
-.section-content {
+.card-content {
   font-size: 28rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 0.8;
   line-height: 1.6;
 }
@@ -548,39 +778,42 @@
 
 .info-label {
   font-size: 28rpx;
-  color: #8c8c8c;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  opacity: 0.7;
 }
 
 .info-value {
   font-size: 28rpx;
-  color: #1c1c1e;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  opacity: 0.8;
 }
 
 /* 成员列表 */
-.members-list {
+.zen-members-grid {
   padding: 30rpx;
 }
 
-.member-item {
+.zen-member-card {
   display: flex;
   align-items: center;
   padding: 20rpx;
   border-bottom: none;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.4); /* 符合艺术设计规范中的透明度 */
+  border-radius: 16rpx; /* 符合艺术设计规范中的大圆角 */
   margin-bottom: 10rpx;
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.18); /* 符合规范：使用边框替代实线 */
 }
 
-.member-item:active {
-  transform: scale(0.98);
+.zen-member-card:active {
+  transform: scale(0.98); /* 符合艺术设计规范中的果冻效果 */
   background: rgba(255, 255, 255, 0.6);
 }
 
 .member-avatar {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 16rpx;
+  border-radius: 16rpx; /* 符合艺术设计规范中的大圆角 */
   margin-right: 20rpx;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -591,7 +824,7 @@
 
 .member-name {
   font-size: 28rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   margin-bottom: 8rpx;
   font-weight: 500;
 }
@@ -605,132 +838,130 @@
 .member-role {
   font-size: 22rpx;
   padding: 4rpx 12rpx;
-  border-radius: 12rpx;
-  background: rgba(135, 168, 164, 0.2);
-  color: #87A8A4;
+  border-radius: 12rpx; /* 符合艺术设计规范中的大圆角 */
+  background: rgba(135, 168, 164, 0.2); /* 使用艺术设计规范中的鼠尾草绿 */
+  color: #87A8A4; /* 艺术设计规范中的鼠尾草绿 */
 }
 
 .member-role.leader {
-  background: rgba(226, 194, 164, 0.2);
-  color: #E2C2A4;
+  background: rgba(226, 194, 164, 0.2); /* 使用艺术设计规范中的暖沙色 */
+  color: #E2C2A4; /* 艺术设计规范中的暖沙色 */
 }
 
 .member-role.deputy_leader {
-  background: rgba(188, 160, 188, 0.2);
-  color: #BCA0BC;
+  background: rgba(188, 160, 188, 0.2); /* 使用艺术设计规范中的灰紫色 */
+  color: #BCA0BC; /* 艺术设计规范中的灰紫色 */
 }
 
 .join-time {
   font-size: 22rpx;
-  color: #2D3436;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   opacity: 0.7;
 }
 
 /* 任务列表 */
-.tasks-list {
+.zen-tasks {
   padding: 30rpx;
 }
 
-.empty-tasks {
+.zen-empty {
   text-align: center;
   padding: 60rpx 0;
 }
 
-.empty-text {
+.empty-title {
   font-size: 28rpx;
-  color: #8c8c8c;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  opacity: 0.7;
 }
 
-.task-item {
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.task-title {
-  font-size: 28rpx;
-  color: #1c1c1e;
-  margin-bottom: 8rpx;
-  font-weight: 600;
-}
-
-.task-meta {
-  display: flex;
-  justify-content: space-between;
+.empty-desc {
   font-size: 24rpx;
-  color: #8c8c8c;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  opacity: 0.5;
+  margin-top: 10rpx;
 }
 
 /* 操作链接 */
-.section-actions {
+.zen-more-actions {
   padding: 30rpx;
   text-align: center;
-  border-top: 1rpx solid #eee;
+  border-top: none; /* 移除边框，符合艺术设计规范 */
 }
 
-.btn-link {
+.zen-link-btn {
   background: transparent;
-  color: #1c1c1e;
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
   border: none;
   font-size: 28rpx;
   text-decoration: underline;
+  padding: 15rpx 30rpx; /* 增加点击区域，提高可用性 */
+  border-radius: 16rpx; /* 符合艺术设计规范中的大圆角 */
+  transition: all 0.3s ease;
+}
+
+.zen-link-btn:active {
+  background: rgba(255, 255, 255, 0.2); /* 符合艺术设计规范的交互效果 */
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
 }
 
 /* 底部操作 */
-.bottom-actions {
+.zen-bottom-actions {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.25); /* 符合艺术设计规范中的玻璃拟态 */
+  backdrop-filter: blur(20px); /* 符合艺术设计规范中的玻璃拟态 */
   -webkit-backdrop-filter: blur(20px);
   padding: 20rpx 30rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* 符合规范：使用边框替代实线 */
   border-bottom: none;
   display: flex;
   gap: 20rpx;
   z-index: 100;
-  box-shadow: 0 -4px 20px rgba(31, 38, 135, 0.1);
+  box-shadow: 0 -4px 20px rgba(31, 38, 135, 0.1); /* 符合艺术设计规范 */
+  border-radius: 24rpx 24rpx 0 0; /* 符合艺术设计规范中的大圆角 */
 }
 
-.btn-danger {
+.zen-danger-btn {
   flex: 1;
-  background: linear-gradient(135deg, #E08E79, #E08E79);
+  background: linear-gradient(135deg, #E08E79, #BCA0BC); /* 使用艺术设计规范中的莫兰迪色系 */
   color: white;
   border: none;
-  border-radius: 24rpx;
+  border-radius: 24rpx; /* 符合艺术设计规范中的大圆角 */
   padding: 20rpx;
   font-size: 28rpx;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  box-shadow: 0 4rpx 15rpx rgba(224, 142, 121, 0.3);
+  box-shadow: 0 4rpx 15rpx rgba(224, 142, 121, 0.3); /* 符合艺术设计规范 */
 }
 
-.btn-danger:active {
-  transform: scale(0.95);
-  box-shadow: 0 2rpx 8rpx rgba(224, 142, 121, 0.2);
+.zen-danger-btn:active {
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
+  box-shadow: 0 2rpx 8rpx rgba(224, 142, 121, 0.2); /* 符合艺术设计规范 */
 }
 
-.btn-secondary {
+.zen-secondary-btn {
   flex: 1;
-  background: rgba(255, 255, 255, 0.25);
-  color: #2D3436;
-  border: 1rpx solid rgba(255, 255, 255, 0.3);
-  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.25); /* 符合艺术设计规范中的透明度 */
+  color: #2D3436; /* 艺术设计规范中的主文字色 */
+  border: 1rpx solid rgba(255, 255, 255, 0.3); /* 符合规范：使用边框替代实线 */
+  border-radius: 24rpx; /* 符合艺术设计规范中的大圆角 */
   padding: 20rpx;
   font-size: 28rpx;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px); /* 符合艺术设计规范中的玻璃拟态 */
   -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
-.btn-secondary:active {
-  transform: scale(0.95);
+.zen-secondary-btn:active {
+  transform: scale(0.95); /* 符合艺术设计规范中的果冻效果 */
   background: rgba(255, 255, 255, 0.4);
 }
 
 /* 任务统计样式 */
-.task-stats {
+.zen-stats-cards {
   padding: 30rpx;
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(20px);
@@ -750,7 +981,7 @@
   margin-bottom: 20rpx;
 }
 
-.stat-item {
+.stat-card {
   text-align: center;
   padding: 15rpx;
   border-radius: 16rpx;
@@ -758,11 +989,11 @@
   transition: all 0.3s ease;
 }
 
-.stat-item:active {
+.stat-card:active {
   transform: scale(0.95);
 }
 
-.stat-value {
+.stat-number {
   display: block;
   font-size: 36rpx;
   font-weight: bold;
@@ -770,11 +1001,11 @@
   margin-bottom: 5rpx;
 }
 
-.stat-value.completed {
+.stat-number.completed {
   color: #87A8A4;
 }
 
-.stat-value.pending {
+.stat-number.pending {
   color: #E08E79;
 }
 

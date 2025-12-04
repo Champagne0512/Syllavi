@@ -5,6 +5,7 @@
     <view class="mesh-orb orb-a"></view>
     <view class="mesh-orb orb-b"></view>
     <view class="mesh-orb orb-c"></view>
+    <view class="mesh-orb orb-d"></view>
   </view>
 
   <!-- 页面头部 -->
@@ -28,10 +29,10 @@
         <text class="form-required">*</text>
       </view>
       <view class="input-wrapper">
-        <input 
-          class="zen-input" 
-          name="name" 
-          value="{{form.name}}" 
+        <input
+          class="zen-input"
+          name="name"
+          value="{{form.name}}"
           placeholder="给你的小组起个响亮的名字"
           maxlength="50"
           data-field="name"
@@ -48,10 +49,10 @@
         <text class="form-optional">选填</text>
       </view>
       <view class="textarea-wrapper">
-        <textarea 
-          class="zen-textarea" 
-          name="description" 
-          value="{{form.description}}" 
+        <textarea
+          class="zen-textarea"
+          name="description"
+          value="{{form.description}}"
           placeholder="描述一下小组的学习目标或特色..."
           maxlength="200"
           data-field="description"
@@ -69,8 +70,8 @@
         <text class="form-hint">选择适合的小组规模</text>
       </view>
       <view class="zen-picker">
-        <picker 
-          range="{{memberOptions}}" 
+        <picker
+          range="{{memberOptions}}"
           range-key="label"
           value="{{selectedMemberIndex}}"
           bindchange="onMaxMembersChange"
@@ -98,8 +99,8 @@
             <text class="switch-title">{{form.isPublic ? '公开小组' : '私密小组'}}</text>
             <text class="switch-desc">{{form.isPublic ? '任何人都可以搜索并申请加入' : '只能通过小组码邀请加入'}}</text>
           </view>
-          <switch 
-            checked="{{form.isPublic}}" 
+          <switch
+            checked="{{form.isPublic}}"
             bindchange="togglePublic"
             color="#87A8A4"
           />
@@ -125,9 +126,9 @@
 
     <!-- 提交按钮 -->
     <view class="zen-form-actions">
-      <button 
-        class="zen-submit-btn {{canSubmit ? 'ready' : 'disabled'}}" 
-        form-type="submit" 
+      <button
+        class="zen-submit-btn {{canSubmit ? 'ready' : 'disabled'}}"
+        form-type="submit"
         disabled="{{!canSubmit || submitting}}"
         loading="{{submitting}}"
       >

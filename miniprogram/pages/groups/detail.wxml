@@ -28,7 +28,7 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 小组头部卡片 -->
     <view class="zen-group-header">
       <view class="header-glow"></view>
@@ -82,7 +82,7 @@
 
     <!-- 导航标签 -->
     <view class="zen-tabs">
-      <view 
+      <view
         class="zen-tab {{currentTab === 'info' ? 'active' : ''}}"
         data-tab="info"
         bindtap="switchTab"
@@ -90,7 +90,7 @@
         <view class="tab-indicator"></view>
         <text class="tab-text">小组信息</text>
       </view>
-      <view 
+      <view
         wx:if="{{isMember}}"
         class="zen-tab {{currentTab === 'members' ? 'active' : ''}}"
         data-tab="members"
@@ -99,7 +99,7 @@
         <view class="tab-indicator"></view>
         <text class="tab-text">成员列表</text>
       </view>
-      <view 
+      <view
         wx:if="{{isMember}}"
         class="zen-tab {{currentTab === 'tasks' ? 'active' : ''}}"
         data-tab="tasks"
@@ -155,11 +155,11 @@
         <view class="zen-members-grid">
           <view class="zen-member-card" wx:for="{{members}}" wx:key="id">
             <view class="member-avatar">
-              <image src="/static/icons/group-empty.png" class="member-image"></image>
+              <image src="{{item.avatar_url || '/static/icons/group-empty.png'}}" class="member-image"></image>
               <view class="member-status {{item.role}}"></view>
             </view>
             <view class="member-info">
-              <text class="member-name">成员 {{index + 1}}</text>
+              <text class="member-name">{{item.nickname || item.username || '成员 ' + (index + 1)}}</text>
               <view class="member-role {{item.role}}">
                 <text class="role-text">{{item.role === 'leader' ? '组长' : item.role === 'deputy_leader' ? '副组长' : '组员'}}</text>
               </view>
@@ -167,7 +167,7 @@
             </view>
           </view>
         </view>
-        
+
         <view class="zen-more-actions">
           <button class="zen-link-btn" bindtap="viewMembers">
             <text class="link-text">查看完整成员管理</text>
@@ -215,10 +215,10 @@
             <text class="empty-title">暂无任务</text>
             <text class="empty-desc">组长还没有安排任务</text>
           </view>
-          
-          <view 
+
+          <view
             class="zen-task-card {{item.status === 'completed' ? 'completed' : ''}}"
-            wx:for="{{tasks}}" 
+            wx:for="{{tasks}}"
             wx:key="id"
             data-id="{{item.id}}"
           >
@@ -240,7 +240,7 @@
               </view>
             </view>
             <view wx:if="{{item.isMyTask}}" class="task-action">
-              <button 
+              <button
                 class="zen-task-btn {{item.status === 'completed' ? 'undo' : 'complete'}}"
                 data-id="{{item.id}}"
                 bindtap="toggleTaskStatus"
@@ -250,7 +250,7 @@
             </view>
           </view>
         </view>
-        
+
         <view class="zen-more-actions">
           <button class="zen-link-btn" bindtap="viewTasks">
             <text class="link-text">查看完整任务管理</text>
@@ -270,7 +270,7 @@
       </button>
     </view>
   </view>
-  
+
   <!-- 底部安全区域 -->
   <view class="safe-bottom"></view>
 </view>
