@@ -139,17 +139,19 @@ function generateMonthHeatmap(date = new Date()) {
   const year = date.getFullYear();
   const month = date.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
   const heatmap = [];
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  for (let i = 0; i < daysInMonth; i++) {
+    const currentDate = new Date(year, month, i + 1);
     heatmap.push({
-      date: dateStr,
-      level: 0, // 0-4，表示活跃度
-      count: 0
+      date: currentDate,
+      day: i + 1,
+      isToday: isToday(currentDate),
+      isWeekend: currentDate.getDay() === 0 || currentDate.getDay() === 6,
+      level: Math.floor(Math.random() * 5) // 模拟数据，实际应该从数据库计算
     });
   }
-
+  
   return heatmap;
 }
 
@@ -169,21 +171,3 @@ module.exports = {
   getMonthlyStats,
   generateMonthHeatmap
 };
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
-  const heatmap = [];
-  for (let i = 0; i < daysInMonth; i++) {
-    const currentDate = new Date(year, month, i + 1);
-    heatmap.push({
-      date: currentDate,
-      day: i + 1,
-      isToday: isToday(currentDate),
-      isWeekend: currentDate.getDay() === 0 || currentDate.getDay() === 6,
-      level: Math.floor(Math.random() * 5) // 模拟数据，实际应该从数据库计算
-    });
-  }
-  
-  return heatmap;
-}
