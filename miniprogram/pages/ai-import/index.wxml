@@ -1,55 +1,60 @@
 <view class="ai-import-page">
-  <!-- 自定义导航栏，添加返回按钮 -->
-  <custom-navbar title="Syllaby" subtitle="AI 导入" show-back="true" />
+  <!-- 自定义导航栏 -->
+  <custom-navbar title="Syllaby" subtitle="AI 导入" />
 
   <view class="hero">
-    <view class="mode-switch">
-      <view class="pill {{mode === 'task' ? 'active' : ''}}"
-        data-mode="task"
-        bindtap="switchMode">
-        任务通知
-      </view>
-      <view class="pill {{mode === 'course' ? 'active' : ''}}"
-        data-mode="course"
-        bindtap="switchMode">
-        课程表
-      </view>
-    </view>
-    <text class="title-text">
-      {{mode === 'task' ? 'Screenshot to Tasks' : 'Screenshot to Schedule'}}
-    </text>
-    <text class="description-text">
-      {{mode === 'task'
-        ? '上传作业/考试通知截图，自动生成待办。'
-        : '上传考试/课表截图，一键转化为课程数据。'}}
-    </text>
-  </view>
-
-  <!-- 操作区域 -->
-  <view class="action-section">
-    <view class="upload card" bindtap="chooseImage">
-      <view class="preview" wx:if="{{image}}">
-        <image src="{{image}}" mode="aspectFit" />
-        <view class="scan-line" wx:if="{{scanning}}"></view>
-        <!-- 上传后的文字提示 -->
-        <view class="upload-hint" wx:if="{{image}}">
-          <text>点击可重新选择图片</text>
+    <view class="hero-card">
+      <view class="hero-toolbar">
+        <view class="hero-back-btn" bindtap="handleBack">
+          <text class="back-icon">‹</text>
+          <text>返回</text>
         </view>
       </view>
-      <view wx:else class="placeholder">
-        <text class="upload-text">＋ 上传截图</text>
-      </view>
-      <view class="progress" wx:if="{{scanning}}">
-        <view class="bar" style="width: {{progress}}%;"></view>
-      </view>
-    </view>
+      <view class="hero-main">
+        <view class="hero-copy">
+          <text class="hero-eyebrow">{{mode === 'task' ? '待办导入' : '课程导入'}}</text>
+          <text class="title-text">AI 导入助手</text>
+          <text class="description-text">
+            {{mode === 'task'
+              ? '识别作业/考试标题与截止时间，自动生成待办。'
+              : '识别课程名称、节次、地点，快速写入课表。'}}
+          </text>
+          <view class="hero-controls">
+            <view class="mode-switch">
+              <view class="pill {{mode === 'task' ? 'active' : ''}}"
+                data-mode="task"
+                bindtap="switchMode">
+                任务通知
+              </view>
+              <view class="pill {{mode === 'course' ? 'active' : ''}}"
+                data-mode="course"
+                bindtap="switchMode">
+                课程表
+              </view>
+            </view>
+            <view class="hero-status-chip">
+              {{scanning ? 'AI 正在解析' : (image ? '可编辑识别结果' : '上传后立即识别')}}
+            </view>
+          </view>
+        </view>
 
-    <!-- 示例体验区域 -->
-    <view class="quick-demo" wx:if="{{!image && !scanning}}">
-      <view class="demo-title">示例体验</view>
-      <view class="demo-buttons">
-        <button class="btn-demo" bindtap="testCourseSchedule">课程表示例</button>
-        <button class="btn-demo" bindtap="testTodoList">待办示例</button>
+        <view class="hero-uploader" bindtap="chooseImage">
+          <view class="preview" wx:if="{{image}}">
+            <image src="{{image}}" mode="aspectFit" />
+            <view class="scan-line" wx:if="{{scanning}}"></view>
+            <!-- 上传后的文字提示 -->
+            <view class="upload-hint" wx:if="{{image}}">
+              <text>点击可重新选择图片</text>
+            </view>
+          </view>
+          <view wx:else class="placeholder">
+            <text class="upload-text">＋ 上传截图</text>
+            <text class="upload-subtext">支持通知、课表、考试安排</text>
+          </view>
+          <view class="progress" wx:if="{{scanning}}">
+            <view class="bar" style="width: {{progress}}%;"></view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -59,52 +64,51 @@
     <button class="reupload-btn" bindtap="chooseImage">重新选择图片</button>
   </view>
 
-  <view class="card" wx:if="{{result}}">
-    <view class="section-head">
-      <text class="section-title">AI 识别结果</text>
-      <text class="section-subtitle">
-        {{mode === 'task' ? '可编辑后逐条或批量写入待办' : '可编辑后逐条或批量写入课程表'}}
-      </text>
-    </view>
-    
-    <!-- 批量操作按钮 -->
-    <view class="bulk-actions">
-      <button class="bulk-btn"
-        wx:if="{{mode === 'task'}}"
-        bindtap="confirmAll">
-        全部写入待办
-      </button>
-      <button class="bulk-btn"
-        wx:elif="{{mode === 'course'}}"
-        bindtap="confirmAll">
-        全部写入课程表
-      </button>
+  <view class="results-wrapper" wx:if="{{result}}">
+    <view class="results-header">
+      <view class="results-title">
+        <text class="title-main">识别结果</text>
+        <text class="title-sub">AI 已解析 {{result.length}} 条{{mode === 'task' ? '待办' : '课程'}}</text>
+      </view>
+      
+      <!-- 批量操作 -->
+      <view class="bulk-action">
+        <button class="bulk-import-btn" bindtap="confirmAll">
+          <text class="import-text">全部导入</text>
+        </button>
+      </view>
     </view>
 
     <!-- 结果列表 -->
-    <view class="results-container">
+    <view class="results-list">
       <block wx:for="{{result}}" wx:key="index">
-        <view class="result-item">
-          <view class="item-content" data-index="{{index}}" bindtap="editItem">
-            <view wx:if="{{item.kind === 'task'}}" class="item-type">
-              <view class="chip {{item.type}}">
-                {{item.type === 'exam' ? '考试' : '作业'}}
-              </view>
-            </view>
-            <view wx:elif="{{item.kind === 'course'}}" class="item-type">
-              <view class="chip course">课程</view>
-            </view>
+        <view class="result-card" data-index="{{index}}">
+          <view class="card-main" bindtap="editItem">
+            <!-- 左侧色条 -->
+            <view class="color-bar {{item.kind === 'task' ? (item.type === 'exam' ? 'exam' : 'homework') : 'course'}}"></view>
             
-            <view class="item-info">
-              <text class="item-title">{{item.kind === 'task' ? item.title : item.name}}</text>
-              <text class="item-details" wx:if="{{item.kind === 'task'}}">{{item.deadline}}</text>
-              <text class="item-details" wx:else>周{{item.day_of_week}} · 第{{item.start_section}}节起 {{item.length}}节 · {{item.location}}</text>
+            <!-- 内容区域 -->
+            <view class="card-content">
+              <view class="card-header">
+                <text class="card-title">{{item.kind === 'task' ? item.title : item.name}}</text>
+                <view class="card-tag {{item.kind === 'task' ? (item.type === 'exam' ? 'exam' : 'homework') : 'course'}}">
+                  {{item.kind === 'task' ? (item.type === 'exam' ? '考试' : '作业') : '课程'}}
+                </view>
+              </view>
+              
+              <view class="card-details">
+                <text class="detail-text" wx:if="{{item.kind === 'task'}}">{{item.deadline || '无截止日期'}}</text>
+                <text class="detail-text" wx:else>周{{item.day_of_week}} · 第{{item.start_section}}节起 · {{item.length || 1}}节 · {{item.location || '待定'}}</text>
+              </view>
             </view>
           </view>
           
-          <button class="confirm-btn" data-index="{{index}}" bindtap="confirmItem">
-            {{item.kind === 'task' ? '写入' : '添加'}}
-          </button>
+          <!-- 操作按钮 -->
+          <view class="card-actions">
+            <button class="action-btn" data-index="{{index}}" bindtap="confirmItem" catchtap="confirmItem">
+              <text class="btn-icon">+</text>
+            </button>
+          </view>
         </view>
       </block>
     </view>

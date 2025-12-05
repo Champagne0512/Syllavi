@@ -1,4 +1,7 @@
 Component({
+  data: {
+    showMenu: false
+  },
   properties: {
     pattern: {
       type: String,
@@ -13,26 +16,44 @@ Component({
   methods: {
     handleTap() {
       wx.vibrateShort({ type: 'light' });
-      this.goAiUpload();
+      this.showMenu();
     },
 
     preventTouch() {
       return;
     },
 
-    goAiUpload() {
-      const pages = getCurrentPages();
-      const currentPage = pages[pages.length - 1];
+    showMenu() {
+      this.setData({ showMenu: true });
+    },
 
-      if (currentPage && typeof currentPage.handleScanImage === 'function') {
-        currentPage.handleScanImage();
-        return;
-      }
+    hideMenu() {
+      this.setData({ showMenu: false });
+    },
 
+    goCourseRecognition() {
+      this.hideMenu();
+      wx.vibrateShort({ type: 'light' });
+      
+      // 直接跳转到课程表识别页面
       wx.navigateTo({
-        url: '/pages/ai-import/index',
+        url: '/pages/ai-import/index?mode=course',
         fail: (err) => {
-          console.error('导航到 AI 导入页失败', err);
+          console.error('导航到课程表识别页失败', err);
+          wx.showToast({ title: '跳转失败', icon: 'none' });
+        }
+      });
+    },
+
+    goTaskRecognition() {
+      this.hideMenu();
+      wx.vibrateShort({ type: 'light' });
+      
+      // 直接跳转到待办识别页面
+      wx.navigateTo({
+        url: '/pages/ai-import/index?mode=task',
+        fail: (err) => {
+          console.error('导航到待办识别页失败', err);
           wx.showToast({ title: '跳转失败', icon: 'none' });
         }
       });

@@ -4,4 +4,19 @@
       <text class="fab-icon-text">+</text>
     </view>
   </view>
+  
+  <!-- 选择菜单 -->
+  <view class="fab-menu" wx:if="{{showMenu}}">
+    <view class="menu-backdrop" bindtap="hideMenu"></view>
+    <view class="menu-content">
+      <view class="menu-item" bindtap="goCourseRecognition">
+        <view class="menu-icon"></view>
+        <text class="menu-text">课程表识别</text>
+      </view>
+      <view class="menu-item" bindtap="goTaskRecognition">
+        <view class="menu-icon"></view>
+        <text class="menu-text">待办识别</text>
+      </view>
+    </view>
+  </view>
 </view>

@@ -1512,6 +1512,7 @@
   display: flex;
   align-items: center;
   gap: 16rpx;
+  flex-wrap: nowrap;
 }
 
 .task-chip {
@@ -1521,6 +1522,8 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .task-chip.chip-homework {

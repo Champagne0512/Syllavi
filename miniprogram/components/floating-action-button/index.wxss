@@ -69,7 +69,92 @@
   line-height: 1;
   font-family: var(--main-font);
 }
+
+/* 菜单样式 */
+.fab-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+}
+
+.menu-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4rpx);
+  -webkit-backdrop-filter: blur(4rpx);
+}
+
+.menu-content {
+  position: absolute;
+  bottom: 340rpx; /* 悬浮按钮上方 */
+  right: 32rpx;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 24rpx;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 20rpx 60rpx rgba(45, 52, 54, 0.15),
+    0 8rpx 32rpx rgba(45, 52, 54, 0.1);
+  padding: 0;
+  min-width: 240rpx;
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:active {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-icon {
+  margin-right: 20rpx;
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-text {
+  font-size: 28rpx;
+  color: #2D3436;
+  font-weight: 500;
+  flex: 1;
+  font-family: 'Gotham', 'HarmonyOS Sans SC', sans-serif;
+  letter-spacing: 0.5rpx;
+}
+
 @keyframes breathe {
   0%, 100% { transform: scale(1); opacity: 0.6; }
   50% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
