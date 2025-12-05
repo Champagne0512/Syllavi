@@ -1,0 +1,121 @@
+<view class="container">
+  <!-- 模式选择 -->
+  <view class="mode-selector">
+    <view 
+      class="mode-item {{mode === 'auto' ? 'active' : ''}}"
+      data-mode="auto"
+      bindtap="switchMode"
+    >
+      智能识别
+    </view>
+    <view 
+      class="mode-item {{mode === 'course' ? 'active' : ''}}"
+      data-mode="course"
+      bindtap="switchMode"
+    >
+      课程表识别
+    </view>
+    <view 
+      class="mode-item {{mode === 'task' ? 'active' : ''}}"
+      data-mode="task"
+      bindtap="switchMode"
+    >
+      待办识别
+    </view>
+  </view>
+
+  <!-- 图片选择区域 -->
+  <view class="image-section" wx:if="{{!image && !scanning}}">
+    <view class="upload-area" bindtap="chooseImage">
+      <view class="upload-icon">📷</view>
+      <text class="upload-text">点击选择图片</text>
+      <text class="upload-hint">支持拍照或从相册选择</text>
+    </view>
+  </view>
+
+  <!-- 图片预览 -->
+  <view class="image-preview" wx:if="{{image}}">
+    <image src="{{image}}" mode="aspectFit" class="preview-image"></image>
+  </view>
+
+  <!-- 扫描进度 -->
+  <view class="scanning-section" wx:if="{{scanning}}">
+    <view class="scanning-animation">
+      <view class="scanning-icon">🔍</view>
+      <text class="scanning-text">AI正在分析图片...</text>
+    </view>
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{progress}}%"></view>
+    </view>
+    <text class="progress-text">{{progress}}%</text>
+  </view>
+
+  <!-- 识别结果 -->
+  <view class="result-section" wx:if="{{result && !scanning}}">
+    <view class="result-header">
+      <text class="result-title">识别结果</text>
+      <view class="result-type {{result.type}}">
+        {{result.type === 'schedule' ? '课程表' : result.type === 'todo' ? '待办事项' : '未知内容'}}
+      </view>
+    </view>
+
+    <!-- 调试信息 -->
+    <view class="debug-info" wx:if="{{debugInfo}}">
+      <view class="debug-title">🔧 调试信息</view>
+      <view class="debug-item">任务ID: {{debugInfo.taskId}}</view>
+      <view class="debug-item">状态: {{debugInfo.status}}</view>
+      <view class="debug-item">检查次数: {{debugInfo.checkCount}}</view>
+      <view class="debug-item">原始数据:</view>
+      <view class="debug-json">{{debugInfo.rawData}}</view>
+    </view>
+
+    <view class="result-content">
+      <view wx:if="{{result.type === 'schedule'}}">
+        <view class="course-list">
+          <view class="course-item" wx:for="{{result.data}}" wx:key="index">
+            <view class="course-name">{{item.name}}</view>
+            <view class="course-details">
+              周{{item.day}} 第{{item.start}}节 ({{item.len}}节) · {{item.location}}
+            </view>
+            <view class="course-teacher" wx:if="{{item.teacher}}">{{item.teacher}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{result.type === 'todo'}}">
+        <view class="task-list">
+          <view class="task-item" wx:for="{{result.data}}" wx:key="index">
+            <view class="task-title">{{item.title}}</view>
+            <view class="task-details" wx:if="{{item.description}}">{{item.description}}</view>
+            <view class="task-deadline" wx:if="{{item.deadline}}">截止: {{item.deadline}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{result.type === 'unknown'}}" class="unknown-result">
+        <text class="unknown-text">无法识别图片内容，请尝试更清晰的图片</text>
+        <view wx:if="{{debugInfo}}" class="unknown-debug">
+          <text class="unknown-debug-text">AI返回了空数据，可能是因为图片不清晰或格式不支持</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="btn btn-secondary" bindtap="previewResult">查看详情</button>
+      <button class="btn btn-primary" bindtap="goToRelatedPage" wx:if="{{result.type !== 'unknown'}}">
+        查看{{result.type === 'schedule' ? '课程表' : '待办'}}
+      </button>
+      <button class="btn btn-secondary" bindtap="retry">重新识别</button>
+    </view>
+  </view>
+
+  <!-- 错误提示 -->
+  <view class="error-section" wx:if="{{error}}">
+    <view class="error-icon">❌</view>
+    <text class="error-text">{{error}}</text>
+    <button class="btn btn-primary" bindtap="retry">重新尝试</button>
+  </view>
+
+  
+</view>

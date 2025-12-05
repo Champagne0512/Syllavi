@@ -1,0 +1,7 @@
+{
+  "timeoutSeconds": 60,
+  "memorySize": 512,
+  "triggers": [],
+  "installDependency": true,
+  "envVariables": {}
+}

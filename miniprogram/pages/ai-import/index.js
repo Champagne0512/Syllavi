@@ -16,6 +16,12 @@ Page({
     mode: 'task', // task | course
     uploading: false
   },
+  onLoad(options) {
+    const mode = options?.mode;
+    if (mode && (mode === 'task' || mode === 'course')) {
+      this.setData({ mode });
+    }
+  },
   onUnload() {
     if (this.scanTicker) clearInterval(this.scanTicker);
   },
@@ -70,34 +76,32 @@ Page({
       });
   },
   async runAIFlow(imagePath) {
+    const app = getApp();
+    const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id') || 'unknown_user';
+    const token = app?.globalData?.supabase?.accessToken || wx.getStorageSync('access_token');
+    
+    if (!token) {
+      throw new Error('未登录或认证令牌过期');
+    }
+    
     const { publicUrl } = await uploadToStorage(
       'temp',
       imagePath,
-      `snapshot_${Date.now()}.jpg`
+      `snapshot_${Date.now()}.jpg`,
+      {
+        userId: userId,
+        token: token
+      }
     );
-    const data = await parseImageWithAI(publicUrl, this.data.mode);
-
-    if (data.type === 'task') {
-      return (data.data || []).map((item) => ({
-        kind: 'task',
-        type: item.type,
-        title: item.title,
-        deadline: item.deadline,
-        course: item.course
-      }));
-    }
-
-    // 简化课程导入展示，仅展示结果，不直接写表
-    return (data.data || []).map((item) => ({
-      kind: 'course',
-      name: item.name,
-      day_of_week: item.day_of_week,
-      start_section: item.start_section,
-      length: item.length,
-      location: item.location,
-      teacher: item.teacher,
-      weeks: item.weeks
-    }));
+    
+    // 调用AI解析（仅提取数据，不自动入库）
+    const aiResult = await parseImageWithAI(publicUrl, this.data.mode, {
+      userId: userId,
+      autoStore: false
+    });
+    
+    // 返回可编辑的本地结果
+    return aiResult.data || [];
   },
   async confirmItem(e) {
     const { index } = e.currentTarget.dataset;
@@ -280,5 +284,27 @@ Page({
       wx.hideLoading();
       wx.showToast({ title: '批量导入失败', icon: 'none' });
     }
+  },
+  
+  // 测试函数 - 课程表识别
+  testCourseSchedule() {
+    const testImage = 'cloud://dev-8g3q3q9m4c9b1f6f.6465-dev-8g3q3q9m4c9b1f6f-1325659580/test-course-schedule.jpg';
+    this.setData({ 
+      image: testImage, 
+      mode: 'course',
+      result: null 
+    });
+    this.startScanning(testImage);
+  },
+  
+  // 测试函数 - 待办识别
+  testTodoList() {
+    const testImage = 'cloud://dev-8g3q3q9m4c9b1f6f.6465-dev-8g3q3q9m4c9b1f6f-1325659580/test-todo-list.jpg';
+    this.setData({ 
+      image: testImage, 
+      mode: 'task',
+      result: null 
+    });
+    this.startScanning(testImage);
   }
 });

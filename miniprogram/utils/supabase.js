@@ -354,11 +354,21 @@ async function fetchCourses(userId) {
 }
 
 async function createCourse(courseData) {
-  const { data, error } = await request('courses', {
+  const rows = await request('courses', {
     method: 'POST',
     data: courseData
   });
-  return { data, error };
+
+  if (Array.isArray(rows)) {
+    return rows;
+  }
+
+  // Supabase 也可能返回单个对象，保持调用方的数组解构写法
+  if (rows && typeof rows === 'object') {
+    return [rows];
+  }
+
+  return [];
 }
 
 async function updateCourse(id, updates) {
@@ -575,13 +585,28 @@ async function deleteTask(id) {
 
 // 从冲突文件中提取的其他必要函数
 async function fetchWeekSchedule(userId, startDate, endDate) {
-  const query = [
-    `user_id=eq.${userId}`,
-    `start_date=gte.${startDate}`,
-    `end_date=lte.${endDate}`,
-    'order=start_time.asc'
-  ].join('&');
-  return request('week_schedules', { query });
+  const filters = [`user_id=eq.${userId}`];
+  if (startDate) {
+    filters.push(`start_date=gte.${startDate}`);
+  }
+  if (endDate) {
+    filters.push(`end_date=lte.${endDate}`);
+  }
+  
+  // 构建查询参数
+  const queryParts = [filters.join('&')];
+  // 使用视图v_weekly_schedule，它已经预连接了课程信息
+  queryParts.push('select=id,course_id,day_of_week,start_section,length,weeks,schedule_location,course_name,course_color,final_location,teacher');
+  queryParts.push('order=day_of_week.asc,start_section.asc');
+  const query = queryParts.join('&');
+
+  // 使用预连接的视图查询，更稳定
+  try {
+    return await request('v_weekly_schedule', { query });
+  } catch (error) {
+    console.error('查询 v_weekly_schedule 失败:', error);
+    throw error;
+  }
 }
 
 // 专注统计相关函数
@@ -971,73 +996,33 @@ async function parseImageWithAI(imageUrl, mode = 'task', options = {}) {
     throw new Error('当前环境未启用云开发能力');
   }
 
-  const { userId = wx.getStorageSync('user_id') || DEMO_USER_ID, maxAttempts = 18, pollInterval = 800 } = options;
+  const {
+    userId = wx.getStorageSync('user_id') || DEMO_USER_ID,
+    autoStore = false
+  } = options;
 
-  const startResult = await callAnalyzeImageFunction({
-    action: 'start',
-    imageUrl,
-    userId
+  const response = await wx.cloud.callFunction({
+    name: 'deepseekAI',
+    data: {
+      imageUrl,
+      userId,
+      mode,
+      autoStore
+    }
   });
 
-  if (!startResult) {
+  const payload = response?.result;
+  if (!payload) {
     throw new Error('云函数无响应');
   }
 
-  if (!startResult.success) {
-    throw new Error(startResult.error || 'AI 解析失败');
+  if (!payload.success) {
+    throw new Error(payload.error || 'AI 解析失败');
   }
 
-  if (!startResult.pending) {
-    return normalizeAiPayload(startResult.data, mode);
-  }
-
-  const job = {
-    chatId: startResult.chatId,
-    conversationId: startResult.conversationId
-  };
-
-  if (!job.chatId || !job.conversationId) {
-    throw new Error('AI 任务缺少标识');
-  }
-
-  let interval = startResult.retryAfter || pollInterval;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    await wait(interval);
-    const pollResult = await callAnalyzeImageFunction({
-      action: 'poll',
-      chatId: job.chatId,
-      conversationId: job.conversationId
-    });
-
-    if (!pollResult) {
-      continue;
-    }
-
-    if (pollResult.success && !pollResult.pending) {
-      return normalizeAiPayload(pollResult.data, mode);
-    }
-
-    if (!pollResult.success && !pollResult.pending) {
-      throw new Error(pollResult.error || 'AI 解析失败');
-    }
-
-    interval = pollResult.retryAfter || pollInterval;
-  }
-
-  throw new Error('AI 解析超时，请稍后再试');
-}
-
-function callAnalyzeImageFunction(data) {
-  return wx.cloud
-    .callFunction({
-      name: 'analyzeImage',
-      data
-    })
-    .then((res) => res?.result)
-    .catch((error) => {
-      console.error('[AI] 云函数调用失败', error);
-      throw error;
-    });
+  const recognition = payload.data || {};
+  const normalizeMode = mode === 'course' ? 'course' : 'task';
+  return normalizeAiPayload(recognition, normalizeMode);
 }
 
 function normalizeAiPayload(raw = {}, preferredMode = 'task') {
@@ -1110,15 +1095,28 @@ function wait(duration = 600) {
 }
 
 function mapTaskType(value) {
-  if (!value) return 'homework';
-  const text = String(value).toLowerCase();
-  if (text.includes('exam') || text.includes('test')) {
-    return 'exam';
+  const text = sanitizeText(value).toLowerCase();
+  if (!text) return 'task';
+
+  const includes = (keywords) => keywords.some((kw) => text.includes(kw));
+
+  if (includes(['通知', '公告', 'notification', 'notice', 'announcement', '消息'])) {
+    return 'notification';
   }
-  if (text.includes('event') || text.includes('lecture')) {
+
+  if (includes(['lecture', '讲座', 'seminar', '分享会', '论坛'])) {
+    return 'lecture';
+  }
+
+  if (includes(['event', '活动', 'party', 'festival', 'meetup', '音乐会', '运动会'])) {
     return 'event';
   }
-  return 'homework';
+
+  if (includes(['exam', 'test', '考试', '测验'])) {
+    return 'exam';
+  }
+
+  return 'task';
 }
 
 function normalizeWeekdayNumber(value) {
@@ -1188,43 +1186,39 @@ function toFiniteNumber(value) {
 
 // 上传文件到存储
 async function uploadToStorage(bucket, filePath, fileName, options = {}) {
-  try {
-    const { userId, token } = options;
-    const formData = new FormData();
-    
-    // 读取文件
-    const fileData = await new Promise((resolve, reject) => {
-      wx.getFileSystemManager().readFile({
-        filePath,
-        success: resolve,
-        fail: reject
-      });
-    });
-    
-    // 构建FormData
-    formData.append('file', new Blob([fileData]), fileName);
-    
-    const response = await wx.request({
-      url: `${SUPABASE_URL}/storage/v1/object/${bucket}/${fileName}`,
-      method: 'POST',
-      header: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data'
-      },
-      data: formData
-    });
-    
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return {
-        publicUrl: `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`
-      };
-    } else {
-      throw new Error('上传失败');
-    }
-  } catch (error) {
-    console.error('文件上传失败:', error);
-    throw error;
+  if (!bucket || !filePath) {
+    throw new Error('缺少上传参数');
   }
+
+  const userId = options.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
+  const token = options.token || wx.getStorageSync('access_token') || SUPABASE_ANON_KEY;
+  const safeName = fileName || filePath.split('/').pop() || `upload_${Date.now()}`;
+  const storagePath = `${userId || 'public'}/${Date.now()}_${safeName}`;
+
+  return new Promise((resolve, reject) => {
+    wx.uploadFile({
+      url: `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`,
+      filePath,
+      name: 'file',
+      header: {
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY
+      },
+      success(res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({
+            path: storagePath,
+            publicUrl: `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`
+          });
+        } else {
+          reject(res);
+        }
+      },
+      fail(err) {
+        reject(err);
+      }
+    });
+  });
 }
 
 module.exports = {
