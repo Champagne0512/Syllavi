@@ -103,21 +103,90 @@ Page({
     // 返回可编辑的本地结果
     return aiResult.data || [];
   },
+  normalizeDeadline(value) {
+    const fallback = () => {
+      const today = new Date();
+      today.setHours(23, 59, 0, 0);
+      return today.toISOString();
+    };
+
+    if (!value) return fallback();
+    if (typeof value === 'number') {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? fallback() : date.toISOString();
+    }
+
+    const parsed = this.parseDateTimeText(String(value));
+    return parsed || fallback();
+  },
+  parseDateTimeText(raw) {
+    const text = (raw || '').trim();
+    if (!text) return null;
+
+    const isoMatch = text.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ T](\d{1,2})(?::(\d{2}))?)?/);
+    if (isoMatch) {
+      const [, year, month, day, hour, minute] = isoMatch;
+      const hh = hour ? hour.padStart(2, '0') : '23';
+      const mm = minute ? minute : '59';
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hh}:${mm}:00`;
+    }
+
+    const zhMatch = text.match(/(\d{1,2})月(\d{1,2})日(?:\s*(上午|中午|下午|晚上|夜间|晚|早上)?\s*(\d{1,2})(?::(\d{2}))?)?/);
+    if (zhMatch) {
+      const nowYear = new Date().getFullYear();
+      const month = zhMatch[1].padStart(2, '0');
+      const day = zhMatch[2].padStart(2, '0');
+      let hour = zhMatch[4] ? Number(zhMatch[4]) : 23;
+      const minute = zhMatch[5] ? zhMatch[5] : '59';
+      const period = zhMatch[3] || '';
+      if (period.includes('下午') || period.includes('晚上') || period.includes('夜') || period.includes('晚')) {
+        if (hour < 12) hour += 12;
+      }
+      return `${nowYear}-${month}-${day}T${String(hour).padStart(2, '0')}:${minute}:00`;
+    }
+
+    const mdMatch = text.match(/^(\d{1,2})[./-](\d{1,2})(?:\s*(\d{1,2})(?::(\d{2}))?)?/);
+    if (mdMatch) {
+      const nowYear = new Date().getFullYear();
+      const month = mdMatch[1].padStart(2, '0');
+      const day = mdMatch[2].padStart(2, '0');
+      const hour = mdMatch[3] ? mdMatch[3].padStart(2, '0') : '23';
+      const minute = mdMatch[4] ? mdMatch[4] : '59';
+      return `${nowYear}-${month}-${day}T${hour}:${minute}:00`;
+    }
+
+    const timeOnly = text.match(/^(\d{1,2})(?::(\d{2}))$/);
+    if (timeOnly) {
+      const hour = timeOnly[1].padStart(2, '0');
+      const minute = timeOnly[2];
+      const today = new Date();
+      return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}T${hour}:${minute}:00`;
+    }
+
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  },
   async confirmItem(e) {
     const { index } = e.currentTarget.dataset;
     const item = this.data.result?.[index];
     if (!item) return;
     const app = getApp();
-    const userId = app?.globalData?.supabase?.userId;
+    const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id');
+
+    if (!userId) {
+      wx.showToast({ title: '请先登录再导入', icon: 'none' });
+      return;
+    }
 
     if (item.kind === 'task') {
       try {
         wx.showLoading({ title: '导入中...' });
+        const mappedType = item.type === 'exam' ? 'exam' : 'homework';
         const payload = {
           user_id: userId,
-          type: item.type || 'homework',
+          type: mappedType,
           title: item.title,
-          deadline: item.deadline,
+          deadline: this.normalizeDeadline(item.deadline),
           description: null
         };
         await createTask(payload);
@@ -144,16 +213,19 @@ Page({
         teacher: item.teacher || null
       });
 
-      const schedulePayload = [
-        {
-          user_id: userId,
-          course_id: course.id,
-          day_of_week: item.day_of_week,
-          start_section: item.start_section,
-          length: item.length,
-          weeks: item.weeks && item.weeks.length ? item.weeks : [1]
-        }
-      ];
+      const courseId = course && course.id;
+      if (!courseId) {
+        throw new Error('课程ID缺失，导入失败');
+      }
+
+      const schedulePayload = [{
+        user_id: userId,
+        course_id: courseId,
+        day_of_week: item.day_of_week,
+        start_section: item.start_section,
+        length: item.length,
+        weeks: item.weeks && item.weeks.length ? item.weeks : [1]
+      }];
       await createCourseSchedules(schedulePayload);
 
       wx.hideLoading();
@@ -286,7 +358,7 @@ Page({
     }
   },
   
-  // 测试函数 - 课程表识别
+  // 示例函数 - 课程表识别
   testCourseSchedule() {
     const testImage = 'cloud://dev-8g3q3q9m4c9b1f6f.6465-dev-8g3q3q9m4c9b1f6f-1325659580/test-course-schedule.jpg';
     this.setData({ 
@@ -297,7 +369,7 @@ Page({
     this.startScanning(testImage);
   },
   
-  // 测试函数 - 待办识别
+  // 示例函数 - 待办识别
   testTodoList() {
     const testImage = 'cloud://dev-8g3q3q9m4c9b1f6f.6465-dev-8g3q3q9m4c9b1f6f-1325659580/test-todo-list.jpg';
     this.setData({ 

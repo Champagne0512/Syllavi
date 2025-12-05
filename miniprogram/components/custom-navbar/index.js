@@ -7,6 +7,10 @@ Component({
     subtitle: {
       type: String,
       value: 'Academic Zen'
+    },
+    showBack: {
+      type: Boolean,
+      value: false
     }
   },
   observers: {
@@ -44,6 +48,13 @@ Component({
       const text = typeof raw === 'string' ? raw : '';
       const cleaned = text.replace(/日程管理/g, '').trim();
       this.setData({ displayTitle: cleaned || (text || 'Syllaby') });
+    },
+    handleBack() {
+      if (getCurrentPages().length > 1) {
+        wx.navigateBack({ delta: 1 });
+      } else {
+        wx.switchTab({ url: '/pages/tools/index' });
+      }
     }
   }
 });

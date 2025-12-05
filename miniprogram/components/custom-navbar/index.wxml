@@ -1,5 +1,8 @@
 <view class="navbar" style="padding-top: {{statusBarHeight}}px;">
-  <view class="date-block">
+  <view class="back-btn" wx:if="{{showBack}}" bindtap="handleBack" style="top: {{statusBarHeight + 10}}px;">
+    <text class="back-icon">‹</text>
+  </view>
+  <view class="date-block {{showBack ? 'with-back' : ''}}">
     <text class="date">{{dateLabel}}</text>
     <text class="weekday mono">{{weekdayLabel}}</text>
   </view>

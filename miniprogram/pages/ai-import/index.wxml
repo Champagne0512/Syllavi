@@ -1,5 +1,6 @@
 <view class="ai-import-page">
-  <custom-navbar title="Syllaby" subtitle="AI 导入" />
+  <!-- 自定义导航栏，添加返回按钮 -->
+  <custom-navbar title="Syllaby" subtitle="AI 导入" show-back="true" />
 
   <view class="hero">
     <view class="mode-switch">
@@ -14,76 +15,98 @@
         课程表
       </view>
     </view>
-    <text class="mono">
+    <text class="title-text">
       {{mode === 'task' ? 'Screenshot to Tasks' : 'Screenshot to Schedule'}}
     </text>
-    <text>
+    <text class="description-text">
       {{mode === 'task'
         ? '上传作业/考试通知截图，自动生成待办。'
         : '上传考试/课表截图，一键转化为课程数据。'}}
     </text>
   </view>
 
-  <view class="upload card" bindtap="chooseImage">
-    <view class="preview" wx:if="{{image}}">
-      <image src="{{image}}" mode="aspectFit" />
-      <view class="scan-line" wx:if="{{scanning}}"></view>
+  <!-- 操作区域 -->
+  <view class="action-section">
+    <view class="upload card" bindtap="chooseImage">
+      <view class="preview" wx:if="{{image}}">
+        <image src="{{image}}" mode="aspectFit" />
+        <view class="scan-line" wx:if="{{scanning}}"></view>
+        <!-- 上传后的文字提示 -->
+        <view class="upload-hint" wx:if="{{image}}">
+          <text>点击可重新选择图片</text>
+        </view>
+      </view>
+      <view wx:else class="placeholder">
+        <text class="upload-text">＋ 上传截图</text>
+      </view>
+      <view class="progress" wx:if="{{scanning}}">
+        <view class="bar" style="width: {{progress}}%;"></view>
+      </view>
     </view>
-    <view wx:else class="placeholder">
-      <text class="mono">＋ 上传截图</text>
+
+    <!-- 示例体验区域 -->
+    <view class="quick-demo" wx:if="{{!image && !scanning}}">
+      <view class="demo-title">示例体验</view>
+      <view class="demo-buttons">
+        <button class="btn-demo" bindtap="testCourseSchedule">课程表示例</button>
+        <button class="btn-demo" bindtap="testTodoList">待办示例</button>
+      </view>
     </view>
-    <view class="progress" wx:if="{{scanning}}">
-      <view class="bar" style="width: {{progress}}%;"></view>
-    </view>
+  </view>
+
+  <!-- 重新上传按钮 -->
+  <view class="reupload-section" wx:if="{{image && !scanning && !result}}">
+    <button class="reupload-btn" bindtap="chooseImage">重新选择图片</button>
   </view>
 
   <view class="card" wx:if="{{result}}">
     <view class="section-head">
-      <text>AI 识别结果</text>
-      <text class="muted">
+      <text class="section-title">AI 识别结果</text>
+      <text class="section-subtitle">
         {{mode === 'task' ? '可编辑后逐条或批量写入待办' : '可编辑后逐条或批量写入课程表'}}
       </text>
     </view>
+    
+    <!-- 批量操作按钮 -->
     <view class="bulk-actions">
-      <button class="ghost mini"
+      <button class="bulk-btn"
         wx:if="{{mode === 'task'}}"
         bindtap="confirmAll">
         全部写入待办
       </button>
-      <button class="ghost mini"
+      <button class="bulk-btn"
         wx:elif="{{mode === 'course'}}"
         bindtap="confirmAll">
         全部写入课程表
       </button>
     </view>
-    <block wx:for="{{result}}" wx:key="index">
-      <view class="result-row">
-        <view wx:if="{{item.kind === 'task'}}" class="info-row"
-          data-index="{{index}}"
-          bindtap="editItem">
-          <view class="chip {{item.type}}">
-            {{item.type === 'exam' ? '考试' : '作业'}}
+
+    <!-- 结果列表 -->
+    <view class="results-container">
+      <block wx:for="{{result}}" wx:key="index">
+        <view class="result-item">
+          <view class="item-content" data-index="{{index}}" bindtap="editItem">
+            <view wx:if="{{item.kind === 'task'}}" class="item-type">
+              <view class="chip {{item.type}}">
+                {{item.type === 'exam' ? '考试' : '作业'}}
+              </view>
+            </view>
+            <view wx:elif="{{item.kind === 'course'}}" class="item-type">
+              <view class="chip course">课程</view>
+            </view>
+            
+            <view class="item-info">
+              <text class="item-title">{{item.kind === 'task' ? item.title : item.name}}</text>
+              <text class="item-details" wx:if="{{item.kind === 'task'}}">{{item.deadline}}</text>
+              <text class="item-details" wx:else>周{{item.day_of_week}} · 第{{item.start_section}}节起 {{item.length}}节 · {{item.location}}</text>
+            </view>
           </view>
-          <view class="info">
-            <text>{{item.title}}</text>
-            <text class="muted">{{item.deadline}}</text>
-          </view>
+          
+          <button class="confirm-btn" data-index="{{index}}" bindtap="confirmItem">
+            {{item.kind === 'task' ? '写入' : '添加'}}
+          </button>
         </view>
-        <view wx:elif="{{item.kind === 'course'}}" class="info-row"
-          data-index="{{index}}"
-          bindtap="editItem">
-          <view class="chip exam">课程</view>
-          <view class="info">
-            <text>{{item.name}}</text>
-            <text class="muted">
-              周{{item.day_of_week}} · 第{{item.start_section}}节起 {{item.length}}节 · {{item.location}}
-            </text>
-          </view>
-        </view>
-        <button class="ghost mini" data-index="{{index}}" bindtap="confirmItem">
-          {{item.kind === 'task' ? '写入待办' : '稍后处理'}}
-        </button>
-      </view>
-    </block>
+      </block>
+    </view>
   </view>
 </view>
