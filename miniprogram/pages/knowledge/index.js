@@ -6,6 +6,7 @@ const {
   createTask,
   deleteFromStorage,
   deleteResource,
+  DEMO_USER_ID,
   fetchResources,
   summarizeFile,
   uploadToStorage,
@@ -52,11 +53,89 @@ Page({
     return map[type] || 'other';
   },
   onLoad() {
+    // 检查登录状态
+    this.checkAuthStatus();
     this.hydrateLastOpenedFile();
     this.refreshActionableInsight([]);
     this.loadResources();
   },
+
+  // 检查登录状态
+  checkAuthStatus() {
+    // 优先使用新的存储键名，兼容旧的键名
+    const token = wx.getStorageSync('syllaby_access_token') || wx.getStorageSync('access_token');
+    const refreshToken = wx.getStorageSync('syllaby_refresh_token') || wx.getStorageSync('refresh_token');
+    const userId = wx.getStorageSync('syllaby_user_id') || wx.getStorageSync('user_id');
+    const expiresAt = wx.getStorageSync('syllaby_token_expires_at') || wx.getStorageSync('token_expires_at');
+    
+    console.log('知识库页面检查登录状态:', {
+      userId,
+      hasToken: !!token,
+      hasRefreshToken: !!refreshToken,
+      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null
+    });
+    
+    // 如果没有用户信息或演示模式，允许继续使用但显示提示
+    if (!userId || userId === DEMO_USER_ID) {
+      console.log('未登录或演示模式，允许使用知识库功能');
+      return;
+    }
+    
+    // 检查 token 状态
+    if (token) {
+      const now = Date.now();
+      const tokenExpired = expiresAt ? now >= expiresAt : false;
+      const oneHour = 60 * 60 * 1000;
+      const willExpireSoon = expiresAt ? (expiresAt - now) < oneHour : false;
+      
+      console.log('知识库页面Token状态检查:', {
+        expired: tokenExpired,
+        willExpireSoon: willExpireSoon,
+        timeLeft: expiresAt ? Math.floor((expiresAt - now) / 1000 / 60) + '分钟' : '未知'
+      });
+      
+      // 如果 token 已过期且无法刷新，提示重新登录
+      if (tokenExpired && !refreshToken) {
+        console.log('Token已过期且无法刷新，提示重新登录');
+        wx.showToast({
+          title: '登录已过期，部分功能受限',
+          icon: 'none',
+          duration: 3000
+        });
+        
+        // 清除过期的token信息
+        wx.removeStorageSync('syllaby_access_token');
+        wx.removeStorageSync('access_token');
+        wx.removeStorageSync('syllaby_token_expires_at');
+        wx.removeStorageSync('token_expires_at');
+      }
+    } else {
+      // 没有token但有用户ID，可能是异常状态，清除数据并显示提示
+      console.log('没有token但有用户ID，清除异常状态');
+      wx.showToast({
+        title: '登录状态异常，使用演示模式',
+        icon: 'none',
+        duration: 3000
+      });
+      
+      // 清除所有用户数据
+      wx.removeStorageSync('syllaby_access_token');
+      wx.removeStorageSync('access_token');
+      wx.removeStorageSync('syllaby_refresh_token');
+      wx.removeStorageSync('refresh_token');
+      wx.removeStorageSync('syllaby_token_expires_at');
+      wx.removeStorageSync('token_expires_at');
+      wx.removeStorageSync('syllaby_user_id');
+      wx.removeStorageSync('user_id');
+      
+      // 设置演示用户ID
+      wx.setStorageSync('user_id', DEMO_USER_ID);
+      wx.setStorageSync('syllaby_user_id', DEMO_USER_ID);
+    }
+  },
   onShow() {
+    // 每次显示页面时检查登录状态
+    this.checkAuthStatus();
     const app = getApp();
     app.syncTabBar(); // 使用全局同步方法
     this.setData({ showUploadModal: false });

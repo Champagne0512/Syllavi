@@ -36,13 +36,23 @@ const normalizeGradeField = (value) => {
 };
 
 function buildHeaders(extra = {}) {
-  const token = wx.getStorageSync('access_token');
-  const refreshToken = wx.getStorageSync('refresh_token');
+  // 优先使用主键名，备用键名作为兜底
+  let token = wx.getStorageSync('access_token');
+  let refreshToken = wx.getStorageSync('refresh_token');
+  let expiresAt = wx.getStorageSync('token_expires_at');
   
-  // 检查token是否过期
-  const expiresAt = wx.getStorageSync('token_expires_at');
+  // 如果主键名获取失败，尝试备用键名（重编译后可能存在的情况）
+  if (!token) {
+    token = wx.getStorageSync('syllaby_access_token');
+  }
+  if (!refreshToken) {
+    refreshToken = wx.getStorageSync('syllaby_refresh_token');
+  }
+  if (!expiresAt) {
+    expiresAt = wx.getStorageSync('syllaby_token_expires_at');
+  }
+  
   const now = Date.now();
-  
   let authToken = token;
   
   // 如果token即将过期或已过期，尝试刷新
@@ -144,11 +154,15 @@ function request(path, { method = 'GET', data = null, query = '', headers = {} }
 }
 
 // 从冲突文件中提取的用户认证函数
-async function wechatLoginWithCode(code) {
+async function wechatLoginWithCode(code, retryCount = 0) {
+  const MAX_RETRIES = 2;
+  const TIMEOUT = 10000; // 10秒超时
+  
   try {
     const response = await wx.request({
       url: `${SUPABASE_URL}/auth/v1/token?grant_type=authorization_code`,
       method: 'POST',
+      timeout: TIMEOUT,
       header: {
         apikey: SUPABASE_ANON_KEY,
         'Content-Type': 'application/json'
@@ -160,47 +174,107 @@ async function wechatLoginWithCode(code) {
     
     if (response.statusCode >= 200 && response.statusCode < 300 && response.data) {
       const { access_token, refresh_token, user } = response.data;
+      
+      // 同时写入新旧键名，确保重新编译后状态保持
       wx.setStorageSync('access_token', access_token);
-      wx.setStorageSync('refresh_token', refresh_token);
+      wx.setStorageSync('syllaby_access_token', access_token);
+      
+      if (refresh_token) {
+        wx.setStorageSync('refresh_token', refresh_token);
+        wx.setStorageSync('syllaby_refresh_token', refresh_token);
+      }
+      
       wx.setStorageSync('user_id', user.id);
+      wx.setStorageSync('syllaby_user_id', user.id);
+      
       return { success: true, user };
     } else {
       console.error('微信登录失败:', response);
       return { success: false, error: response };
     }
   } catch (error) {
-    console.error('微信登录请求失败:', error);
-    return { success: false, error };
+    console.warn(`微信登录请求失败 (尝试 ${retryCount + 1}/${MAX_RETRIES + 1}):`, error);
+    
+    // 如果是网络错误且还有重试次数，则重试
+    if (retryCount < MAX_RETRIES && (
+      error.errMsg?.includes('request:fail') || 
+      error.errMsg?.includes('timeout') ||
+      error.errMsg?.includes('network')
+    )) {
+      console.log(`将在${2000}ms后重试...`);
+      // 等待2秒后重试
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return wechatLoginWithCode(code, retryCount + 1);
+    } else {
+      console.error('微信登录请求失败:', error);
+      return { success: false, error };
+    }
   }
 }
 
-function emailPasswordLogin(email, password) {
+function emailPasswordLogin(email, password, retryCount = 0) {
+  const MAX_RETRIES = 2;
+  const TIMEOUT = 10000; // 10秒超时
+  
   return new Promise((resolve, reject) => {
-    wx.request({
-      url: `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      method: 'POST',
-      data: { email, password },
-      header: {
-        apikey: SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json'
-      },
-      success(res) {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          // 处理登录成功，存储token
-          if (res.data && res.data.access_token) {
-            wx.setStorageSync('access_token', res.data.access_token);
-            wx.setStorageSync('refresh_token', res.data.refresh_token);
-            wx.setStorageSync('user_id', res.data.user.id);
+    const makeRequest = () => {
+      wx.request({
+        url: `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+        method: 'POST',
+        data: { email, password },
+        timeout: TIMEOUT,
+        header: {
+          apikey: SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        success(res) {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            // 处理登录成功，存储token到所有键名
+            if (res.data && res.data.access_token) {
+              const accessToken = res.data.access_token;
+              const refreshToken = res.data.refresh_token;
+              const userId = res.data.user.id;
+              
+              // 同时写入新旧键名，确保重新编译后状态保持
+              wx.setStorageSync('access_token', accessToken);
+              wx.setStorageSync('syllaby_access_token', accessToken);
+              
+              if (refreshToken) {
+                wx.setStorageSync('refresh_token', refreshToken);
+                wx.setStorageSync('syllaby_refresh_token', refreshToken);
+              }
+              
+              wx.setStorageSync('user_id', userId);
+              wx.setStorageSync('syllaby_user_id', userId);
+            }
+            resolve(res.data);
+          } else {
+            reject(res.data || res);
           }
-          resolve(res.data);
-        } else {
-          reject(res.data || res);
+        },
+        fail(err) {
+          console.warn(`登录请求失败 (尝试 ${retryCount + 1}/${MAX_RETRIES + 1}):`, err);
+          
+          // 如果是网络错误且还有重试次数，则重试
+          if (retryCount < MAX_RETRIES && (
+            err.errMsg?.includes('request:fail') || 
+            err.errMsg?.includes('timeout') ||
+            err.errMsg?.includes('network')
+          )) {
+            console.log(`将在${2000}ms后重试...`);
+            setTimeout(() => {
+              emailPasswordLogin(email, password, retryCount + 1)
+                .then(resolve)
+                .catch(reject);
+            }, 2000);
+          } else {
+            reject(err);
+          }
         }
-      },
-      fail(err) {
-        reject(err);
-      }
-    });
+      });
+    };
+    
+    makeRequest();
   });
 }
 
@@ -221,11 +295,23 @@ function emailPasswordSignUp(email, password) {
           return;
         }
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          // 处理注册成功，存储token
+          // 处理注册成功，存储token到所有键名
           if (res.data && res.data.access_token) {
-            wx.setStorageSync('access_token', res.data.access_token);
-            wx.setStorageSync('refresh_token', res.data.refresh_token);
-            wx.setStorageSync('user_id', res.data.user.id);
+            const accessToken = res.data.access_token;
+            const refreshToken = res.data.refresh_token;
+            const userId = res.data.user.id;
+            
+            // 同时写入新旧键名，确保重新编译后状态保持
+            wx.setStorageSync('access_token', accessToken);
+            wx.setStorageSync('syllaby_access_token', accessToken);
+            
+            if (refreshToken) {
+              wx.setStorageSync('refresh_token', refreshToken);
+              wx.setStorageSync('syllaby_refresh_token', refreshToken);
+            }
+            
+            wx.setStorageSync('user_id', userId);
+            wx.setStorageSync('syllaby_user_id', userId);
           }
           resolve(res.data);
         } else {
@@ -251,11 +337,23 @@ function signupViaAuth(email, password) {
       },
       success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          // 处理注册成功，存储token
+          // 处理注册成功，存储token到所有键名
           if (res.data && res.data.access_token) {
-            wx.setStorageSync('access_token', res.data.access_token);
-            wx.setStorageSync('refresh_token', res.data.refresh_token);
-            wx.setStorageSync('user_id', res.data.user.id);
+            const accessToken = res.data.access_token;
+            const refreshToken = res.data.refresh_token;
+            const userId = res.data.user.id;
+            
+            // 同时写入新旧键名，确保重新编译后状态保持
+            wx.setStorageSync('access_token', accessToken);
+            wx.setStorageSync('syllaby_access_token', accessToken);
+            
+            if (refreshToken) {
+              wx.setStorageSync('refresh_token', refreshToken);
+              wx.setStorageSync('syllaby_refresh_token', refreshToken);
+            }
+            
+            wx.setStorageSync('user_id', userId);
+            wx.setStorageSync('syllaby_user_id', userId);
           }
           resolve(res.data);
         } else {
@@ -271,11 +369,19 @@ function signupViaAuth(email, password) {
 
 async function refreshToken() {
   try {
-    const refresh_token = wx.getStorageSync('refresh_token');
+    // 优先使用主键名，备用键名作为兜底
+    let refresh_token = wx.getStorageSync('refresh_token');
+    if (!refresh_token) {
+      refresh_token = wx.getStorageSync('syllaby_refresh_token');
+    }
+    
     if (!refresh_token) {
       console.log('没有refresh token，清除过期的access token');
+      // 清除所有键名
       wx.removeStorageSync('access_token');
+      wx.removeStorageSync('syllaby_access_token');
       wx.removeStorageSync('token_expires_at');
+      wx.removeStorageSync('syllaby_token_expires_at');
       return { success: false, error: 'No refresh token' };
     }
 
@@ -291,46 +397,76 @@ async function refreshToken() {
     
     if (response.statusCode >= 200 && response.statusCode < 300 && response.data) {
       const { access_token, refresh_token: new_refresh_token, expires_in } = response.data;
+      const newRefreshToken = new_refresh_token || refresh_token;
+      
+      // 同时写入新旧键名，确保重新编译后状态保持
       wx.setStorageSync('access_token', access_token);
-      wx.setStorageSync('refresh_token', new_refresh_token || refresh_token);
+      wx.setStorageSync('syllaby_access_token', access_token);
+      
+      if (newRefreshToken) {
+        wx.setStorageSync('refresh_token', newRefreshToken);
+        wx.setStorageSync('syllaby_refresh_token', newRefreshToken);
+      }
       
       // 设置新的过期时间
       if (expires_in) {
         const expiresAt = Date.now() + expires_in * 1000;
         wx.setStorageSync('token_expires_at', expiresAt);
+        wx.setStorageSync('syllaby_token_expires_at', expiresAt);
       }
       
       console.log('Token刷新成功');
       return { 
         success: true, 
         access_token, 
-        refresh_token: new_refresh_token || refresh_token, 
+        refresh_token: newRefreshToken, 
         expires_in 
       };
     } else {
       console.warn('Token刷新失败:', response);
-      // 清除无效的token
+      // 清除所有无效的token键名
       wx.removeStorageSync('access_token');
+      wx.removeStorageSync('syllaby_access_token');
       wx.removeStorageSync('refresh_token');
+      wx.removeStorageSync('syllaby_refresh_token');
       wx.removeStorageSync('token_expires_at');
+      wx.removeStorageSync('syllaby_token_expires_at');
       return { success: false, error: response };
     }
   } catch (error) {
     console.error('刷新令牌失败:', error);
-    // 清除无效的token
+    // 清除所有无效的token键名
     wx.removeStorageSync('access_token');
+    wx.removeStorageSync('syllaby_access_token');
     wx.removeStorageSync('refresh_token');
+    wx.removeStorageSync('syllaby_refresh_token');
     wx.removeStorageSync('token_expires_at');
+    wx.removeStorageSync('syllaby_token_expires_at');
     return { success: false, error };
   }
 }
 
 // 检查用户认证状态
 function checkAuthStatus() {
-  const token = wx.getStorageSync('access_token');
-  const refreshToken = wx.getStorageSync('refresh_token');
-  const expiresAt = wx.getStorageSync('token_expires_at');
-  const userId = wx.getStorageSync('user_id');
+  // 优先使用主键名，备用键名作为兜底
+  let token = wx.getStorageSync('access_token');
+  let refreshToken = wx.getStorageSync('refresh_token');
+  let expiresAt = wx.getStorageSync('token_expires_at');
+  let userId = wx.getStorageSync('user_id');
+  
+  // 如果主键名获取失败，尝试备用键名（重编译后可能存在的情况）
+  if (!token) {
+    token = wx.getStorageSync('syllaby_access_token');
+  }
+  if (!refreshToken) {
+    refreshToken = wx.getStorageSync('syllaby_refresh_token');
+  }
+  if (!expiresAt) {
+    expiresAt = wx.getStorageSync('syllaby_token_expires_at');
+  }
+  if (!userId) {
+    userId = wx.getStorageSync('syllaby_user_id');
+  }
   
   console.log('认证状态检查:', {
     hasToken: !!token,
@@ -988,6 +1124,7 @@ function summarizeFile(fileUrl, fileType = 'pdf') {
   });
 }
 
+<<<<<<< HEAD
 async function parseImageWithAI(imageUrl, mode = 'task', options = {}) {
   if (!imageUrl) {
     throw new Error('缺少图片地址');
@@ -1024,6 +1161,220 @@ async function parseImageWithAI(imageUrl, mode = 'task', options = {}) {
   const normalizeMode = mode === 'course' ? 'course' : 'task';
   return normalizeAiPayload(recognition, normalizeMode);
 }
+=======
+async function parseImageWithAI(imageUrl, mode = 'task', options = {}) {
+  if (!imageUrl) {
+    throw new Error('缺少图片地址');
+  }
+  if (!wx.cloud || typeof wx.cloud.callFunction !== 'function') {
+    throw new Error('当前环境未启用云开发能力');
+  }
+
+  const { userId = wx.getStorageSync('user_id') || DEMO_USER_ID } = options;
+
+  console.log('[AI] 开始调用云函数解析图片:', { imageUrl, userId, mode });
+
+  // 直接调用 deepseekAI 云函数 (同步模式)
+  const result = await wx.cloud.callFunction({
+    name: 'deepseekAI',
+    data: {
+      imageUrl,
+      userId,
+      mode
+    }
+  });
+
+  console.log('[AI] 云函数响应:', result);
+
+  if (!result.result) {
+    throw new Error('云函数无响应');
+  }
+
+  if (!result.result.success) {
+    throw new Error(result.result.error || 'AI 解析失败');
+  }
+
+  // 直接返回识别结果 (已经自动存储到数据库)
+  return result.result.data;
+}
+
+    if (!pollResult) {
+      continue;
+    }
+
+    if (pollResult.success && !pollResult.pending) {
+      return normalizeAiPayload(pollResult.data, mode);
+    }
+
+    if (!pollResult.success && !pollResult.pending) {
+      throw new Error(pollResult.error || 'AI 解析失败');
+    }
+
+    interval = pollResult.retryAfter || pollInterval;
+  }
+
+  throw new Error('AI 解析超时，请稍后再试');
+}
+
+function callAnalyzeImageFunction(data) {
+  return wx.cloud
+    .callFunction({
+      name: 'analyzeImage',
+      data
+    })
+    .then((res) => res?.result)
+    .catch((error) => {
+      console.error('[AI] 云函数调用失败', error);
+      throw error;
+    });
+}
+
+function normalizeAiPayload(raw = {}, preferredMode = 'task') {
+  const aiType = typeof raw?.type === 'string' ? raw.type.toLowerCase() : '';
+  let normalizedType = null;
+  if (aiType === 'todo') {
+    normalizedType = 'task';
+  } else if (aiType === 'schedule') {
+    normalizedType = 'course';
+  }
+  if (!normalizedType) {
+    normalizedType = preferredMode === 'course' ? 'course' : 'task';
+  }
+
+  const sourceList = Array.isArray(raw?.data) ? raw.data : [];
+  const normalizedData = normalizedType === 'task'
+    ? sourceList.map(normalizeAiTask).filter(Boolean)
+    : sourceList.map(normalizeAiCourse).filter(Boolean);
+
+  return {
+    type: normalizedType,
+    rawType: aiType || null,
+    data: normalizedData,
+    raw
+  };
+}
+
+function normalizeAiTask(item = {}) {
+  const title = sanitizeText(item.title || item.name || item.subject);
+  if (!title) return null;
+
+  return {
+    kind: 'task',
+    title,
+    type: mapTaskType(item.type),
+    deadline: normalizeAiDeadline(item.deadline || item.due || item.date || item.deadline_date),
+    course: sanitizeText(item.course || item.subject || ''),
+    priority: (item.priority || 'medium').toLowerCase()
+  };
+}
+
+function normalizeAiCourse(item = {}) {
+  const name = sanitizeText(item.name || item.subject || item.title);
+  if (!name) return null;
+
+  const day = normalizeWeekdayNumber(item.day || item.day_of_week || item.weekday) || 1;
+  const start = toFiniteNumber(item.start_section || item.startSection || item.start || 1) || 1;
+  const endSection = toFiniteNumber(item.end_section || item.endSection || item.end) || start;
+  const length = Math.max(1, toFiniteNumber(item.length) || endSection - start + 1);
+  let weeks = Array.isArray(item.weeks)
+    ? item.weeks
+        .map((week) => toFiniteNumber(week))
+        .filter((week) => typeof week === 'number' && week > 0)
+    : [];
+
+  return {
+    kind: 'course',
+    name,
+    day_of_week: day,
+    start_section: start,
+    length,
+    location: sanitizeText(item.location || item.room || ''),
+    teacher: sanitizeText(item.teacher || ''),
+    weeks
+  };
+}
+
+function wait(duration = 600) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(200, duration)));
+}
+
+function mapTaskType(value) {
+  if (!value) return 'homework';
+  const text = String(value).toLowerCase();
+  if (text.includes('exam') || text.includes('test')) {
+    return 'exam';
+  }
+  if (text.includes('event') || text.includes('lecture')) {
+    return 'event';
+  }
+  return 'homework';
+}
+
+function normalizeWeekdayNumber(value) {
+  if (typeof value === 'number' && value >= 1 && value <= 7) {
+    return value;
+  }
+  const map = {
+    '周一': 1,
+    '星期一': 1,
+    monday: 1,
+    mon: 1,
+    '周二': 2,
+    '星期二': 2,
+    tuesday: 2,
+    tue: 2,
+    '周三': 3,
+    '星期三': 3,
+    wednesday: 3,
+    wed: 3,
+    '周四': 4,
+    '星期四': 4,
+    thursday: 4,
+    thu: 4,
+    '周五': 5,
+    '星期五': 5,
+    friday: 5,
+    fri: 5,
+    '周六': 6,
+    '星期六': 6,
+    saturday: 6,
+    sat: 6,
+    '周日': 7,
+    '星期日': 7,
+    sunday: 7,
+    sun: 7
+  };
+  const key = sanitizeText(value).toLowerCase();
+  return map[key] || null;
+}
+
+function sanitizeText(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+}
+
+function normalizeAiDeadline(value) {
+  if (!value && value !== 0) return '';
+  if (typeof value === 'number') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+  const text = sanitizeText(value);
+  if (!text) return '';
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) {
+    return date.toISOString();
+  }
+  return text;
+}
+
+function toFiniteNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+>>>>>>> 1c9577bff73b21aa6bc63c844bae6caeb1bd900c
 
 function normalizeAiPayload(raw = {}, preferredMode = 'task') {
   const aiType = typeof raw?.type === 'string' ? raw.type.toLowerCase() : '';
