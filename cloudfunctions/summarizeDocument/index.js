@@ -46,26 +46,151 @@ async function processDocumentByType(fileUrl, fileType, isFullAnalysis = false, 
       prompt = `以下是一个基础摘要：\n\n${existingSummary}\n\n请基于这个基础摘要，对文档进行更全面、更详细的分析，${FULL_ANALYSIS_PROMPT}`;
     }
     
-    // 根据文件类型添加特定的处理指令
-    if (fileType && fileType.toLowerCase() === 'pdf') {
-      prompt = `请分析以下PDF文档内容，${prompt}特别注意文档的结构和章节划分。`;
-    } else if (fileType && (fileType.toLowerCase() === 'doc' || fileType.toLowerCase() === 'docx')) {
-      prompt = `请分析以下Word文档内容，${prompt}特别注意文档的标题层次和段落结构。`;
-    } else if (fileType && (fileType.toLowerCase() === 'ppt' || fileType.toLowerCase() === 'pptx')) {
-      prompt = `请分析以下PowerPoint演示文稿内容，${prompt}重点关注每页的核心观点和演示逻辑。`;
-    } else if (fileType && (fileType.toLowerCase() === 'jpg' || fileType.toLowerCase() === 'png' || fileType.toLowerCase() === 'jpeg')) {
-      prompt = `请分析以下图片内容，识别图片中的文字信息并提供摘要。如果图片不包含文字，请描述图片的主要内容。`;
-    }
-
     // 根据文件类型选择不同的处理方式
     if (fileType && (fileType.toLowerCase() === 'jpg' || fileType.toLowerCase() === 'png' || fileType.toLowerCase() === 'jpeg')) {
+      prompt = `请分析以下图片内容，识别图片中的文字信息并提供摘要。如果图片不包含文字，请描述图片的主要内容。`;
       return await processImage(fileUrl, prompt, isFullAnalysis);
+    } else if (fileType && fileType.toLowerCase() === 'pdf') {
+      // PDF文档需要特殊处理
+      prompt = `请分析以下PDF文档内容，${prompt}特别注意文档的结构和章节划分。`;
+      return await processPdfDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'doc' || fileType.toLowerCase() === 'docx')) {
+      prompt = `请分析以下Word文档内容，${prompt}特别注意文档的标题层次和段落结构。`;
+      return await processOfficeDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'ppt' || fileType.toLowerCase() === 'pptx')) {
+      prompt = `请分析以下PowerPoint演示文稿内容，${prompt}重点关注每页的核心观点和演示逻辑。`;
+      return await processOfficeDocument(fileUrl, prompt, fileType, isFullAnalysis);
     } else {
+      // 默认作为文本文档处理
       return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
     }
   } catch (error) {
     console.error('处理文档时出错:', error);
     throw new Error('文档处理失败: ' + error.message);
+  }
+}
+
+// 处理PDF文档 - 使用多模态模型
+async function processPdfDocument(fileUrl, prompt, fileType, isFullAnalysis = false) {
+  try {
+    console.log('开始处理PDF文档:', fileUrl);
+    
+    // 使用更长的内容限制，因为PDF通常包含更多信息
+    const maxTokens = isFullAnalysis ? 1800 : 1000;
+    const systemContent = isFullAnalysis 
+      ? '你是PDF文档分析专家，请全面分析PDF内容，提取关键信息并保持结构清晰。'
+      : '你是PDF文档摘要助手，请准确提取PDF的核心要点和关键信息。';
+    
+    // 使用多模态模型处理PDF
+    const response = await bailianClient.post('/services/aigc/multimodal-generation/generation', {
+      model: 'qwen-vl-plus', // 使用多模态模型
+      input: {
+        messages: [
+          {
+            role: 'system',
+            content: systemContent
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                text: prompt
+              },
+              {
+                image: fileUrl
+              }
+            ]
+          }
+        ]
+      },
+      parameters: {
+        temperature: 0.3,
+        max_tokens: maxTokens
+      }
+    });
+    
+    console.log('PDF分析API返回:', JSON.stringify(response.data, null, 2));
+    
+    if (response.data && response.data.output && response.data.output.text) {
+      return {
+        success: true,
+        summary: response.data.output.text,
+        isPartial: true // PDF处理通常被视为部分处理，因为可能无法提取全部内容
+      };
+    } else {
+      // 如果多模态模型处理失败，尝试直接二进制方式读取
+      console.log('多模态PDF处理失败，尝试直接读取二进制内容');
+      return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    }
+  } catch (error) {
+    console.error('处理PDF文档时出错:', error);
+    console.error('错误详情:', error.response?.data || error.message);
+    
+    // 如果多模态处理失败，尝试直接二进制方式读取
+    console.log('PDF多模态处理失败，回退到二进制读取');
+    return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
+  }
+}
+
+// 处理Office文档 - 使用多模态模型
+async function processOfficeDocument(fileUrl, prompt, fileType, isFullAnalysis = false) {
+  try {
+    console.log('开始处理Office文档:', fileUrl, '类型:', fileType);
+    
+    // 使用更长的内容限制，因为Office文档通常包含更多信息
+    const maxTokens = isFullAnalysis ? 1800 : 1000;
+    const systemContent = isFullAnalysis 
+      ? `你是${fileType}文档分析专家，请全面分析文档内容，提取关键信息并保持结构清晰。`
+      : `你是${fileType}文档摘要助手，请准确提取文档的核心要点和关键信息。`;
+    
+    // 使用多模态模型处理Office文档
+    const response = await bailianClient.post('/services/aigc/multimodal-generation/generation', {
+      model: 'qwen-vl-plus', // 使用多模态模型
+      input: {
+        messages: [
+          {
+            role: 'system',
+            content: systemContent
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                text: prompt
+              },
+              {
+                image: fileUrl // 将文档URL作为图像传递给多模态模型
+              }
+            ]
+          }
+        ]
+      },
+      parameters: {
+        temperature: 0.3,
+        max_tokens: maxTokens
+      }
+    });
+    
+    console.log('Office文档分析API返回:', JSON.stringify(response.data, null, 2));
+    
+    if (response.data && response.data.output && response.data.output.text) {
+      return {
+        success: true,
+        summary: response.data.output.text,
+        isPartial: true // Office文档处理通常被视为部分处理
+      };
+    } else {
+      // 如果多模态模型处理失败，尝试直接二进制方式读取
+      console.log('多模态Office文档处理失败，尝试直接读取二进制内容');
+      return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    }
+  } catch (error) {
+    console.error('处理Office文档时出错:', error);
+    console.error('错误详情:', error.response?.data || error.message);
+    
+    // 如果多模态处理失败，尝试直接二进制方式读取
+    console.log('Office文档多模态处理失败，回退到二进制读取');
+    return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
   }
 }
 
