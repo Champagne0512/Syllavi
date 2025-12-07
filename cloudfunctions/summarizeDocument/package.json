@@ -1,0 +1,19 @@
+{
+  "name": "summarizeDocument",
+  "version": "1.0.0",
+  "description": "Document summarization cloud function using Alibaba Cloud Bailian API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "latest",
+    "axios": "^0.24.0"
+  },
+  "cloudfunction-config": {
+    "timeout": 20,
+    "memorySize": 512
+  }
+}

@@ -562,55 +562,11 @@ Page({
     });
   },
 
-  async runSummary(file) {
-    if (!file.url) {
-      wx.showToast({ title: '缺少文件地址', icon: 'none' });
-      return;
-    }
-
-    // 若已存在摘要，优先展示缓存，并提供重新生成选项
-    if (file.aiSummary) {
-      wx.showModal({
-        title: 'AI 划重点',
-        content: file.aiSummary.slice(0, 800),
-        confirmText: '重新生成',
-        cancelText: '关闭',
-        success: (res) => {
-          if (res.confirm) {
-            this.generateSummary(file);
-          }
-        }
-      });
-      return;
-    }
-
-    this.generateSummary(file);
-  },
-
-  async generateSummary(file) {
-    wx.showLoading({ title: 'AI 划重点中...' });
-    try {
-      const summary = await summarizeFile(file.url, file.type);
-      await updateResource(file.id, { ai_summary: summary });
-      // 同步更新本地缓存
-      const files = this.data.files.map((f) =>
-        f.id === file.id ? { ...f, aiSummary: summary } : f
-      );
-      this.setData({ files }, () => {
-        this.updateFilteredFiles();
-        this.refreshActionableInsight();
-      });
-      wx.hideLoading();
-      wx.showModal({
-        title: 'AI 划重点',
-        content: summary.slice(0, 800),
-        showCancel: false
-      });
-    } catch (err) {
-      console.warn('summary failed', err);
-      wx.hideLoading();
-      wx.showToast({ title: '生成失败', icon: 'none' });
-    }
+  runSummary(file) {
+    // 导航到AI摘要页面，并传入文件ID
+    wx.navigateTo({
+      url: `/pages/ai-summary/index?id=${file.id}`
+    });
   },
 
   async removeFile(file) {
@@ -1180,21 +1136,20 @@ Page({
   },
 
   enterAiMode() {
-    const { lastOpenedFile, files } = this.data;
-    let target = null;
-    if (lastOpenedFile) {
-      target = files.find((file) => file.id === lastOpenedFile.id);
-    }
-    if (!target && files.length) {
-      target = files[0];
-    }
-
-    if (!target) {
-      wx.showToast({ title: '上传文件以体验 AI', icon: 'none' });
-      return;
-    }
-
-    this.runSummary(target);
+    // 导航到文件选择页面，让用户选择要分析的文件
+    wx.navigateTo({
+      url: '/pages/file-selector/index',
+      success: (res) => {
+        console.log('成功跳转到文件选择页面');
+      },
+      fail: (err) => {
+        console.error('跳转到文件选择页面失败:', err);
+        wx.showToast({
+          title: '页面跳转失败',
+          icon: 'none'
+        });
+      }
+    });
   },
 
   
