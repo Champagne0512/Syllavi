@@ -476,7 +476,7 @@ Page({
       
       wx.showLoading({ title: '上传中...' });
 
-      const { publicUrl } = await uploadToStorage(
+      const uploadResult = await uploadToStorage(
         'resources',
         file.path || file.tempFilePath || file.url,
         file.name
@@ -484,12 +484,14 @@ Page({
 
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
+      const publicUrl = uploadResult.publicUrl;
+      const originalName = uploadResult.originalName || file.name;
 
       const [row] = await createResource({
         user_id: userId,
-        file_name: file.name,
+        file_name: originalName, // 使用原始文件名，包含中文字符
         file_url: publicUrl,
-        file_type: this.getFileType(file.name),
+        file_type: this.getFileType(originalName),
         file_size: file.size,
         subject: this.data.activeFolder === '全部' ? '未分类' : this.data.activeFolder
       });

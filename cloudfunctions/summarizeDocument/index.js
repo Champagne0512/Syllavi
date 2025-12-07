@@ -16,27 +16,24 @@ const bailianClient = axios.create({
     'Authorization': `Bearer ${API_KEY}`,
     'Content-Type': 'application/json'
   },
-  timeout: 20000 // 设置为20秒，确保在微信云函数限制内完成
+  timeout: 15000 // 减少到15秒，确保在微信云函数限制内完成
 });
 
-// 恢复完整的文件摘要prompt模板
-const SUMMARY_PROMPT = `请分析以下文档内容，并提供一个详细、全面的摘要，重点关注以下方面：
-1. 核心主题和主要观点
-2. 关键数据和重要信息
-3. 结论和建议
-4. 主要论点和支撑论据
-5. 适合快速理解的要点列表
+// 优化的文件摘要prompt模板 - 更简洁快速
+const SUMMARY_PROMPT = `请分析文档并提供简洁摘要：
+1. 核心观点
+2. 关键信息
+3. 主要结论
 
-请确保摘要内容详实全面，不超过2000字，语言简洁明了，便于掌握文档核心内容。`;
+不超过800字，语言简练。`;
 
-// 完整分析的prompt模板 - 优化为更简洁高效
-const FULL_ANALYSIS_PROMPT = `请对文档进行更深入的分析，包括：
-1. 核心观点和关键论据
-2. 重要数据和事实
-3. 结论与建议
-4. 实用要点列表
+// 简化的分析prompt模板
+const FULL_ANALYSIS_PROMPT = `请深入分析文档：
+1. 核心观点和论据
+2. 重要数据
+3. 结论建议
 
-请提供详细分析，不超过2500字，内容精炼全面。`;
+不超过1200字，内容精炼。`;
 
 // 根据文件类型生成不同的处理策略
 async function processDocumentByType(fileUrl, fileType, isFullAnalysis = false, existingSummary = '') {
@@ -75,21 +72,23 @@ async function processDocumentByType(fileUrl, fileType, isFullAnalysis = false, 
 // 处理文本类文档
 async function processTextDocument(fileUrl, prompt, fileType, isFullAnalysis = false) {
   try {
-    // 根据是否是完整分析设置不同的参数 - 优化为更快的处理
-    const maxContentLength = isFullAnalysis ? 12000 : 8000; // 减少内容长度以提高处理速度
-    const maxTokens = isFullAnalysis ? 2000 : 1500; // 减少输出token数量以提高速度
+    // 进一步优化参数 - 更快的处理
+    const maxContentLength = isFullAnalysis ? 8000 : 4000; // 大幅减少内容长度
+    const maxTokens = isFullAnalysis ? 1000 : 600; // 减少输出token数量
     const systemContent = isFullAnalysis 
-      ? '你是一个文档分析专家，请快速准确地提取并总结关键信息。'
-      : '你是一个文档摘要助手，请快速准确地提取要点。';
+      ? '你是文档分析专家，快速提取关键信息。'
+      : '你是文档摘要助手，快速提取要点。';
     
-    // 首先尝试获取文件内容 - 优化超时设置
+    // 优化文件获取超时设置
     const response = await axios.get(fileUrl, { 
       responseType: 'text',
-      maxContentLength: 3 * 1024 * 1024, // 统一限制为3MB
-      timeout: 10000 // 统一设置为10秒获取文件超时
+      maxContentLength: 2 * 1024 * 1024, // 减少到2MB
+      timeout: 8000 // 减少到8秒获取文件超时
     });
     
     let content = response.data;
+    console.log('获取到的文件内容长度:', content ? content.length : 0);
+    
     if (!content || content.trim().length === 0) {
       throw new Error('文件内容为空或无法读取');
     }
@@ -98,6 +97,11 @@ async function processTextDocument(fileUrl, prompt, fileType, isFullAnalysis = f
     if (content.length > maxContentLength) {
       content = content.substring(0, maxContentLength) + "\n\n[注意：文档过长，已截断显示部分内容]";
     }
+    
+    // 添加调试日志
+    console.log('准备发送给AI的内容长度:', content.length);
+    console.log('文件URL:', fileUrl);
+    console.log('文件类型:', fileType);
     
     // 调用阿里云百炼API进行摘要
     const summaryResponse = await bailianClient.post('/services/aigc/text-generation/generation', {
@@ -120,6 +124,8 @@ async function processTextDocument(fileUrl, prompt, fileType, isFullAnalysis = f
       }
     });
     
+    console.log('API返回:', JSON.stringify(summaryResponse.data, null, 2));
+    
     if (summaryResponse.data && summaryResponse.data.output && summaryResponse.data.output.text) {
       return {
         success: true,
@@ -131,6 +137,7 @@ async function processTextDocument(fileUrl, prompt, fileType, isFullAnalysis = f
     }
   } catch (error) {
     console.error('处理文本文档时出错:', error);
+    console.error('错误详情:', error.response?.data || error.message);
     // 如果直接读取文件失败，尝试通过多模态模型处理
     return await processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis);
   }
@@ -189,15 +196,37 @@ async function processImage(fileUrl, prompt, isFullAnalysis = false) {
 // 使用多模态模型处理无法直接读取的文档
 async function processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis = false) {
   try {
-    // 恢复完整的提示语
-    const fullPrompt = `${prompt}\n\n请分析以下${fileType}文件:`;
-    const maxTokens = isFullAnalysis ? 1500 : 1000; // 减少输出token数量以提高速度
-    const systemContent = isFullAnalysis
-      ? '你是一个文档分析专家，请快速准确地分析各种格式文档。'
-      : '你是一个文档分析助手，请快速准确地提取文档关键信息。';
+    // 首先尝试获取文件内容
+    let content = '';
+    try {
+      const fileResponse = await axios.get(fileUrl, { 
+        responseType: 'text',
+        maxContentLength: 1 * 1024 * 1024, // 限制为1MB
+        timeout: 5000 // 5秒
+      });
+      content = fileResponse.data || '';
+      console.log('多模态处理获取到的文件内容长度:', content.length);
+    } catch (fileError) {
+      console.error('获取文件内容失败:', fileError);
+      // 如果无法获取文件内容，使用通用错误消息
+      content = '无法读取文档内容';
+    }
     
-    const response = await bailianClient.post('/services/aigc/multimodal-generation/generation', {
-      model: 'qwen-vl-plus',
+    // 优化的提示语，包含实际内容
+    const fullPrompt = content.trim() 
+      ? `${prompt}\n\n文档内容：\n${content.substring(0, 2000)}`
+      : `${prompt}\n\n文件URL: ${fileUrl}\n\n请尝试分析此文档。`;
+    
+    const maxTokens = isFullAnalysis ? 1000 : 600; // 减少输出token数量
+    const systemContent = isFullAnalysis
+      ? '你是文档分析专家，请准确分析文档内容。'
+      : '你是文档摘要助手，请提取文档关键信息。';
+    
+    console.log('使用文本模型处理文档，内容长度:', fullPrompt.length);
+    
+    // 使用文本模型而不是多模态模型，因为我们已经提取了文本内容
+    const response = await bailianClient.post('/services/aigc/text-generation/generation', {
+      model: MODEL_NAME,
       input: {
         messages: [
           {
@@ -206,14 +235,7 @@ async function processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis =
           },
           {
             role: 'user',
-            content: [
-              {
-                text: fullPrompt
-              },
-              {
-                file: fileUrl
-              }
-            ]
+            content: fullPrompt
           }
         ]
       },
@@ -223,6 +245,8 @@ async function processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis =
       }
     });
     
+    console.log('多模态处理API返回:', JSON.stringify(response.data, null, 2));
+    
     if (response.data && response.data.output && response.data.output.text) {
       return {
         success: true,
@@ -230,11 +254,18 @@ async function processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis =
         isPartial: true
       };
     } else {
-      throw new Error('多模态处理API返回格式不正确');
+      throw new Error('文档处理API返回格式不正确');
     }
   } catch (error) {
-    console.error('多模态处理文档时出错:', error);
-    throw new Error('文档处理失败: ' + error.message);
+    console.error('处理文档时出错:', error);
+    console.error('错误详情:', error.response?.data || error.message);
+    
+    // 最后的备用方案 - 返回通用错误信息
+    return {
+      success: true,
+      summary: `无法处理此${fileType}文档。错误信息: ${error.message}`,
+      isPartial: true
+    };
   }
 }
 
@@ -268,19 +299,23 @@ function getTaskStatus(taskId) {
 // 快速摘要异步处理
 async function processQuickSummaryAsync(taskId, fileUrl, fileType) {
   try {
-    // 使用较小的内容长度和输出
-    const maxContentLength = 3000;
-    const maxTokens = 600;
-    const prompt = '请快速提取文档核心要点，列出3-5个关键点，不超过500字。';
+    // 进一步减小内容长度和输出
+    const maxContentLength = 2000;
+    const maxTokens = 400;
+    const prompt = '快速提取文档要点，列出3个关键点，不超过300字。';
+    
+    console.log('快速摘要处理文件:', fileUrl, '类型:', fileType);
     
     // 获取文件内容
     const response = await axios.get(fileUrl, { 
       responseType: 'text',
       maxContentLength: 1 * 1024 * 1024, // 1MB
-      timeout: 10000 // 10秒
+      timeout: 5000 // 5秒
     });
     
     let content = response.data;
+    console.log('快速摘要获取到的文件内容长度:', content ? content.length : 0);
+    
     if (!content || content.trim().length === 0) {
       throw new Error('文件内容为空或无法读取');
     }
@@ -289,6 +324,8 @@ async function processQuickSummaryAsync(taskId, fileUrl, fileType) {
     if (content.length > maxContentLength) {
       content = content.substring(0, maxContentLength) + "\n\n[内容已截断]";
     }
+    
+    console.log('准备发送给快速摘要API的内容长度:', content.length);
     
     // 调用API
     const summaryResponse = await bailianClient.post('/services/aigc/text-generation/generation', {
@@ -311,6 +348,8 @@ async function processQuickSummaryAsync(taskId, fileUrl, fileType) {
       }
     });
     
+    console.log('快速摘要API返回:', JSON.stringify(summaryResponse.data, null, 2));
+    
     if (summaryResponse.data && summaryResponse.data.output && summaryResponse.data.output.text) {
       updateTaskStatus(taskId, 'completed', summaryResponse.data.output.text, true, null);
     } else {
@@ -318,6 +357,7 @@ async function processQuickSummaryAsync(taskId, fileUrl, fileType) {
     }
   } catch (error) {
     console.error('快速摘要异步处理失败:', error);
+    console.error('错误详情:', error.response?.data || error.message);
     updateTaskStatus(taskId, 'failed', null, false, error.message);
   }
 }
@@ -325,27 +365,31 @@ async function processQuickSummaryAsync(taskId, fileUrl, fileType) {
 // 异步处理文档
 async function processAsyncDocument(taskId, fileUrl, fileType, isFullAnalysis, existingSummary) {
   try {
+    console.log('开始异步处理文档，任务ID:', taskId);
     updateTaskStatus(taskId, 'processing', null, false, null);
     
     // 执行实际的文档分析
     const result = await processDocumentByType(fileUrl, fileType, isFullAnalysis, existingSummary);
+    console.log('文档分析完成，结果长度:', result.summary ? result.summary.length : 0);
     
     // 更新任务状态为完成
     updateTaskStatus(taskId, 'completed', result.summary, result.isPartial, null);
+    console.log('任务状态已更新为完成');
   } catch (error) {
     console.error('异步处理文档失败:', error);
+    console.error('错误详情:', error.response?.data || error.message);
     updateTaskStatus(taskId, 'failed', null, false, error.message);
   }
 }
 
 // 快速摘要（同步模式）
 async function processQuickSummary(fileUrl, fileType, isFullAnalysis) {
-  // 使用更短的内容长度和更少的输出
-  const maxContentLength = 4000;
-  const maxTokens = 800;
+  // 进一步减少内容长度和输出
+  const maxContentLength = 3000;
+  const maxTokens = 500;
   const prompt = isFullAnalysis ? 
-    '请快速分析文档核心内容，提供简明扼要的要点列表，不超过800字。' :
-    '请快速提取文档要点，列出3-5个关键点，不超过500字。';
+    '快速分析文档核心，提供要点列表，不超过600字。' :
+    '快速提取文档要点，列出3个关键点，不超过400字。';
   
   try {
     // 尝试获取文件内容
@@ -405,6 +449,8 @@ exports.main = async (event, context) => {
   try {
     const { action, fileUrl, fileType, existingSummary, taskId } = event;
     
+    console.log('云函数收到请求:', JSON.stringify(event, null, 2));
+    
     if (!action) {
       return {
         success: false,
@@ -425,13 +471,15 @@ exports.main = async (event, context) => {
       console.log('启动分析任务:', fileUrl, '类型:', fileType, '完整分析:', isFullAnalysis);
       
       // 立即生成任务ID并返回
-      const newTaskId = taskId || `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newTaskId = taskId || `task_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       
       // 立即更新任务状态为处理中
       updateTaskStatus(newTaskId, 'processing', null, false, null);
+      console.log('已创建任务ID:', newTaskId);
       
       // 使用setTimeout零延迟启动异步处理，确保不影响当前响应
       setTimeout(() => {
+        console.log('开始异步处理文档，任务ID:', newTaskId);
         processAsyncDocument(newTaskId, fileUrl, fileType, isFullAnalysis, existingSummary).catch(error => {
           console.error('异步处理失败:', error);
           updateTaskStatus(newTaskId, 'failed', null, false, error.message);
@@ -456,6 +504,7 @@ exports.main = async (event, context) => {
       
       // 快速获取任务状态
       const taskStatus = getTaskStatus(taskId);
+      console.log('检查任务状态，任务ID:', taskId, '状态:', taskStatus.status);
       
       return {
         success: true,
@@ -475,7 +524,7 @@ exports.main = async (event, context) => {
       console.log('使用快速模式处理文档:', fileUrl, '类型:', fileType);
       
       // 生成任务ID
-      const newTaskId = `quick_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newTaskId = `quick_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       
       // 立即更新任务状态为处理中
       updateTaskStatus(newTaskId, 'processing', null, false, null);

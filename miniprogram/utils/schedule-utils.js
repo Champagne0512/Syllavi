@@ -169,21 +169,3 @@ module.exports = {
   getMonthlyStats,
   generateMonthHeatmap
 };
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
-  const heatmap = [];
-  for (let i = 0; i < daysInMonth; i++) {
-    const currentDate = new Date(year, month, i + 1);
-    heatmap.push({
-      date: currentDate,
-      day: i + 1,
-      isToday: isToday(currentDate),
-      isWeekend: currentDate.getDay() === 0 || currentDate.getDay() === 6,
-      level: Math.floor(Math.random() * 5) // 模拟数据，实际应该从数据库计算
-    });
-  }
-  
-  return heatmap;
-}

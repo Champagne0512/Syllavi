@@ -270,7 +270,7 @@ Page({
       // 第一步：启动异步分析任务
       console.log('启动文档分析任务');
 
-      // 确保在1秒内完成云函数调用
+      // 增加超时时间到3秒，减少超时风险
       const startResult = await Promise.race([
         wx.cloud.callFunction({
           name: 'summarizeDocument',
@@ -282,7 +282,7 @@ Page({
           }
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('云函数响应超时')), 1000)
+          setTimeout(() => reject(new Error('云函数响应超时')), 3000)
         )
       ]);
 
@@ -379,7 +379,7 @@ Page({
   // 轮询检查分析结果
   async pollForAnalysisResult(taskId, isFullAnalysis) {
     try {
-      // 云函数任务处理
+      // 增加云函数任务超时时间到3秒
       const result = await Promise.race([
         wx.cloud.callFunction({
           name: 'summarizeDocument',
@@ -389,7 +389,7 @@ Page({
           }
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('云函数检查超时')), 2000)
+          setTimeout(() => reject(new Error('云函数检查超时')), 3000)
         )
       ]);
 
@@ -425,7 +425,7 @@ Page({
           // 仍在处理中，继续轮询
           setTimeout(() => {
             this.pollForAnalysisResult(taskId, isFullAnalysis);
-          }, 3000); // 每3秒检查一次
+          }, 4000); // 每4秒检查一次，减少服务器压力
         }
       } else {
         throw new Error(result.result.error || '检查结果失败');
@@ -450,7 +450,7 @@ Page({
         mask: true
       });
 
-      // 第一步：启动完整分析任务，使用超时控制
+      // 第一步：启动完整分析任务，增加超时时间
       const startResult = await Promise.race([
         wx.cloud.callFunction({
           name: 'summarizeDocument',
@@ -463,7 +463,7 @@ Page({
           }
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('云函数响应超时')), 1000)
+          setTimeout(() => reject(new Error('云函数响应超时')), 3000)
         )
       ]);
 
