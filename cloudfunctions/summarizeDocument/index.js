@@ -47,7 +47,9 @@ async function processDocumentByType(fileUrl, fileType, isFullAnalysis = false, 
     }
     
     // 根据文件类型选择不同的处理方式
-    if (fileType && (fileType.toLowerCase() === 'jpg' || fileType.toLowerCase() === 'png' || fileType.toLowerCase() === 'jpeg')) {
+    if (fileType && (fileType.toLowerCase() === 'jpg' || fileType.toLowerCase() === 'png' || 
+                   fileType.toLowerCase() === 'jpeg' || fileType.toLowerCase() === 'gif' || 
+                   fileType.toLowerCase() === 'bmp' || fileType.toLowerCase() === 'webp')) {
       prompt = `请分析以下图片内容，识别图片中的文字信息并提供摘要。如果图片不包含文字，请描述图片的主要内容。`;
       return await processImage(fileUrl, prompt, isFullAnalysis);
     } else if (fileType && fileType.toLowerCase() === 'pdf') {
@@ -60,6 +62,24 @@ async function processDocumentByType(fileUrl, fileType, isFullAnalysis = false, 
     } else if (fileType && (fileType.toLowerCase() === 'ppt' || fileType.toLowerCase() === 'pptx')) {
       prompt = `请分析以下PowerPoint演示文稿内容，${prompt}重点关注每页的核心观点和演示逻辑。`;
       return await processOfficeDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'xls' || fileType.toLowerCase() === 'xlsx')) {
+      prompt = `请分析以下Excel表格内容，${prompt}重点关注数据、趋势和结论。`;
+      return await processOfficeDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'rtf')) {
+      prompt = `请分析以下RTF文档内容，${prompt}注意文档的结构和内容。`;
+      return await processOfficeDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'csv')) {
+      prompt = `请分析以下CSV数据文件内容，${prompt}重点关注数据、趋势和关键值。`;
+      return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'txt')) {
+      prompt = `请分析以下文本文档内容，${prompt}提取关键信息和要点。`;
+      return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'md')) {
+      prompt = `请分析以下Markdown文档内容，${prompt}注意文档的结构和要点。`;
+      return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
+    } else if (fileType && (fileType.toLowerCase() === 'html' || fileType.toLowerCase() === 'htm')) {
+      prompt = `请分析以下HTML文档内容，${prompt}忽略标签，提取文本内容的关键信息。`;
+      return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);
     } else {
       // 默认作为文本文档处理
       return await processTextDocument(fileUrl, prompt, fileType, isFullAnalysis);

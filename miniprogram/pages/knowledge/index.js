@@ -43,12 +43,25 @@ Page({
 
   // 增加一个辅助函数用于 CSS 类名映射
   getFileTypeClass(type) {
-    // 简单映射，你可以根据需要扩展
+    // 文档类型映射到CSS类名
     const map = {
+      // 文档类型
       'pdf': 'pdf',
-      'ppt': 'ppt', 'pptx': 'ppt',
       'doc': 'doc', 'docx': 'doc',
-      'jpg': 'img', 'png': 'img', 'jpeg': 'img'
+      'ppt': 'ppt', 'pptx': 'ppt',
+      'xlsx': 'xls', 'xls': 'xls',
+      'txt': 'txt',
+      'rtf': 'doc',
+      'csv': 'xls',
+      'md': 'txt',
+      'html': 'doc', 'htm': 'doc',
+      
+      // 图片类型
+      'jpg': 'img', 'jpeg': 'img', 'png': 'img',
+      'gif': 'img', 'bmp': 'img', 'webp': 'img',
+      
+      // 其他类型
+      'other': 'other'
     };
     return map[type] || 'other';
   },
@@ -466,7 +479,14 @@ Page({
       const { tempFiles } = await wx.chooseMessageFile({
         count: 1,
         type: 'file',
-        extension: ['pdf', 'ppt', 'pptx', 'doc', 'docx', 'jpg', 'png']
+        extension: [
+          // 文档类型
+          'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt',
+          // 图片类型
+          'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+          // 其他常见格式
+          'rtf', 'csv', 'md', 'html', 'htm'
+        ]
       });
       if (!tempFiles || !tempFiles.length) {
         this._uploading = false;
@@ -535,11 +555,26 @@ Page({
 
   getFileType(name = '') {
     const lower = name.toLowerCase();
+    
+    // 文档类型
     if (lower.endsWith('.pdf')) return 'pdf';
-    if (lower.endsWith('.pptx') || lower.endsWith('.ppt')) return 'pptx';
     if (lower.endsWith('.docx') || lower.endsWith('.doc')) return 'docx';
+    if (lower.endsWith('.pptx') || lower.endsWith('.ppt')) return 'pptx';
+    if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) return 'xlsx';
+    if (lower.endsWith('.txt')) return 'txt';
+    if (lower.endsWith('.rtf')) return 'rtf';
+    if (lower.endsWith('.csv')) return 'csv';
+    if (lower.endsWith('.md')) return 'md';
+    if (lower.endsWith('.html') || lower.endsWith('.htm')) return 'html';
+    
+    // 图片类型
     if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'jpg';
     if (lower.endsWith('.png')) return 'png';
+    if (lower.endsWith('.gif')) return 'gif';
+    if (lower.endsWith('.bmp')) return 'bmp';
+    if (lower.endsWith('.webp')) return 'webp';
+    
+    // 其他类型
     return 'other';
   },
 

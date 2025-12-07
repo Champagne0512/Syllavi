@@ -205,11 +205,25 @@ Page({
 
   // 文件类型映射
   getFileTypeClass(type) {
+    // 文档类型映射到CSS类名
     const map = {
+      // 文档类型
       'pdf': 'pdf',
-      'ppt': 'ppt', 'pptx': 'ppt',
       'doc': 'doc', 'docx': 'doc',
-      'jpg': 'img', 'png': 'img', 'jpeg': 'img'
+      'ppt': 'ppt', 'pptx': 'ppt',
+      'xlsx': 'xls', 'xls': 'xls',
+      'txt': 'txt',
+      'rtf': 'doc',
+      'csv': 'xls',
+      'md': 'txt',
+      'html': 'doc', 'htm': 'doc',
+      
+      // 图片类型
+      'jpg': 'img', 'jpeg': 'img', 'png': 'img',
+      'gif': 'img', 'bmp': 'img', 'webp': 'img',
+      
+      // 其他类型
+      'other': 'other'
     };
     return map[type] || 'other';
   },
