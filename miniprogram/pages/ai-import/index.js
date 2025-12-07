@@ -25,6 +25,14 @@ Page({
   onUnload() {
     if (this.scanTicker) clearInterval(this.scanTicker);
   },
+  handleBack() {
+    const pages = getCurrentPages();
+    if (pages.length > 1) {
+      wx.navigateBack({ delta: 1 });
+    } else {
+      wx.switchTab({ url: '/pages/tools/index' });
+    }
+  },
   switchMode(e) {
     const { mode } = e.currentTarget.dataset;
     if (mode === this.data.mode) return;
@@ -358,25 +366,5 @@ Page({
     }
   },
   
-  // 示例函数 - 课程表识别
-  testCourseSchedule() {
-    const testImage = 'cloud://dev-8g3q3q9m4c9b1f6f.6465-dev-8g3q3q9m4c9b1f6f-1325659580/test-course-schedule.jpg';
-    this.setData({ 
-      image: testImage, 
-      mode: 'course',
-      result: null 
-    });
-    this.startScanning(testImage);
-  },
   
-  // 示例函数 - 待办识别
-  testTodoList() {
-    const testImage = 'cloud://dev-8g3q3q9m4c9b1f6f.6465-dev-8g3q3q9m4c9b1f6f-1325659580/test-todo-list.jpg';
-    this.setData({ 
-      image: testImage, 
-      mode: 'task',
-      result: null 
-    });
-    this.startScanning(testImage);
-  }
 });

@@ -1,4 +1,5 @@
 const { MORANDI_COLORS } = require('../../utils/colors');
+const { sectionsToTime } = require('../../utils/schedule-utils');
 const {
   DEMO_USER_ID,
   fetchWeekSchedule,
@@ -14,8 +15,8 @@ const {
   uploadToStorage
 } = require('../../utils/supabase');
 
-// 模拟课程数据 (实际开发中应从数据库加载)
-const MOCK_COURSES = [
+// 模拟课程数据（仅在 API 不可用时兜底）
+const FALLBACK_COURSES = [
   { id: 'c1', name: '操作系统', location: 'C3-201', day: 1, start: 2, len: 2, color: '#9BB5CE' }, // 周一 2-4节
   { id: 'c2', name: '线性代数', location: 'B1-105', day: 2, start: 1, len: 2, color: '#C9A5A0' }, // 周二 1-2节
   { id: 'c3', name: '人工智能导论', location: 'A2-404', day: 3, start: 6, len: 3, color: '#A3B18A' },
@@ -98,6 +99,9 @@ Page({
     
     // 数据展示
     tasks: [],
+    scheduleEntries: [],
+    scheduleLoading: false,
+    scheduleError: null,
     todayCourses: [],
     todayTasks: [],
     weekDays: [], // 周视图头部
@@ -163,14 +167,14 @@ Page({
   onLoad() {
     this.initDate();
     this.loadTasks();
-    this.generateTimeSlots();
+    this.loadSchedule();
   },
 
   onShow() {
     const app = getApp();
     app.syncTabBar(); // 使用全局同步方法
     this.loadTasks(); // 加载任务数据
-    this.updateViewData(); // 更新视图数据
+    this.loadSchedule(); // 再次同步课表数据
   },
 
   onUnload() {
@@ -237,10 +241,13 @@ Page({
     const dayOfWeek = date.getDay() || 7; // 1-7
 
     // 筛选今日课程
-    const courses = MOCK_COURSES.filter(c => c.day === dayOfWeek).map(c => ({
-      ...c,
-      time: `${8 + c.start - 1}:00 - ${8 + c.start - 1 + c.len}:00` // 简单计算时间
-    })).sort((a, b) => a.start - b.start);
+    const courses = this.getScheduleEntries()
+      .filter(c => c.day === dayOfWeek)
+      .map(c => ({
+        ...c,
+        time: sectionsToTime(c.start, c.len)
+      }))
+      .sort((a, b) => a.start - b.start);
 
     const targetMidnight = new Date(dateKey);
     targetMidnight.setHours(0, 0, 0, 0);
@@ -326,10 +333,13 @@ Page({
     const dayOfWeek = selectedDate.getDay() || 7;
     
     // 筛选选中日期的课程
-    const selectedDayCourses = MOCK_COURSES.filter(c => c.day === dayOfWeek).map(c => ({
-      ...c,
-      time: `${8 + c.start - 1}:00 - ${8 + c.start - 1 + c.len}:00`
-    })).sort((a, b) => a.start - b.start);
+    const selectedDayCourses = this.getScheduleEntries()
+      .filter(c => c.day === dayOfWeek)
+      .map(c => ({
+        ...c,
+        time: sectionsToTime(c.start, c.len)
+      }))
+      .sort((a, b) => a.start - b.start);
     
     // 生成选中日期的文本
     const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
@@ -347,68 +357,298 @@ Page({
     const year = date.getFullYear();
     const month = date.getMonth();
     
-    // 统计数据
-    const currentMonthTasks = this.data.tasks.filter(t => {
+    // 只筛选重要事件：考试、论文Deadline、假期、生日、自定义纪念日
+    const importantEvents = this.data.tasks.filter(t => {
       const d = new Date(t.rawDeadline);
-      return d.getFullYear() === year && d.getMonth() === month;
+      return d.getFullYear() === year && d.getMonth() === month && 
+             (t.type === 'exam' || t.type === 'deadline' || t.type === 'holiday' || 
+              t.type === 'birthday' || t.type === 'anniversary' || t.urgent);
     });
 
-    const completed = currentMonthTasks.filter(t => t.completed).length;
-    const exams = currentMonthTasks.filter(t => t.type === 'exam').length;
+    // 计算倒计时数据 - 事件视界
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const countdownEvents = importantEvents.map(event => {
+      const eventDate = new Date(event.rawDeadline);
+      eventDate.setHours(0, 0, 0, 0);
+      const daysUntil = Math.ceil((eventDate - now) / (24 * 60 * 60 * 1000));
+      
+      // 计算引力场强度（越近的事件引力越强）
+      let gravityStrength = 0;
+      if (daysUntil >= 0 && daysUntil <= 30) {
+        gravityStrength = Math.max(0, 1 - (daysUntil / 30));
+      }
+      
+      // 计算连线终点位置
+      const eventDay = eventDate.getDate();
+      const connectToBottom = daysUntil >= 0 && daysUntil <= 7;
+      
+      return {
+        ...event,
+        daysUntil,
+        gravityStrength,
+        isPast: daysUntil < 0,
+        isToday: daysUntil === 0,
+        isNear: daysUntil >= 0 && daysUntil <= 7,
+        eventDay,
+        connectToBottom,
+        eventHorizonType: this.getEventHorizonType(event)
+      };
+    }).sort((a, b) => a.daysUntil - b.daysUntil);
+
+    // 获取心情打卡数据 - 心绪马赛克
+    const moodData = this.getMoodDataForMonth(year, month);
     
-    // 寻找最忙的一天
-    const countMap = {};
-    currentMonthTasks.forEach(t => {
-      if (!t.deadlineKey) return;
-      countMap[t.deadlineKey] = (countMap[t.deadlineKey] || 0) + 1;
-    });
-    let busiestDate = '-';
-    let maxCount = 0;
-    Object.entries(countMap).forEach(([d, c]) => {
-      if(c > maxCount) { maxCount = c; busiestDate = d.split('-')[2]; }
-    });
-
-    // 热力图数据 (简化版，只显示当前月天数)
+    // 生成月度格子数据
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const heatmap = [];
+    const calendarGrid = [];
     for(let i=1; i<=daysInMonth; i++) {
       const dStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-      const count = countMap[dStr] || 0;
-      let level = 'l0';
-      if(count > 0) level = 'l1';
-      if(count > 2) level = 'l2';
-      if(count > 4) level = 'l3';
+      const dateObj = new Date(dStr);
       
-      heatmap.push({ day: i, date: dStr, count, level });
+      // 查找当天的重要事件
+      const dayEvents = countdownEvents.filter(event => {
+        const eventDate = new Date(event.rawDeadline);
+        return eventDate.getDate() === i;
+      });
+      
+      // 查找当天的心情记录
+      const moodRecord = moodData.find(m => m.date === dStr);
+      
+      // 计算引力场影响（来自附近的重要事件）
+      let totalGravity = 0;
+      let gravityDistortion = 0;
+      countdownEvents.forEach(event => {
+        const eventDate = new Date(event.rawDeadline);
+        const eventDay = eventDate.getDate();
+        const distance = Math.abs(i - eventDay);
+        if (distance <= 3) { // 3天范围内有引力影响
+          const gravityContribution = event.gravityStrength * (1 - distance / 3);
+          totalGravity += gravityContribution;
+          // 引力扭曲效果：越近的事件扭曲越强
+          if (distance <= 1) {
+            gravityDistortion = Math.max(gravityDistortion, gravityContribution * 0.3);
+          }
+        }
+      });
+      
+      // 心绪马赛克效果
+      let moodGlow = 0;
+      let moodColor = null;
+      if (moodRecord) {
+        moodGlow = 1;
+        moodColor = this.getMoodColor(moodRecord.mood);
+      }
+      
+      calendarGrid.push({
+        day: i,
+        date: dStr,
+        events: dayEvents,
+        mood: moodRecord,
+        moodGlow,
+        moodColor,
+        gravity: totalGravity,
+        gravityDistortion,
+        isToday: this.isToday(dateObj),
+        isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6,
+        hasEventHorizon: dayEvents.length > 0,
+        eventHorizonLines: dayEvents.map(event => ({
+          type: event.eventHorizonType,
+          connectToBottom: event.connectToBottom,
+          gravityStrength: event.gravityStrength
+        }))
+      });
     }
 
-    // 即将到期的任务 (未来7天)
-    const now = new Date();
-    const upcoming = this.data.tasks.filter(t => {
-      const d = new Date(t.rawDeadline);
-      return d > now && !t.completed;
-    }).sort((a,b) => new Date(a.rawDeadline) - new Date(b.rawDeadline)).slice(0, 5);
+    // 计算月度统计
+    const stats = {
+      totalEvents: importantEvents.length,
+      nearEvents: countdownEvents.filter(e => e.isNear).length,
+      completedEvents: importantEvents.filter(e => e.completed).length,
+      moodDays: moodData.length,
+      currentStreak: this.calculateCurrentStreak(moodData),
+      monthMoodScore: this.calculateMonthMoodScore(moodData),
+      perfectMoodDays: moodData.filter(m => m.mood === 'happy' || m.mood === 'productive').length
+    };
+
+    // 检查是否获得月度徽章
+    const monthlyBadges = this.checkMonthlyBadges(moodData, importantEvents, year, month);
 
     this.setData({
-      monthStats: {
-        totalTasks: currentMonthTasks.length,
-        completedTasks: completed,
-        exams,
-        busiestDay: busiestDate === '-' ? '-' : `${month+1}.${busiestDate}`
-      },
-      monthHeatmap: heatmap,
-      upcomingTasks: upcoming
+      monthView: {
+        calendarGrid,
+        countdownEvents: countdownEvents.slice(0, 5), // 只显示最近5个
+        eventHorizonEvents: countdownEvents.filter(e => e.daysUntil >= 0),
+        stats,
+        currentMonth: month,
+        currentYear: year,
+        monthlyBadges,
+        showMoodCheckIn: this.shouldShowMoodCheckIn(year, month)
+      }
     });
+  },
+
+  // 获取事件视界类型
+  getEventHorizonType(event) {
+    if (event.type === 'exam') return 'exam';
+    if (event.type === 'deadline') return 'deadline';
+    if (event.type === 'holiday') return 'holiday';
+    if (event.type === 'birthday') return 'birthday';
+    if (event.type === 'anniversary') return 'anniversary';
+    return 'important';
+  },
+
+  // 获取心情颜色
+  getMoodColor(mood) {
+    const moodColors = {
+      happy: '#FFD93D',      // 开心 - 黄色
+      anxious: '#95A5A6',    // 焦虑 - 灰色
+      productive: '#6BCF7F', // 充实 - 绿色
+      tired: '#E08E79',      // 疲惫 - 橙色
+      excited: '#DDA0DD',    // 兴奋 - 紫色
+      calm: '#87CEEB'        // 平静 - 天蓝色
+    };
+    return moodColors[mood] || '#BDC3C7';
+  },
+
+  // 计算月度心情得分
+  calculateMonthMoodScore(moodData) {
+    if (!moodData.length) return 0;
+    const moodScores = {
+      happy: 5,
+      productive: 4,
+      calm: 3,
+      excited: 4,
+      anxious: 1,
+      tired: 2
+    };
+    const totalScore = moodData.reduce((sum, mood) => sum + (moodScores[mood.mood] || 3), 0);
+    return Math.round(totalScore / moodData.length * 10) / 10;
+  },
+
+  // 检查月度徽章
+  checkMonthlyBadges(moodData, events, year, month) {
+    const badges = [];
+    
+    // 全勤徽章
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    if (moodData.length === daysInMonth) {
+      badges.push({
+        id: 'perfect_attendance',
+        name: '全勤大师',
+        description: '整月完成心情打卡',
+        icon: '🏆',
+        color: '#FFD700'
+      });
+    }
+    
+    // 连续打卡徽章
+    const currentStreak = this.calculateCurrentStreak(moodData);
+    if (currentStreak >= 7) {
+      badges.push({
+        id: 'week_streak',
+        name: '七日连击',
+        description: '连续打卡7天',
+        icon: '🔥',
+        color: '#FF6347'
+      });
+    }
+    
+    // 高能量月度徽章
+    const highEnergyDays = moodData.filter(m => m.mood === 'happy' || m.mood === 'productive').length;
+    if (highEnergyDays >= daysInMonth * 0.7) {
+      badges.push({
+        id: 'high_energy',
+        name: '能量满满',
+        description: '70%以上日子状态良好',
+        icon: '⚡',
+        color: '#32CD32'
+      });
+    }
+    
+    // 事件征服者徽章
+    const completedEvents = events.filter(e => e.completed).length;
+    if (completedEvents >= 3) {
+      badges.push({
+        id: 'event_conqueror',
+        name: '事件征服者',
+        description: '完成多个重要事件',
+        icon: '👑',
+        color: '#9370DB'
+      });
+    }
+    
+    return badges;
+  },
+
+  // 是否应该显示心情打卡
+  shouldShowMoodCheckIn(year, month) {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // 昨天的日期
+    const yesterdayKey = formatDateKey(yesterday);
+    
+    // 获取昨天的心情记录
+    const moodData = this.getMoodDataForMonth(year, month);
+    const yesterdayMood = moodData.find(m => m.date === yesterdayKey);
+    
+    // 如果昨天没有打卡且是最近2天内，显示打卡提醒
+    const daysSinceYesterday = Math.floor((today - yesterday) / (24 * 60 * 60 * 1000));
+    return !yesterdayMood && daysSinceYesterday <= 2;
+  },
+
+  // 获取心情数据
+  getMoodDataForMonth(year, month) {
+    const moodKey = `mood_${year}_${month}`;
+    const savedMoods = wx.getStorageSync(moodKey) || [];
+    return savedMoods;
+  },
+
+  // 判断是否为今天
+  isToday(date) {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  },
+
+  // 计算连续打卡天数
+  calculateCurrentStreak(moodData) {
+    if (!moodData.length) return 0;
+    
+    const sorted = [...moodData].sort((a, b) => new Date(b.date) - new Date(a.date));
+    let streak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    
+    for (let i = 0; i < sorted.length; i++) {
+      const moodDate = new Date(sorted[i].date);
+      moodDate.setHours(0, 0, 0, 0);
+      
+      const diffDays = Math.floor((currentDate - moodDate) / (24 * 60 * 60 * 1000));
+      
+      if (diffDays === streak) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
   },
 
   generateTimeSlots() {
     // 生成 8:00 - 20:00 的时间槽，并附带课程信息
     const slots = [];
     for (let i = 1; i <= 12; i++) { // 12节课
-      const coursesInSlot = MOCK_COURSES.filter(c => c.start === i).map(c => ({
-        ...c,
-        timeIndex: i - 1
-      }));
+      const coursesInSlot = this.getScheduleEntries()
+        .filter(c => c.start === i)
+        .map(c => ({
+          ...c,
+          timeIndex: i - 1
+        }));
       
       slots.push({
         time: i,
@@ -586,6 +826,152 @@ Page({
     }
   },
 
+  // === 心情打卡相关功能 ===
+  
+  // 保存心情打卡
+  saveMoodCheckIn(e) {
+    const { mood } = e.currentTarget.dataset;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = formatDateKey(yesterday);
+    
+    // 获取当前月份的心情数据
+    const year = yesterday.getFullYear();
+    const month = yesterday.getMonth();
+    const moodKey = `mood_${year}_${month}`;
+    const moodData = wx.getStorageSync(moodKey) || [];
+    
+    // 检查是否已经打卡
+    const existingIndex = moodData.findIndex(m => m.date === yesterdayKey);
+    if (existingIndex >= 0) {
+      moodData[existingIndex].mood = mood;
+    } else {
+      moodData.push({
+        date: yesterdayKey,
+        mood: mood,
+        timestamp: Date.now()
+      });
+    }
+    
+    // 保存心情数据
+    wx.setStorageSync(moodKey, moodData);
+    
+    // 显示反馈
+    wx.vibrateShort({ type: 'light' });
+    wx.showToast({
+      title: '打卡成功',
+      icon: 'success'
+    });
+    
+    // 关闭打卡弹窗并刷新视图
+    this.setData({
+      'monthView.showMoodCheckIn': false
+    }, () => {
+      this.updateViewData();
+    });
+  },
+
+  // 跳过心情打卡
+  skipMoodCheckIn() {
+    this.setData({
+      'monthView.showMoodCheckIn': false
+    });
+  },
+
+  // 关闭心情打卡弹窗
+  closeMoodCheckIn() {
+    this.setData({
+      'monthView.showMoodCheckIn': false
+    });
+  },
+
+  async loadSchedule() {
+    // 避免并发重复加载
+    if (this._loadingSchedule) return;
+    this._loadingSchedule = true;
+    this.setData({ scheduleLoading: true });
+
+    try {
+      const app = getApp();
+      const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
+      if (!userId) {
+        throw new Error('缺少用户信息');
+      }
+
+      const rows = await fetchWeekSchedule(userId);
+      if (!Array.isArray(rows) || rows.length === 0) {
+        throw new Error('课表为空');
+      }
+
+      const normalized = this.normalizeScheduleEntries(rows);
+      wx.setStorageSync('week_schedule_cache', normalized);
+      this.applyScheduleEntries(normalized);
+      this.setData({ scheduleError: null });
+    } catch (error) {
+      console.warn('加载课表失败，使用缓存或兜底数据', error);
+      const cached = wx.getStorageSync('week_schedule_cache');
+      if (Array.isArray(cached) && cached.length) {
+        this.applyScheduleEntries(cached.map((item) => ({ ...item })));
+      } else {
+        const fallback = this.normalizeScheduleEntries(FALLBACK_COURSES);
+        this.applyScheduleEntries(fallback);
+      }
+      this.setData({ scheduleError: error?.message || '课表获取失败' });
+    } finally {
+      this.setData({ scheduleLoading: false });
+      this._loadingSchedule = false;
+    }
+  },
+
+  applyScheduleEntries(entries = []) {
+    this.setData(
+      {
+        scheduleEntries: entries
+      },
+      () => {
+        this.generateTimeSlots();
+        this.updateViewData();
+      }
+    );
+  },
+
+  normalizeScheduleEntries(rows = []) {
+    return rows.map((row, index) => {
+      if (row && row.scheduleId && row.courseId && row.day && row.start) {
+        return { ...row };
+      }
+
+      const scheduleId = row.id || row.schedule_id || `schedule-${index}`;
+      const courseId = row.course_id || row.courseId || row.id || scheduleId;
+      const paletteIndex = index % MORANDI_COLORS.length;
+      const color = row.course_color || row.color || MORANDI_COLORS[paletteIndex];
+
+      // 处理视图返回的数据结构
+      const courseName = row.course_name || row.name || `课程${index + 1}`;
+      const courseColor = row.course_color || color;
+      const courseLocation = row.final_location || row.schedule_location || row.location || '待定';
+      const courseTeacher = row.teacher || row.course_teacher || '';
+
+      return {
+        id: scheduleId,
+        scheduleId,
+        courseId,
+        name: courseName,
+        location: courseLocation,
+        teacher: courseTeacher,
+        day: Number(row.day_of_week || row.day || row.dayIdx || 1),
+        start: Number(row.start_section || row.start || 1),
+        len: Number(row.length || row.len || 1),
+        color: courseColor,
+        weeks: Array.isArray(row.weeks) && row.weeks.length ? row.weeks : DEFAULT_WEEKS
+      };
+    });
+  },
+
+  getScheduleEntries() {
+    return Array.isArray(this.data.scheduleEntries) ? this.data.scheduleEntries : [];
+  },
+
   // 事件处理
   handleCourseOpen(e) {
     const course = e.detail;
@@ -637,6 +1023,26 @@ Page({
       console.error('切换任务状态失败:', err);
       wx.showToast({ title: '操作失败', icon: 'none' });
     }
+  },
+
+  // 选择事件类型
+  selectEventType(e) {
+    const { type } = e.currentTarget.dataset;
+    this.setData({
+      'taskForm.type': type,
+      'taskForm.urgent': false
+    });
+    wx.vibrateShort({ type: 'light' });
+  },
+
+  // 切换紧急状态
+  toggleUrgent() {
+    const currentUrgent = this.data.taskForm.urgent || false;
+    this.setData({
+      'taskForm.type': '',
+      'taskForm.urgent': !currentUrgent
+    });
+    wx.vibrateShort({ type: 'light' });
   },
 
   // 完成所有今日待办
@@ -698,7 +1104,9 @@ Page({
         deadline_date: dateStr,
         deadline_time: timeStr,
         has_specific_time: false,
-        related_course_id: null
+        related_course_id: null,
+        type: '',
+        urgent: false
       }
     });
   },
@@ -726,7 +1134,9 @@ Page({
         deadline_date: dateStr,
         deadline_time: timeStr,
         has_specific_time: hasExplicitTime,
-        related_course_id: task.related_course_id || null
+        related_course_id: task.related_course_id || null,
+        type: task.type || '',
+        urgent: task.urgent || false
       }
     });
   },
@@ -744,7 +1154,9 @@ Page({
         deadline_date: '',
         deadline_time: '',
         has_specific_time: false,
-        related_course_id: null
+        related_course_id: null,
+        type: '',
+        urgent: false
       }
     });
   },
@@ -831,7 +1243,12 @@ Page({
     try {
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
-      const recordType = taskForm.mode === 'instant' ? 'exam' : 'homework';
+      
+      // 确定任务类型：优先使用用户选择的重要事件类型，否则使用默认类型
+      let recordType = taskForm.type || '';
+      if (!recordType) {
+        recordType = taskForm.mode === 'instant' ? 'exam' : 'homework';
+      }
 
       const payload = {
         user_id: userId,
@@ -840,7 +1257,8 @@ Page({
         description: taskForm.description.trim() || null,
         deadline: taskForm.deadline,
         is_completed: false,
-        related_course_id: taskForm.related_course_id || null
+        related_course_id: taskForm.related_course_id || null,
+        urgent: taskForm.urgent || false
       };
 
       if (editingTask) {
@@ -936,21 +1354,23 @@ Page({
   
   openCourse(e) {
     const { id } = e.currentTarget.dataset;
-    const course = MOCK_COURSES.find(c => c.id === id);
+    const courseEntry = this.getScheduleEntries().find(c => c.id === id || c.scheduleId === id);
     
-    if (!course) {
+    if (!courseEntry) {
       wx.showToast({ title: '课程信息未找到', icon: 'none' });
       return;
     }
     
     // 添加时间信息
-    course.time = `${8 + course.start - 1}:00 - ${8 + course.start - 1 + course.len}:00`;
+    const course = {
+      ...courseEntry,
+      time: sectionsToTime(courseEntry.start, courseEntry.len)
+    };
     
     // 查找相关任务
     const courseTasks = this.data.tasks.filter(task => {
-      const courseCode = (task.course || task.related_course_id || '').toLowerCase();
-      const courseName = course.name.toLowerCase();
-      return courseName.includes(courseCode) || courseCode.includes(courseName.slice(0, 4));
+      if (!task.related_course_id) return false;
+      return task.related_course_id === course.courseId;
     });
     
     this.setData({
@@ -1108,6 +1528,27 @@ Page({
     });
   },
 
+  // 从模拟数据中删除课程
+  removeCourseFromMockData(courseId) {
+    const entries = this.getScheduleEntries();
+    const updatedEntries = entries.filter(entry => entry.courseId !== courseId);
+    this.setData({ scheduleEntries: updatedEntries });
+    wx.setStorageSync('week_schedule_cache', updatedEntries);
+  },
+
+  // 更新模拟数据中的课程
+  updateMockCourse(courseId, updates) {
+    const entries = this.getScheduleEntries();
+    const updatedEntries = entries.map(entry => {
+      if (entry.courseId === courseId) {
+        return { ...entry, ...updates };
+      }
+      return entry;
+    });
+    this.setData({ scheduleEntries: updatedEntries });
+    wx.setStorageSync('week_schedule_cache', updatedEntries);
+  },
+
   // 添加课程
   addCourse() {
     wx.vibrateShort({ type: 'light' });
@@ -1170,11 +1611,7 @@ Page({
       };
 
       await createCourseSchedules([schedulePayload]);
-
-      // 刷新界面 - 直接更新模拟数据
-      this.addCourseToMockData(newCourse, courseForm);
-      this.generateTimeSlots();
-      this.updateViewData();
+      await this.loadSchedule();
       
       wx.showToast({ title: '课程添加成功', icon: 'success' });
       this.closeCourseEditor();
@@ -1210,146 +1647,6 @@ Page({
           // wx.navigateTo({
           //   url: `/pages/course-edit/index?courseId=${selectedCourse.id}`
           // });
-        }
-      }
-    });
-  },
-
-  // 添加课程到模拟数据
-  addCourseToMockData(newCourse, courseForm) {
-    // 生成唯一的课程ID
-    const courseId = 'c' + (MOCK_COURSES.length + 1);
-    
-    // 创建新的课程对象
-    const newMockCourse = {
-      id: courseId,
-      name: newCourse.name,
-      location: courseForm.location || '待定',
-      teacher: courseForm.teacher || '待定',
-      day: courseForm.day,
-      start: courseForm.start,
-      len: courseForm.len,
-      color: courseForm.color
-    };
-    
-    // 添加到模拟数据
-    MOCK_COURSES.push(newMockCourse);
-    
-    // 更新存储
-    wx.setStorageSync('courses_cache', MOCK_COURSES);
-  },
-
-  // 更新模拟数据中的课程
-  updateMockCourse(courseId, courseForm) {
-    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
-    if (courseIndex !== -1) {
-      MOCK_COURSES[courseIndex] = {
-        ...MOCK_COURSES[courseIndex],
-        name: courseForm.name,
-        location: courseForm.location || '待定',
-        teacher: courseForm.teacher || '待定',
-        day: courseForm.day,
-        start: courseForm.start,
-        len: courseForm.len,
-        color: courseForm.color
-      };
-      
-      // 更新存储
-      wx.setStorageSync('courses_cache', MOCK_COURSES);
-    }
-  },
-
-  // 从模拟数据中删除课程
-  removeCourseFromMockData(courseId) {
-    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
-    if (courseIndex !== -1) {
-      MOCK_COURSES.splice(courseIndex, 1);
-      
-      // 更新存储
-      wx.setStorageSync('courses_cache', MOCK_COURSES);
-    }
-  },
-
-  // 添加课程到模拟数据
-  addCourseToMockData(newCourse, courseForm) {
-    // 生成唯一的课程ID
-    const courseId = 'c' + (MOCK_COURSES.length + 1);
-    
-    // 创建新的课程对象
-    const newMockCourse = {
-      id: courseId,
-      name: newCourse.name,
-      location: courseForm.location || '待定',
-      teacher: courseForm.teacher || '待定',
-      day: courseForm.day,
-      start: courseForm.start,
-      len: courseForm.len,
-      color: courseForm.color
-    };
-    
-    // 添加到模拟数据
-    MOCK_COURSES.push(newMockCourse);
-    
-    // 更新存储
-    wx.setStorageSync('courses_cache', MOCK_COURSES);
-  },
-
-  // 更新模拟数据中的课程
-  updateMockCourse(courseId, courseForm) {
-    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
-    if (courseIndex !== -1) {
-      MOCK_COURSES[courseIndex] = {
-        ...MOCK_COURSES[courseIndex],
-        name: courseForm.name,
-        location: courseForm.location || '待定',
-        teacher: courseForm.teacher || '待定',
-        day: courseForm.day,
-        start: courseForm.start,
-        len: courseForm.len,
-        color: courseForm.color
-      };
-      
-      // 更新存储
-      wx.setStorageSync('courses_cache', MOCK_COURSES);
-    }
-  },
-
-  // 从模拟数据中删除课程
-  removeCourseFromMockData(courseId) {
-    const courseIndex = MOCK_COURSES.findIndex(c => c.id === courseId);
-    if (courseIndex !== -1) {
-      MOCK_COURSES.splice(courseIndex, 1);
-      
-      // 更新存储
-      wx.setStorageSync('courses_cache', MOCK_COURSES);
-    }
-  },
-
-  deleteCourse() {
-    const { selectedCourse } = this.data;
-    wx.showModal({
-      title: '删除课程',
-      content: `确定要删除课程"${selectedCourse.name}"吗？此操作不可撤销。`,
-      confirmText: '删除',
-      confirmColor: '#FF3B30',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          // 从模拟数据中删除课程
-          const courseIndex = MOCK_COURSES.findIndex(c => c.id === selectedCourse.id);
-          if (courseIndex !== -1) {
-            MOCK_COURSES.splice(courseIndex, 1);
-            
-            // 更新视图数据
-            this.updateViewData();
-            
-            wx.showToast({
-              title: '删除成功',
-              icon: 'success'
-            });
-            
-            this.closeCourseDetail();
-          }
         }
       }
     });

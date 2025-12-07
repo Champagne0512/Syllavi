@@ -308,74 +308,172 @@
       </view>
     </view>
 
-    <!-- === 月视图 (Month / Dashboard) === -->
+    <!-- === 月视图 (Event Horizon & Mood Mosaic) === -->
     <view wx:if="{{viewMode === 'month'}}" class="view-container month-view fade-in">
       
+      <!-- 心情打卡弹窗 -->
+      <view class="mood-checkin-modal" wx:if="{{monthView.showMoodCheckIn}}">
+        <view class="mood-modal-backdrop" catchtap="closeMoodCheckIn"></view>
+        <view class="mood-modal-content">
+          <view class="mood-modal-header">
+            <text class="mood-modal-title">昨天过得怎么样？</text>
+            <text class="mood-modal-subtitle">记录心情，绘制你的月度马赛克</text>
+          </view>
+          <view class="mood-options">
+            <view class="mood-option" wx:for="{{[ {mood: 'happy', emoji: '😊', label: '开心'}, {mood: 'productive', emoji: '💪', label: '充实'}, {mood: 'calm', emoji: '😌', label: '平静'}, {mood: 'excited', emoji: '🎉', label: '兴奋'}, {mood: 'tired', emoji: '😴', label: '疲惫'}, {mood: 'anxious', emoji: '😰', label: '焦虑'} ]}}" wx:key="mood" catchtap="saveMoodCheckIn" data-mood="{{item.mood}}">
+              <view class="mood-emoji">{{item.emoji}}</view>
+              <text class="mood-label">{{item.label}}</text>
+            </view>
+          </view>
+          <view class="mood-modal-actions">
+            <view class="mood-btn skip" catchtap="skipMoodCheckIn">跳过</view>
+          </view>
+        </view>
+      </view>
+
       <!-- 1. 月度统计卡片 -->
-      <view class="stats-grid">
+      <view class="month-stats-grid">
         <view class="stat-card glass-card">
-          <text class="stat-num">{{monthStats.totalTasks || 0}}</text>
-          <text class="stat-label">总待办</text>
+          <text class="stat-num">{{monthView.stats.totalEvents || 0}}</text>
+          <text class="stat-label">重要事件</text>
         </view>
         <view class="stat-card glass-card">
-          <text class="stat-num">{{monthStats.completedTasks || 0}}</text>
-          <text class="stat-label">已完成</text>
+          <text class="stat-num">{{monthView.stats.nearEvents || 0}}</text>
+          <text class="stat-label">临近事件</text>
         </view>
         <view class="stat-card glass-card highlight">
-          <text class="stat-num">{{monthStats.exams || 0}}</text>
-          <text class="stat-label">考试</text>
+          <text class="stat-num">{{monthView.stats.moodDays || 0}}</text>
+          <text class="stat-label">心情打卡</text>
         </view>
         <view class="stat-card glass-card">
-          <text class="stat-num">{{monthStats.busiestDay || '-'}}</text>
-          <text class="stat-label">最忙碌</text>
+          <text class="stat-num">{{monthView.stats.currentStreak || 0}}</text>
+          <text class="stat-label">连续天数</text>
         </view>
       </view>
 
-      <!-- 2. 任务热力图 -->
-      <view class="section-head mt-40">
-        <text class="head-title">能量分布</text>
-        <text class="head-sub">本月任务密度</text>
-      </view>
-      <view class="heatmap-container glass-card">
-        <view class="heatmap-grid">
-          <block wx:for="{{monthHeatmap}}" wx:key="day">
-            <view class="heat-cell {{item.level}}">
-              <text wx:if="{{item.count > 0}}" class="heat-num">{{item.day}}</text>
-            </view>
-          </block>
+      <!-- 月度徽章 -->
+      <view class="monthly-badges" wx:if="{{monthView.monthlyBadges && monthView.monthlyBadges.length > 0}}">
+        <view class="badges-title">
+          <text class="badges-icon">🏅</text>
+          <text class="badges-text">本月成就</text>
         </view>
-        <view class="heatmap-legend">
-          <text>Less</text>
-          <view class="legend-dots">
-            <view class="dot l0"></view>
-            <view class="dot l1"></view>
-            <view class="dot l2"></view>
-            <view class="dot l3"></view>
+        <view class="badges-container">
+          <view class="badge-item" wx:for="{{monthView.monthlyBadges}}" wx:key="id">
+            <view class="badge-icon" style="background: {{item.color}}20; color: {{item.color}};">{{item.icon}}</view>
+            <view class="badge-info">
+              <text class="badge-name">{{item.name}}</text>
+              <text class="badge-desc">{{item.description}}</text>
+            </view>
           </view>
-          <text>More</text>
         </view>
       </view>
 
-      <!-- 3. 近期重要日程 -->
+      <!-- 2. 事件视界 - 关键节点倒计时 -->
       <view class="section-head mt-40">
-        <text class="head-title">即将到来</text>
-        <text class="head-sub">{{upcomingTasks.length}} 项</text>
+        <text class="head-title">事件视界</text>
+        <text class="head-sub">关键节点倒计时</text>
       </view>
-      <view class="upcoming-list">
-        <block wx:for="{{upcomingTasks}}" wx:key="id">
-          <view class="upcoming-item glass-card">
-            <view class="up-date">
-              <text class="up-day">{{item.deadline.split('.')[1]}}</text>
-              <text class="up-mon">{{item.deadline.split('.')[0]}}月</text>
+      
+      <view class="event-horizon-container">
+        <!-- 倒计时岛 -->
+        <view class="countdown-island">
+          <view class="island-title">即将到来的重要事件</view>
+          <view class="countdown-list">
+            <block wx:for="{{monthView.eventHorizonEvents}}" wx:key="id">
+              <view class="countdown-item {{item.eventHorizonType}}">
+                <view class="countdown-days">
+                  <text class="days-number">{{item.daysUntil}}</text>
+                  <text class="days-label">天</text>
+                </view>
+                <view class="countdown-info">
+                  <text class="event-title">{{item.title}}</text>
+                  <text class="event-type">{{item.eventHorizonType === 'exam' ? '考试' : item.eventHorizonType === 'deadline' ? '截止' : '重要'}}</text>
+                </view>
+                <view class="event-horizon-indicator {{item.eventHorizonType}}"></view>
+              </view>
+            </block>
+            <view wx:if="{{monthView.eventHorizonEvents.length === 0}}" class="no-events-tip">
+              <text class="no-events-text">本月暂无重要事件</text>
+              <text class="no-events-sub">享受宁静的时光</text>
             </view>
-            <view class="up-info">
-              <text class="up-title">{{item.title}}</text>
-              <text class="up-sub {{item.urgent ? 'urgent-text' : ''}}">{{item.course}}</text>
-            </view>
-            <view class="up-tag" style="background: {{item.accent}}"></view>
           </view>
-        </block>
-        <view wx:if="{{upcomingTasks.length === 0}}" class="empty-tip">未来7天暂无急迫任务</view>
+        </view>
+
+        <!-- 月度日历网格 -->
+        <view class="month-calendar-grid">
+          <!-- 星期标题 -->
+          <view class="calendar-weekdays">
+            <view class="weekday" wx:for="{{['日','一','二','三','四','五','六']}}" wx:key="*this">
+              <text class="weekday-text">{{item}}</text>
+            </view>
+          </view>
+          
+          <!-- 日期格子 -->
+          <view class="calendar-days">
+            <block wx:for="{{monthView.calendarGrid}}" wx:key="day">
+              <view class="calendar-day {{item.isToday ? 'today' : ''}} {{item.isWeekend ? 'weekend' : ''}}" 
+                    style="transform: scale({{1 - item.gravityDistortion * 0.1}}); opacity: {{0.7 + item.gravity * 0.3}};">
+                
+                <!-- 日期数字 -->
+                <view class="day-number {{item.isToday ? 'today-number' : ''}}">{{item.day}}</view>
+                
+                <!-- 心情马赛克 -->
+                <view class="mood-mosaic" wx:if="{{item.moodGlow}}" style="background: {{item.moodColor}}; opacity: 0.3;">
+                  <view class="mood-glow" style="background: {{item.moodColor}};"></view>
+                </view>
+                
+                <!-- 事件视界连线 -->
+                <block wx:if="{{item.hasEventHorizon}}" wx:for="{{item.eventHorizonLines}}" wx:for-item="line" wx:key="type">
+                  <view class="event-horizon-line {{line.type}}" 
+                        wx:if="{{line.connectToBottom}}"
+                        style="height: {{200 + line.gravityStrength * 100}}rpx; opacity: {{0.6 + line.gravityStrength * 0.4}};">
+                  </view>
+                </block>
+                
+                <!-- 事件指示器 -->
+                <view class="event-indicators" wx:if="{{item.events.length > 0}}">
+                  <view class="event-dot {{item.events[0].eventHorizonType}}" 
+                        style="background: {{item.events[0].gravityStrength > 0.5 ? '#FF6B6B' : '#87A8A4'}};">
+                  </view>
+                  <view class="event-count" wx:if="{{item.events.length > 1}}">{{item.events.length}}</view>
+                </view>
+                
+                <!-- 引力场扭曲效果 -->
+                <view class="gravity-field" wx:if="{{item.gravityDistortion > 0}}" 
+                      style="border-radius: {{50 - item.gravityDistortion * 20}}%; border: 1px solid rgba(255, 107, 107, {{item.gravityDistortion * 0.3}});">
+                </view>
+              </view>
+            </block>
+          </view>
+        </view>
+      </view>
+
+      <!-- 3. 心绪马赛克统计 -->
+      <view class="section-head mt-40">
+        <text class="head-title">心绪马赛克</text>
+        <text class="head-sub">本月情绪分布</text>
+      </view>
+      
+      <view class="mood-mosaic-stats">
+        <view class="mood-score-card glass-card">
+          <view class="score-circle">
+            <text class="score-number">{{monthView.stats.monthMoodScore || 0}}</text>
+            <text class="score-label">心情指数</text>
+          </view>
+          <view class="score-details">
+            <text class="score-desc">本月平均心情状态</text>
+            <text class="score-days">{{monthView.stats.perfectMoodDays || 0}} 天高能量</text>
+          </view>
+        </view>
+        
+        <view class="mood-distribution">
+          <view class="mood-bar-item" wx:for="{{[ {mood: 'happy', emoji: '😊', color: '#FFD93D'}, {mood: 'productive', emoji: '💪', color: '#6BCF7F'}, {mood: 'calm', emoji: '😌', color: '#87CEEB'}, {mood: 'anxious', emoji: '😰', color: '#95A5A6'} ]}}" wx:key="mood">
+            <view class="mood-bar-emoji">{{item.emoji}}</view>
+            <view class="mood-bar-track">
+              <view class="mood-bar-fill" style="background: {{item.color}}; width: {{item.percentage || 20}}%;"></view>
+            </view>
+          </view>
+        </view>
       </view>
 
     </view>
@@ -617,6 +715,54 @@
           <text class="form-label">任务描述</text>
           <textarea class="form-textarea" placeholder="补充细节、准备事项或链接..." value="{{taskForm.description}}" 
                     data-field="description" bindinput="onTaskFormChange" />
+        </view>
+
+        <!-- 重要事件设置 -->
+        <view class="form-group">
+          <view class="important-event-section">
+            <view class="important-event-header">
+              <text class="form-label">设为重要事件</text>
+              <text class="form-subtitle">将在月视图的事件视界中显示</text>
+            </view>
+            
+            <view class="important-event-options">
+              <view class="event-type-option {{taskForm.type === 'exam' ? 'active' : ''}}" 
+                    data-type="exam" catchtap="selectEventType">
+                <view class="event-type-icon">📝</view>
+                <text class="event-type-name">考试</text>
+              </view>
+              
+              <view class="event-type-option {{taskForm.type === 'deadline' ? 'active' : ''}}" 
+                    data-type="deadline" catchtap="selectEventType">
+                <view class="event-type-icon">⏰</view>
+                <text class="event-type-name">截止日期</text>
+              </view>
+              
+              <view class="event-type-option {{taskForm.type === 'holiday' ? 'active' : ''}}" 
+                    data-type="holiday" catchtap="selectEventType">
+                <view class="event-type-icon">🎉</view>
+                <text class="event-type-name">假期</text>
+              </view>
+              
+              <view class="event-type-option {{taskForm.type === 'birthday' ? 'active' : ''}}" 
+                    data-type="birthday" catchtap="selectEventType">
+                <view class="event-type-icon">🎂</view>
+                <text class="event-type-name">生日</text>
+              </view>
+              
+              <view class="event-type-option {{taskForm.type === 'anniversary' ? 'active' : ''}}" 
+                    data-type="anniversary" catchtap="selectEventType">
+                <view class="event-type-icon">💝</view>
+                <text class="event-type-name">纪念日</text>
+              </view>
+              
+              <view class="event-type-option {{taskForm.urgent ? 'active' : ''}}" 
+                    data-urgent="true" catchtap="toggleUrgent">
+                <view class="event-type-icon">🔥</view>
+                <text class="event-type-name">紧急</text>
+              </view>
+            </view>
+          </view>
         </view>
       </scroll-view>
 
