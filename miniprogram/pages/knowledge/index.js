@@ -55,11 +55,11 @@ Page({
       'csv': 'xls',
       'md': 'txt',
       'html': 'doc', 'htm': 'doc',
-      
+
       // 图片类型
       'jpg': 'img', 'jpeg': 'img', 'png': 'img',
       'gif': 'img', 'bmp': 'img', 'webp': 'img',
-      
+
       // 其他类型
       'other': 'other'
     };
@@ -558,9 +558,12 @@ Page({
     
     // 文档类型
     if (lower.endsWith('.pdf')) return 'pdf';
-    if (lower.endsWith('.docx') || lower.endsWith('.doc')) return 'docx';
-    if (lower.endsWith('.pptx') || lower.endsWith('.ppt')) return 'pptx';
-    if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) return 'xlsx';
+    if (lower.endsWith('.docx')) return 'docx';
+    if (lower.endsWith('.doc')) return 'doc';
+    if (lower.endsWith('.pptx')) return 'pptx';
+    if (lower.endsWith('.ppt')) return 'ppt';
+    if (lower.endsWith('.xlsx')) return 'xlsx';
+    if (lower.endsWith('.xls')) return 'xls';
     if (lower.endsWith('.txt')) return 'txt';
     if (lower.endsWith('.rtf')) return 'rtf';
     if (lower.endsWith('.csv')) return 'csv';

@@ -217,11 +217,11 @@ Page({
       'csv': 'xls',
       'md': 'txt',
       'html': 'doc', 'htm': 'doc',
-      
+
       // 图片类型
       'jpg': 'img', 'jpeg': 'img', 'png': 'img',
       'gif': 'img', 'bmp': 'img', 'webp': 'img',
-      
+
       // 其他类型
       'other': 'other'
     };
