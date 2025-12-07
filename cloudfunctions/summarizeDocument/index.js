@@ -72,22 +72,57 @@ async function processDocumentByType(fileUrl, fileType, isFullAnalysis = false, 
 // 处理文本类文档
 async function processTextDocument(fileUrl, prompt, fileType, isFullAnalysis = false) {
   try {
-    // 进一步优化参数 - 更快的处理
-    const maxContentLength = isFullAnalysis ? 8000 : 4000; // 大幅减少内容长度
-    const maxTokens = isFullAnalysis ? 1000 : 600; // 减少输出token数量
+    // 增加内容长度限制以提高处理能力
+    const maxContentLength = isFullAnalysis ? 12000 : 8000; // 增加内容长度限制
+    const maxTokens = isFullAnalysis ? 1500 : 800; // 增加输出token数量
     const systemContent = isFullAnalysis 
-      ? '你是文档分析专家，快速提取关键信息。'
-      : '你是文档摘要助手，快速提取要点。';
+      ? '你是文档分析专家，请全面分析文档内容，包括核心观点、关键数据和结论建议。'
+      : '你是文档摘要助手，请准确提取文档的核心要点和关键信息。';
     
-    // 优化文件获取超时设置
-    const response = await axios.get(fileUrl, { 
-      responseType: 'text',
-      maxContentLength: 2 * 1024 * 1024, // 减少到2MB
-      timeout: 8000 // 减少到8秒获取文件超时
-    });
+    let content = '';
+    let isEncrypted = false;
+    let isBinary = false;
     
-    let content = response.data;
-    console.log('获取到的文件内容长度:', content ? content.length : 0);
+    try {
+      // 尝试获取文件内容，支持多种编码格式
+      const response = await axios.get(fileUrl, { 
+        responseType: 'arraybuffer', // 先以二进制方式获取
+        maxContentLength: 5 * 1024 * 1024, // 增加到5MB
+        timeout: 12000 // 增加到12秒获取文件超时
+      });
+      
+      // 尝试检测编码并转换为文本
+      const buffer = Buffer.from(response.data);
+      
+      // 检测是否是二进制文件
+      const textBuffer = buffer.toString('utf8', 0, Math.min(1024, buffer.length));
+      
+      // 简单检测是否为加密内容或二进制内容
+      const nonTextChars = textBuffer.match(/[^\x20-\x7E\s\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/g);
+      if (nonTextChars && nonTextChars.length > textBuffer.length * 0.3) {
+        isBinary = true;
+        console.log('检测到二进制或加密内容');
+      } else if (textBuffer.includes('加密') || textBuffer.includes('密码') || textBuffer.includes('protected')) {
+        isEncrypted = true;
+        console.log('检测到加密文档');
+      } else {
+        content = buffer.toString('utf8');
+      }
+    } catch (error) {
+      console.error('获取文件内容失败:', error);
+      throw new Error('文件获取失败: ' + error.message);
+    }
+    
+    // 如果是二进制或加密内容，返回特殊提示
+    if (isBinary || isEncrypted) {
+      return {
+        success: true,
+        summary: isEncrypted 
+          ? '此文档已加密，需要密码才能访问内容。请先解密文档后重新上传。'
+          : '无法解析此文档格式，可能是因为文件格式不支持或文件损坏。请尝试转换为PDF或TXT格式后重新上传。',
+        isPartial: true
+      };
+    }
     
     if (!content || content.trim().length === 0) {
       throw new Error('文件内容为空或无法读取');
@@ -95,7 +130,7 @@ async function processTextDocument(fileUrl, prompt, fileType, isFullAnalysis = f
     
     // 根据是否是完整分析设置不同的内容长度限制
     if (content.length > maxContentLength) {
-      content = content.substring(0, maxContentLength) + "\n\n[注意：文档过长，已截断显示部分内容]";
+      content = content.substring(0, maxContentLength);
     }
     
     // 添加调试日志
@@ -114,7 +149,7 @@ async function processTextDocument(fileUrl, prompt, fileType, isFullAnalysis = f
           },
           {
             role: 'user',
-            content: `${prompt}\n\n文档内容如下：\n\n${content}`
+            content: `${prompt}\n\n文档内容如下：\n\n${content}${content.length >= maxContentLength ? '\n\n[注意：文档过长，以上只是部分内容]' : ''}`
           }
         ]
       },
@@ -196,31 +231,81 @@ async function processImage(fileUrl, prompt, isFullAnalysis = false) {
 // 使用多模态模型处理无法直接读取的文档
 async function processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis = false) {
   try {
-    // 首先尝试获取文件内容
+    // 首先尝试获取文件内容，支持多种编码格式
     let content = '';
+    let isEncrypted = false;
+    let isBinary = false;
+    
     try {
+      // 以二进制方式获取文件
       const fileResponse = await axios.get(fileUrl, { 
-        responseType: 'text',
-        maxContentLength: 1 * 1024 * 1024, // 限制为1MB
-        timeout: 5000 // 5秒
+        responseType: 'arraybuffer',
+        maxContentLength: 3 * 1024 * 1024, // 增加到3MB
+        timeout: 8000 // 8秒
       });
-      content = fileResponse.data || '';
+      
+      // 尝试检测编码并转换为文本
+      const buffer = Buffer.from(fileResponse.data);
+      
+      // 检测是否是二进制文件
+      const textBuffer = buffer.toString('utf8', 0, Math.min(1024, buffer.length));
+      
+      // 简单检测是否为加密内容或二进制内容
+      const nonTextChars = textBuffer.match(/[^\x20-\x7E\s\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/g);
+      if (nonTextChars && nonTextChars.length > textBuffer.length * 0.3) {
+        isBinary = true;
+        console.log('多模态处理检测到二进制或加密内容');
+      } else if (textBuffer.includes('加密') || textBuffer.includes('密码') || textBuffer.includes('protected')) {
+        isEncrypted = true;
+        console.log('多模态处理检测到加密文档');
+      } else {
+        content = buffer.toString('utf8');
+      }
+      
       console.log('多模态处理获取到的文件内容长度:', content.length);
     } catch (fileError) {
       console.error('获取文件内容失败:', fileError);
       // 如果无法获取文件内容，使用通用错误消息
-      content = '无法读取文档内容';
+      return {
+        success: true,
+        summary: `无法读取此${fileType}文档，可能是因为文件格式不支持、网络问题或文件已损坏。请尝试转换为PDF或TXT格式后重新上传。`,
+        isPartial: true
+      };
     }
     
+    // 如果是二进制或加密内容，返回特殊提示
+    if (isBinary || isEncrypted) {
+      return {
+        success: true,
+        summary: isEncrypted 
+          ? '此文档已加密，需要密码才能访问内容。请先解密文档后重新上传。'
+          : `此${fileType}文档包含二进制内容，无法直接提取文本。请尝试将其转换为PDF或纯文本格式后再上传。`,
+        isPartial: true
+      };
+    }
+    
+    // 如果没有内容，返回错误信息
+    if (!content || content.trim().length === 0) {
+      return {
+        success: true,
+        summary: `此${fileType}文档没有可读的文本内容，可能是空文件或只包含图像。`,
+        isPartial: true
+      };
+    }
+    
+    // 根据内容长度和是否是完整分析设置不同的参数
+    const maxContentLength = isFullAnalysis ? 5000 : 3000;
+    const maxTokens = isFullAnalysis ? 1200 : 700;
+    const limitedContent = content.length > maxContentLength ? content.substring(0, maxContentLength) : content;
+    
     // 优化的提示语，包含实际内容
-    const fullPrompt = content.trim() 
-      ? `${prompt}\n\n文档内容：\n${content.substring(0, 2000)}`
+    const fullPrompt = limitedContent.trim() 
+      ? `${prompt}\n\n文档内容：\n${limitedContent}${content.length > maxContentLength ? '\n\n[注意：文档过长，以上只是部分内容]' : ''}`
       : `${prompt}\n\n文件URL: ${fileUrl}\n\n请尝试分析此文档。`;
     
-    const maxTokens = isFullAnalysis ? 1000 : 600; // 减少输出token数量
     const systemContent = isFullAnalysis
-      ? '你是文档分析专家，请准确分析文档内容。'
-      : '你是文档摘要助手，请提取文档关键信息。';
+      ? '你是文档分析专家，请准确分析文档内容，即使信息有限也要尽可能提供有价值的分析。'
+      : '你是文档摘要助手，请提取文档关键信息，即使信息有限也要尽可能提供有价值的摘要。';
     
     console.log('使用文本模型处理文档，内容长度:', fullPrompt.length);
     
@@ -251,7 +336,7 @@ async function processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis =
       return {
         success: true,
         summary: response.data.output.text,
-        isPartial: true
+        isPartial: content.length > maxContentLength
       };
     } else {
       throw new Error('文档处理API返回格式不正确');
@@ -263,7 +348,7 @@ async function processWithMultimodal(fileUrl, prompt, fileType, isFullAnalysis =
     // 最后的备用方案 - 返回通用错误信息
     return {
       success: true,
-      summary: `无法处理此${fileType}文档。错误信息: ${error.message}`,
+      summary: `无法处理此${fileType}文档。可能的原因：1) 文件格式不支持；2) 文件已加密或损坏；3) 网络问题。建议转换为PDF或TXT格式后重新上传。`,
       isPartial: true
     };
   }
@@ -299,30 +384,66 @@ function getTaskStatus(taskId) {
 // 快速摘要异步处理
 async function processQuickSummaryAsync(taskId, fileUrl, fileType) {
   try {
-    // 进一步减小内容长度和输出
-    const maxContentLength = 2000;
-    const maxTokens = 400;
-    const prompt = '快速提取文档要点，列出3个关键点，不超过300字。';
+    // 减小内容长度和输出
+    const maxContentLength = 3000;
+    const maxTokens = 500;
+    const prompt = '快速提取文档要点，列出3个关键点，不超过400字。';
     
     console.log('快速摘要处理文件:', fileUrl, '类型:', fileType);
     
-    // 获取文件内容
-    const response = await axios.get(fileUrl, { 
-      responseType: 'text',
-      maxContentLength: 1 * 1024 * 1024, // 1MB
-      timeout: 5000 // 5秒
-    });
+    let content = '';
+    let isEncrypted = false;
+    let isBinary = false;
     
-    let content = response.data;
+    try {
+      // 以二进制方式获取文件
+      const response = await axios.get(fileUrl, { 
+        responseType: 'arraybuffer',
+        maxContentLength: 2 * 1024 * 1024, // 2MB
+        timeout: 8000 // 8秒
+      });
+      
+      // 尝试检测编码并转换为文本
+      const buffer = Buffer.from(response.data);
+      const textBuffer = buffer.toString('utf8', 0, Math.min(1024, buffer.length));
+      
+      // 检测是否为加密内容或二进制内容
+      const nonTextChars = textBuffer.match(/[^\x20-\x7E\s\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/g);
+      if (nonTextChars && nonTextChars.length > textBuffer.length * 0.3) {
+        isBinary = true;
+        console.log('快速摘要检测到二进制或加密内容');
+      } else if (textBuffer.includes('加密') || textBuffer.includes('密码') || textBuffer.includes('protected')) {
+        isEncrypted = true;
+        console.log('快速摘要检测到加密文档');
+      } else {
+        content = buffer.toString('utf8');
+      }
+    } catch (error) {
+      console.error('获取文件内容失败:', error);
+      updateTaskStatus(taskId, 'failed', null, false, '文件获取失败: ' + error.message);
+      return;
+    }
+    
+    // 如果是二进制或加密内容，返回特殊提示
+    if (isBinary || isEncrypted) {
+      const errorMessage = isEncrypted 
+        ? '此文档已加密，需要密码才能访问内容。请先解密文档后重新上传。'
+        : '无法解析此文档格式，可能是二进制文件或格式不支持。请尝试转换为PDF或TXT格式后重新上传。';
+      
+      updateTaskStatus(taskId, 'completed', errorMessage, false, null);
+      return;
+    }
+    
     console.log('快速摘要获取到的文件内容长度:', content ? content.length : 0);
     
     if (!content || content.trim().length === 0) {
-      throw new Error('文件内容为空或无法读取');
+      updateTaskStatus(taskId, 'completed', '文档内容为空或无法读取，请检查文件是否有效。', false, null);
+      return;
     }
     
     // 限制内容长度
     if (content.length > maxContentLength) {
-      content = content.substring(0, maxContentLength) + "\n\n[内容已截断]";
+      content = content.substring(0, maxContentLength);
     }
     
     console.log('准备发送给快速摘要API的内容长度:', content.length);
@@ -351,14 +472,20 @@ async function processQuickSummaryAsync(taskId, fileUrl, fileType) {
     console.log('快速摘要API返回:', JSON.stringify(summaryResponse.data, null, 2));
     
     if (summaryResponse.data && summaryResponse.data.output && summaryResponse.data.output.text) {
-      updateTaskStatus(taskId, 'completed', summaryResponse.data.output.text, true, null);
+      updateTaskStatus(taskId, 'completed', summaryResponse.data.output.text, content.length >= maxContentLength, null);
     } else {
       throw new Error('API返回格式不正确');
     }
   } catch (error) {
     console.error('快速摘要异步处理失败:', error);
     console.error('错误详情:', error.response?.data || error.message);
-    updateTaskStatus(taskId, 'failed', null, false, error.message);
+    
+    // 检查是否是加密或二进制错误
+    if (error.message && (error.message.includes('加密') || error.message.includes('二进制'))) {
+      updateTaskStatus(taskId, 'completed', error.message, false, null);
+    } else {
+      updateTaskStatus(taskId, 'failed', null, false, error.message);
+    }
   }
 }
 
@@ -384,29 +511,62 @@ async function processAsyncDocument(taskId, fileUrl, fileType, isFullAnalysis, e
 
 // 快速摘要（同步模式）
 async function processQuickSummary(fileUrl, fileType, isFullAnalysis) {
-  // 进一步减少内容长度和输出
-  const maxContentLength = 3000;
-  const maxTokens = 500;
+  const maxContentLength = 4000;
+  const maxTokens = 600;
   const prompt = isFullAnalysis ? 
     '快速分析文档核心，提供要点列表，不超过600字。' :
     '快速提取文档要点，列出3个关键点，不超过400字。';
   
   try {
-    // 尝试获取文件内容
+    let content = '';
+    let isEncrypted = false;
+    let isBinary = false;
+    
+    // 以二进制方式获取文件
     const response = await axios.get(fileUrl, { 
-      responseType: 'text',
-      maxContentLength: 1 * 1024 * 1024, // 1MB
-      timeout: 5000 // 5秒
+      responseType: 'arraybuffer',
+      maxContentLength: 2 * 1024 * 1024, // 2MB
+      timeout: 8000 // 8秒
     });
     
-    let content = response.data;
+    // 尝试检测编码并转换为文本
+    const buffer = Buffer.from(response.data);
+    const textBuffer = buffer.toString('utf8', 0, Math.min(1024, buffer.length));
+    
+    // 检测是否为加密内容或二进制内容
+    const nonTextChars = textBuffer.match(/[^\x20-\x7E\s\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/g);
+    if (nonTextChars && nonTextChars.length > textBuffer.length * 0.3) {
+      isBinary = true;
+      console.log('快速摘要同步模式检测到二进制或加密内容');
+    } else if (textBuffer.includes('加密') || textBuffer.includes('密码') || textBuffer.includes('protected')) {
+      isEncrypted = true;
+      console.log('快速摘要同步模式检测到加密文档');
+    } else {
+      content = buffer.toString('utf8');
+    }
+    
+    // 如果是二进制或加密内容，返回特殊提示
+    if (isBinary || isEncrypted) {
+      const errorMessage = isEncrypted 
+        ? '此文档已加密，需要密码才能访问内容。请先解密文档后重新上传。'
+        : '无法解析此文档格式，可能是二进制文件或格式不支持。请尝试转换为PDF或TXT格式后重新上传。';
+      
+      return {
+        summary: errorMessage,
+        isPartial: false
+      };
+    }
+    
     if (!content || content.trim().length === 0) {
-      throw new Error('文件内容为空或无法读取');
+      return {
+        summary: '文档内容为空或无法读取，请检查文件是否有效。',
+        isPartial: false
+      };
     }
     
     // 限制内容长度
     if (content.length > maxContentLength) {
-      content = content.substring(0, maxContentLength) + "\n\n[内容已截断]";
+      content = content.substring(0, maxContentLength);
     }
     
     // 调用API
@@ -433,13 +593,22 @@ async function processQuickSummary(fileUrl, fileType, isFullAnalysis) {
     if (summaryResponse.data && summaryResponse.data.output && summaryResponse.data.output.text) {
       return {
         summary: summaryResponse.data.output.text,
-        isPartial: true
+        isPartial: content.length >= maxContentLength
       };
     } else {
       throw new Error('API返回格式不正确');
     }
   } catch (error) {
     console.error('快速摘要处理失败:', error);
+    
+    // 检查是否是加密或二进制错误
+    if (error.message && (error.message.includes('加密') || error.message.includes('二进制'))) {
+      return {
+        summary: error.message,
+        isPartial: false
+      };
+    }
+    
     throw error;
   }
 }
