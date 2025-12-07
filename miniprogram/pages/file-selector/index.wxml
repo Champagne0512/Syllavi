@@ -1,0 +1,77 @@
+<view class="file-selector-page">
+  <!-- 弥散背景 -->
+  <view class="ambient-container">
+    <view class="orb orb-1"></view>
+    <view class="orb orb-2"></view>
+    <view class="orb orb-3"></view>
+  </view>
+
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-btn back-btn" bindtap="goBack">
+      <text class="nav-icon">←</text>
+    </view>
+    <view class="nav-title">选择文件</view>
+    <view class="nav-btn"></view>
+  </view>
+
+  <!-- 搜索区域 -->
+  <view class="search-section">
+    <view class="search-container">
+      <input 
+        class="search-input" 
+        placeholder="搜索文件..." 
+        placeholder-class="search-placeholder"
+        bindinput="onSearchInput"
+        value="{{searchQuery}}"
+      />
+      <view class="search-icon">🔍</view>
+    </view>
+  </view>
+
+  <!-- 文件列表 -->
+  <scroll-view 
+    class="files-container" 
+    scroll-y="true"
+    style="height: calc(100vh - 200rpx);"
+  >
+    <view class="files-list">
+      <block wx:for="{{files}}" wx:key="id">
+        <view 
+          class="file-item" 
+          bindtap="selectFile" 
+          data-id="{{item.id}}"
+        >
+          <view class="file-icon-box icon-box-{{item.uiType}}">
+            <text class="file-type">{{item.uiType}}</text>
+          </view>
+          <view class="file-info">
+            <view class="file-name">{{item.name}}</view>
+            <view class="file-meta">
+              <text class="file-subject">{{item.subject}}</text>
+              <text class="file-size">{{formatSize(item.size)}}</text>
+            </view>
+          </view>
+          <view class="file-action">
+            <text class="action-text">选择</text>
+            <text class="action-icon">→</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 空状态 -->
+      <view wx:if="{{!files.length && !loading}}" class="empty-state">
+        <view class="empty-icon">📂</view>
+        <view class="empty-text">暂无文件</view>
+        <view class="empty-subtext">请先上传文件后再进行AI分析</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-overlay">
+    <view class="loading-content">
+      <text class="loading-text">加载中...</text>
+    </view>
+  </view>
+</view>

@@ -3,6 +3,8 @@
     "pages/login/index",
     "pages/hub/index",
     "pages/knowledge/index",
+    "pages/ai-summary/index",
+    "pages/file-selector/index",
     "pages/focus/index",
     "pages/ai-import/index",
     "pages/profile/index",

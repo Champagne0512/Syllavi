@@ -43,12 +43,25 @@ Page({
 
   // 增加一个辅助函数用于 CSS 类名映射
   getFileTypeClass(type) {
-    // 简单映射，你可以根据需要扩展
+    // 文档类型映射到CSS类名
     const map = {
+      // 文档类型
       'pdf': 'pdf',
-      'ppt': 'ppt', 'pptx': 'ppt',
       'doc': 'doc', 'docx': 'doc',
-      'jpg': 'img', 'png': 'img', 'jpeg': 'img'
+      'ppt': 'ppt', 'pptx': 'ppt',
+      'xlsx': 'xls', 'xls': 'xls',
+      'txt': 'txt',
+      'rtf': 'doc',
+      'csv': 'xls',
+      'md': 'txt',
+      'html': 'doc', 'htm': 'doc',
+
+      // 图片类型
+      'jpg': 'img', 'jpeg': 'img', 'png': 'img',
+      'gif': 'img', 'bmp': 'img', 'webp': 'img',
+
+      // 其他类型
+      'other': 'other'
     };
     return map[type] || 'other';
   },
@@ -466,7 +479,14 @@ Page({
       const { tempFiles } = await wx.chooseMessageFile({
         count: 1,
         type: 'file',
-        extension: ['pdf', 'ppt', 'pptx', 'doc', 'docx', 'jpg', 'png']
+        extension: [
+          // 文档类型
+          'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt',
+          // 图片类型
+          'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+          // 其他常见格式
+          'rtf', 'csv', 'md', 'html', 'htm'
+        ]
       });
       if (!tempFiles || !tempFiles.length) {
         this._uploading = false;
@@ -476,7 +496,7 @@ Page({
       
       wx.showLoading({ title: '上传中...' });
 
-      const { publicUrl } = await uploadToStorage(
+      const uploadResult = await uploadToStorage(
         'resources',
         file.path || file.tempFilePath || file.url,
         file.name
@@ -484,12 +504,14 @@ Page({
 
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
+      const publicUrl = uploadResult.publicUrl;
+      const originalName = uploadResult.originalName || file.name;
 
       const [row] = await createResource({
         user_id: userId,
-        file_name: file.name,
+        file_name: originalName, // 使用原始文件名，包含中文字符
         file_url: publicUrl,
-        file_type: this.getFileType(file.name),
+        file_type: this.getFileType(originalName),
         file_size: file.size,
         subject: this.data.activeFolder === '全部' ? '未分类' : this.data.activeFolder
       });
@@ -533,11 +555,29 @@ Page({
 
   getFileType(name = '') {
     const lower = name.toLowerCase();
+    
+    // 文档类型
     if (lower.endsWith('.pdf')) return 'pdf';
-    if (lower.endsWith('.pptx') || lower.endsWith('.ppt')) return 'pptx';
-    if (lower.endsWith('.docx') || lower.endsWith('.doc')) return 'docx';
+    if (lower.endsWith('.docx')) return 'docx';
+    if (lower.endsWith('.doc')) return 'doc';
+    if (lower.endsWith('.pptx')) return 'pptx';
+    if (lower.endsWith('.ppt')) return 'ppt';
+    if (lower.endsWith('.xlsx')) return 'xlsx';
+    if (lower.endsWith('.xls')) return 'xls';
+    if (lower.endsWith('.txt')) return 'txt';
+    if (lower.endsWith('.rtf')) return 'rtf';
+    if (lower.endsWith('.csv')) return 'csv';
+    if (lower.endsWith('.md')) return 'md';
+    if (lower.endsWith('.html') || lower.endsWith('.htm')) return 'html';
+    
+    // 图片类型
     if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'jpg';
     if (lower.endsWith('.png')) return 'png';
+    if (lower.endsWith('.gif')) return 'gif';
+    if (lower.endsWith('.bmp')) return 'bmp';
+    if (lower.endsWith('.webp')) return 'webp';
+    
+    // 其他类型
     return 'other';
   },
 
@@ -562,55 +602,11 @@ Page({
     });
   },
 
-  async runSummary(file) {
-    if (!file.url) {
-      wx.showToast({ title: '缺少文件地址', icon: 'none' });
-      return;
-    }
-
-    // 若已存在摘要，优先展示缓存，并提供重新生成选项
-    if (file.aiSummary) {
-      wx.showModal({
-        title: 'AI 划重点',
-        content: file.aiSummary.slice(0, 800),
-        confirmText: '重新生成',
-        cancelText: '关闭',
-        success: (res) => {
-          if (res.confirm) {
-            this.generateSummary(file);
-          }
-        }
-      });
-      return;
-    }
-
-    this.generateSummary(file);
-  },
-
-  async generateSummary(file) {
-    wx.showLoading({ title: 'AI 划重点中...' });
-    try {
-      const summary = await summarizeFile(file.url, file.type);
-      await updateResource(file.id, { ai_summary: summary });
-      // 同步更新本地缓存
-      const files = this.data.files.map((f) =>
-        f.id === file.id ? { ...f, aiSummary: summary } : f
-      );
-      this.setData({ files }, () => {
-        this.updateFilteredFiles();
-        this.refreshActionableInsight();
-      });
-      wx.hideLoading();
-      wx.showModal({
-        title: 'AI 划重点',
-        content: summary.slice(0, 800),
-        showCancel: false
-      });
-    } catch (err) {
-      console.warn('summary failed', err);
-      wx.hideLoading();
-      wx.showToast({ title: '生成失败', icon: 'none' });
-    }
+  runSummary(file) {
+    // 导航到AI摘要页面，并传入文件ID
+    wx.navigateTo({
+      url: `/pages/ai-summary/index?id=${file.id}`
+    });
   },
 
   async removeFile(file) {
@@ -1180,21 +1176,20 @@ Page({
   },
 
   enterAiMode() {
-    const { lastOpenedFile, files } = this.data;
-    let target = null;
-    if (lastOpenedFile) {
-      target = files.find((file) => file.id === lastOpenedFile.id);
-    }
-    if (!target && files.length) {
-      target = files[0];
-    }
-
-    if (!target) {
-      wx.showToast({ title: '上传文件以体验 AI', icon: 'none' });
-      return;
-    }
-
-    this.runSummary(target);
+    // 导航到文件选择页面，让用户选择要分析的文件
+    wx.navigateTo({
+      url: '/pages/file-selector/index',
+      success: (res) => {
+        console.log('成功跳转到文件选择页面');
+      },
+      fail: (err) => {
+        console.error('跳转到文件选择页面失败:', err);
+        wx.showToast({
+          title: '页面跳转失败',
+          icon: 'none'
+        });
+      }
+    });
   },
 
   

@@ -1132,33 +1132,45 @@ async function parseImageWithAI(imageUrl, mode = 'task', options = {}) {
     throw new Error('当前环境未启用云开发能力');
   }
 
-  const {
-    userId = wx.getStorageSync('user_id') || DEMO_USER_ID,
-    autoStore = false
-  } = options;
+  const { userId = wx.getStorageSync('user_id') || DEMO_USER_ID } = options;
 
-  const response = await wx.cloud.callFunction({
+  console.log('[AI] 开始调用云函数解析图片:', { imageUrl, userId, mode });
+
+  // 直接调用 deepseekAI 云函数 (同步模式)
+  const result = await wx.cloud.callFunction({
     name: 'deepseekAI',
     data: {
       imageUrl,
       userId,
-      mode,
-      autoStore
+      mode
     }
   });
 
-  const payload = response?.result;
-  if (!payload) {
+  console.log('[AI] 云函数响应:', result);
+
+  if (!result.result) {
     throw new Error('云函数无响应');
   }
 
-  if (!payload.success) {
-    throw new Error(payload.error || 'AI 解析失败');
+  if (!result.result.success) {
+    throw new Error(result.result.error || 'AI 解析失败');
   }
 
-  const recognition = payload.data || {};
-  const normalizeMode = mode === 'course' ? 'course' : 'task';
-  return normalizeAiPayload(recognition, normalizeMode);
+  // 直接返回识别结果 (已经自动存储到数据库)
+  return result.result.data;
+}
+
+function callAnalyzeImageFunction(data) {
+  return wx.cloud
+    .callFunction({
+      name: 'analyzeImage',
+      data
+    })
+    .then((res) => res?.result)
+    .catch((error) => {
+      console.error('[AI] 云函数调用失败', error);
+      throw error;
+    });
 }
 
 function normalizeAiPayload(raw = {}, preferredMode = 'task') {
@@ -1328,8 +1340,23 @@ async function uploadToStorage(bucket, filePath, fileName, options = {}) {
 
   const userId = options.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
   const token = options.token || wx.getStorageSync('access_token') || SUPABASE_ANON_KEY;
-  const safeName = fileName || filePath.split('/').pop() || `upload_${Date.now()}`;
-  const storagePath = `${userId || 'public'}/${Date.now()}_${safeName}`;
+  const originalName = fileName || filePath.split('/').pop() || `upload_${Date.now()}`;
+  
+  // 清理文件名，移除特殊字符和中文字符，只保留字母、数字、下划线、连字符和点
+  const fileExt = originalName.includes('.') ? '.' + originalName.split('.').pop().toLowerCase() : '';
+  const cleanName = originalName
+    .split('.')[0] // 获取不带扩展名的文件名
+    .replace(/[^\w.-]/g, '') // 移除所有非单词字符（保留字母、数字、下划线、连字符和点）
+    .replace(/[\u4e00-\u9fa5]/g, '') // 移除中文字符
+    .substring(0, 50); // 限制文件名长度
+  
+  // 确保文件名不为空，如果清空后为空，使用默认名称
+  const safeName = cleanName || 'file';
+  const storagePath = `${userId || 'public'}/${Date.now()}_${safeName}${fileExt}`;
+
+  console.log('原始文件名:', originalName);
+  console.log('清理后文件名:', safeName + fileExt);
+  console.log('存储路径:', storagePath);
 
   return new Promise((resolve, reject) => {
     wx.uploadFile({
@@ -1344,13 +1371,16 @@ async function uploadToStorage(bucket, filePath, fileName, options = {}) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve({
             path: storagePath,
-            publicUrl: `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`
+            publicUrl: `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`,
+            originalName: originalName // 保留原始文件名供显示使用
           });
         } else {
+          console.error('上传失败，响应:', res);
           reject(res);
         }
       },
       fail(err) {
+        console.error('上传失败，错误:', err);
         reject(err);
       }
     });

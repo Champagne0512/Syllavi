@@ -1,5 +1,10 @@
-const { MORANDI_COLORS } = require('../../utils/colors');
-const { sectionsToTime } = require('../../utils/schedule-utils');
+const colors = require('../../utils/colors');
+const { MORANDI_COLORS } = colors;
+
+const scheduleUtils = require('../../utils/schedule-utils');
+const { sectionsToTime } = scheduleUtils;
+
+const supabase = require('../../utils/supabase');
 const {
   DEMO_USER_ID,
   fetchWeekSchedule,
@@ -13,7 +18,7 @@ const {
   updateTask,
   deleteTask,
   uploadToStorage
-} = require('../../utils/supabase');
+} = supabase;
 
 // 模拟课程数据（仅在 API 不可用时兜底）
 const FALLBACK_COURSES = [

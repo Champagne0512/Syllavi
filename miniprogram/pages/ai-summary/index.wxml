@@ -1,0 +1,146 @@
+<view class="ai-summary-page">
+  <!-- 0. 弥散背景 -->
+  <view class="ambient-container">
+    <view class="orb orb-1"></view>
+    <view class="orb orb-2"></view>
+    <view class="orb orb-3"></view>
+  </view>
+
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-btn back-btn" bindtap="goBack">
+      <text class="nav-icon">←</text>
+    </view>
+    <view class="nav-title">AI 划重点</view>
+    <view class="nav-btn"></view>
+  </view>
+
+  <!-- 文件信息区 -->
+  <view class="file-info-section">
+    <view class="file-icon-box icon-box-{{fileType}}">
+      <text class="file-type-icon">{{fileType}}</text>
+    </view>
+    <view class="file-details">
+      <view class="file-name">{{fileName}}</view>
+      <view class="file-meta">{{fileSize}} · {{fileType.toUpperCase()}}</view>
+    </view>
+  </view>
+
+  <!-- AI 处理状态区 -->
+  <view class="ai-status-section" wx:if="{{isProcessing}}">
+    <view class="status-card">
+      <view class="pulse-container">
+        <view class="pulse-dot"></view>
+      </view>
+      <view class="status-text">{{requestFullAnalysis ? 'AI 正在进行完整分析...' : 'AI 正在分析文档...'}}</view>
+      <view class="status-desc">{{requestFullAnalysis ? '完整分析可能需要1-2分钟，请稍候' : '分析已启动，预计需要20-40秒'}}</view>
+      
+      <!-- 异步处理提示 -->
+      <view class="async-notice">
+        <text class="async-text">📱 您可以继续使用其他功能，分析完成后会自动显示结果</text>
+      </view>
+      
+      <!-- 进度指示器 -->
+      <view class="progress-bar">
+        <view class="progress-fill {{requestFullAnalysis ? 'progress-full' : 'progress-standard'}}"></view>
+      </view>
+      
+      <!-- 中断按钮 -->
+      <view class="interrupt-btn" bindtap="interruptProcessing">
+        <text class="interrupt-text">暂停处理</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- AI 结果展示区 -->
+  <view class="ai-result-section" wx:if="{{summary && !isProcessing}}">
+    <view class="result-header">
+      <view class="result-title">重点摘要</view>
+      <view class="result-actions">
+        <view class="action-btn {{isPartial ? '' : 'disabled'}}" bindtap="requestFullSummary">
+          <text class="action-icon">↻</text>
+          <text class="action-text">{{isPartial ? '完整分析' : '已是完整版'}}</text>
+        </view>
+        <view class="action-btn" bindtap="copySummary">
+          <text class="action-icon">⎘</text>
+          <text class="action-text">复制</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 部分分析提示 -->
+    <view class="partial-notice" wx:if="{{isPartial}}">
+      <text class="notice-text">💡 这是一个详细摘要，您可以点击"完整分析"获取更全面的内容</text>
+    </view>
+    
+    <!-- 摘要内容 -->
+    <scroll-view class="summary-content" scroll-y="true">
+      <text class="summary-text">{{summary}}</text>
+    </scroll-view>
+  </view>
+
+  <!-- 错误提示区 -->
+  <view class="error-section" wx:if="{{hasError}}">
+    <view class="error-card">
+      <view class="error-icon">⚠️</view>
+      <view class="error-title">处理失败</view>
+      <view class="error-message">{{errorMessage}}</view>
+      <view class="error-actions">
+        <view class="retry-btn" bindtap="retryProcessing">
+          <text class="retry-text">重试</text>
+        </view>
+        <view class="back-btn-text" bindtap="goBack">
+          <text class="back-text">返回</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 文件选择区 - 页面底部 -->
+  <view class="file-selection-section" wx:if="{{!isProcessing && !summary && !hasError && !directAnalysisMode}}">
+    <view class="selection-title">选择要分析的文件</view>
+    <view class="file-list">
+      <block wx:for="{{availableFiles}}" wx:key="id">
+        <view class="selectable-file-card {{selectedFile && selectedFile.id === item.id ? 'selected' : ''}}"
+              bindtap="selectFile"
+              data-id="{{item.id}}">
+          <view class="file-icon-box-small icon-box-{{item.uiType}}">
+            <text class="file-type-small">{{item.type}}</text>
+          </view>
+          <view class="file-info-small">
+            <view class="file-name-small">{{item.name}}</view>
+            <view class="file-meta-small">{{item.subject || '未分类'}}</view>
+          </view>
+          <view class="selection-indicator">
+            <text wx:if="{{selectedFile && selectedFile.id === item.id}}" class="check-mark">✓</text>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="action-section">
+      <view class="start-btn {{!selectedFile ? 'disabled' : ''}}" bindtap="startProcessing">
+        <text class="start-text">开始 AI 划重点</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 直接分析模式 - 显示当前文件信息和开始按钮 -->
+  <view class="direct-analysis-section" wx:if="{{!isProcessing && !summary && !hasError && directAnalysisMode}}">
+    <view class="file-info-standalone">
+      <view class="file-icon-box icon-box-{{fileType}}">
+        <text class="file-type-icon">{{fileType}}</text>
+      </view>
+      <view class="file-details">
+        <view class="file-name">{{fileName}}</view>
+        <view class="file-meta">{{fileSize}} · {{fileType.toUpperCase()}}</view>
+      </view>
+    </view>
+
+    <view class="action-section">
+      <view class="start-btn" bindtap="startProcessing">
+        <text class="start-text">开始 AI 划重点</text>
+      </view>
+    </view>
+  </view>
+</view>
