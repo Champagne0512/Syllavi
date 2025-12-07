@@ -175,17 +175,26 @@ Page({
   // 加载专注数据
   async loadFocusData() {
     try {
+      console.log('=== 开始加载专注数据 ===');
+      
       // 先获取本地数据作为默认值
       const localStats = focusService.getStats();
       const achievements = focusService.getAchievements();
+      
+      console.log('本地统计数据:', localStats);
+      console.log('本地成就数据:', achievements);
       
       // 尝试从数据库获取最新数据
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
       
+      console.log('用户ID:', userId);
+      
       if (userId) {
         try {
           const remoteStats = await fetchFocusStats(userId);
+          console.log('远程统计数据:', remoteStats);
+          
           if (remoteStats) {
             // 合并本地和远程数据，优先使用远程数据
             const stats = {
@@ -195,12 +204,15 @@ Page({
               totalSessions: remoteStats.total_sessions || localStats.totalSessions
             };
             
+            console.log('合并后的统计数据:', stats);
+            
             this.setData({
               stats: stats,
               achievements: achievements
             });
             
             console.log('专注数据已从数据库同步:', stats);
+            console.log('页面数据已设置:', this.data.stats);
             return;
           }
         } catch (error) {
@@ -209,16 +221,21 @@ Page({
       }
       
       // 如果无法获取远程数据，使用本地数据
+      console.log('使用本地数据设置页面');
       this.setData({
         stats: localStats,
         achievements: achievements
       });
+      
+      console.log('页面数据已设置（本地）:', this.data.stats);
       
     } catch (error) {
       console.error('加载专注数据失败:', error);
       // 降级到本地数据
       const localStats = focusService.getStats();
       const achievements = focusService.getAchievements();
+      
+      console.log('错误降级使用本地数据:', localStats);
       
       this.setData({
         stats: localStats,

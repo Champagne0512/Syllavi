@@ -868,6 +868,96 @@ async function fetchFocusStatsDirect(userId) {
   }
 }
 
+// 创建专注会话
+async function createFocusSession(sessionData) {
+  try {
+    console.log('开始创建专注会话，原始数据:', sessionData);
+    
+    // 确保数据符合数据库约束
+    const sanitizedData = {
+      user_id: sessionData.user_id,
+      duration: Math.min(Math.max(Number(sessionData.duration) || 1, 1), 240), // 限制在1-240分钟之间
+      started_at: sessionData.started_at || new Date().toISOString(),
+      ended_at: sessionData.ended_at || new Date().toISOString(),
+      related_course_id: sessionData.related_course_id || null,
+      completed: sessionData.completed !== false
+    };
+    
+    console.log('创建专注会话数据（处理后）:', sanitizedData);
+    
+    const result = await request('focus_sessions', {
+      method: 'POST',
+      data: sanitizedData
+    });
+    
+    console.log('专注会话创建结果:', result);
+    
+    // 同时更新学习热力图
+    if (result && result.id) {
+      console.log('开始更新学习热力图...');
+      await updateLearningHeatmap(sanitizedData.user_id, sanitizedData.duration);
+      console.log('学习热力图更新完成');
+    } else {
+      console.warn('专注会话创建失败，未返回有效结果');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('创建专注会话失败:', error);
+    throw error;
+  }
+}
+
+// 更新学习热力图
+async function updateLearningHeatmap(userId, focusMinutes) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    
+    // 查询今天是否已有记录
+    const query = [
+      `user_id=eq.${userId}`,
+      `date=eq.${today}`,
+      'select=id,focus_minutes'
+    ].join('&');
+    
+    const existing = await request('learning_heatmap', { query });
+    
+    if (existing && existing.length > 0) {
+      // 更新现有记录
+      const currentMinutes = Number(existing[0].focus_minutes) || 0;
+      const newMinutes = currentMinutes + focusMinutes;
+      
+      await request('learning_heatmap', {
+        method: 'PATCH',
+        query: `id=eq.${existing[0].id}`,
+        data: {
+          focus_minutes: newMinutes,
+          updated_at: new Date().toISOString()
+        }
+      });
+      
+      console.log('更新热力图记录:', today, newMinutes);
+    } else {
+      // 创建新记录
+      await request('learning_heatmap', {
+        method: 'POST',
+        data: {
+          user_id: userId,
+          date: today,
+          focus_minutes: focusMinutes,
+          tasks_completed: 0,
+          level: Math.min(Math.floor(focusMinutes / 30), 4) // 每30分钟一个等级，最高4级
+        }
+      });
+      
+      console.log('创建热力图记录:', today, focusMinutes);
+    }
+  } catch (error) {
+    console.warn('更新学习热力图失败:', error);
+    // 不抛出错误，因为专注会话创建成功更重要
+  }
+}
+
 // 获取专注热力图数据
 async function fetchFocusHeatmapRemote(userId, days = 365) {
   try {
@@ -1156,8 +1246,14 @@ async function parseImageWithAI(imageUrl, mode = 'task', options = {}) {
     throw new Error(result.result.error || 'AI 解析失败');
   }
 
-  // 直接返回识别结果 (已经自动存储到数据库)
-  return result.result.data;
+  // 使用 normalizeAiPayload 处理返回的数据，确保格式一致
+  const rawData = result.result.data;
+  console.log('[AI] 原始数据:', rawData);
+  
+  const normalizedData = normalizeAiPayload(rawData, mode);
+  console.log('[AI] 标准化后数据:', normalizedData);
+  
+  return normalizedData;
 }
 
 function callAnalyzeImageFunction(data) {
@@ -1410,6 +1506,7 @@ module.exports = {
   updateTask,
   deleteTask,
   fetchFocusStats,
+  createFocusSession,
   fetchFocusHeatmapRemote,
   fetchFocusDistributionRemote,
   fetchRemoteAchievementsSnapshot,

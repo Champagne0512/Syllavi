@@ -671,11 +671,34 @@ Page({
 
   shouldDisplayTaskOnDate(task, targetTs, targetKey) {
     if (!task) return false;
+    
+    // 重要事件：提前3天开始显示
+    const isImportantEvent = task.type === 'exam' || 
+                            task.type === 'deadline' || 
+                            task.type === 'holiday' || 
+                            task.type === 'birthday' || 
+                            task.type === 'anniversary' || 
+                            task.urgent;
+    
     if (task.mode === 'instant') {
+      // 重要瞬时事件：提前3天显示
+      if (isImportantEvent && task.deadlineTs) {
+        const threeDaysBefore = task.deadlineTs - (3 * DAY_MS);
+        return targetTs >= threeDaysBefore && targetTs <= task.deadlineTs;
+      }
+      // 普通瞬时事件：只在当天显示
       return task.deadlineKey === targetKey;
     }
+    
     const todayStart = this.getTodayStartTs();
-    const visibleStart = Math.max(task.visibleFromTs || todayStart, todayStart);
+    let visibleStart = Math.max(task.visibleFromTs || todayStart, todayStart);
+    
+    // 重要持续事件：提前3天显示
+    if (isImportantEvent && task.deadlineTs) {
+      const threeDaysBefore = task.deadlineTs - (3 * DAY_MS);
+      visibleStart = Math.max(visibleStart, threeDaysBefore);
+    }
+    
     return targetTs >= visibleStart && targetTs <= (task.deadlineTs || targetTs);
   },
 

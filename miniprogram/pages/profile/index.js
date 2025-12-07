@@ -223,7 +223,10 @@ Page({
 
       // 并行加载所有统计数据
       const [focusStats, tasks, courses, resources] = await Promise.all([
-        fetchFocusStats(userId).catch(err => {
+        fetchFocusStats(userId).then(result => {
+          console.log('专注统计数据获取结果:', result);
+          return result;
+        }).catch(err => {
           console.warn('专注统计获取失败:', err);
           return null;
         }),
@@ -270,6 +273,18 @@ Page({
       this.setData({ stats });
       wx.setStorageSync('profile_stats', stats);
       console.log('个人主页统计数据已更新:', stats);
+      
+      // 添加测试函数到全局，方便调试
+      this.testFocusData = async () => {
+        console.log('=== 测试专注数据 ===');
+        try {
+          const testResult = await fetchFocusStats(userId);
+          console.log('测试专注数据结果:', testResult);
+        } catch (error) {
+          console.error('测试专注数据失败:', error);
+        }
+      };
+      
     } catch (err) {
       console.error('load stats failed', err);
       const cached = wx.getStorageSync('profile_stats');

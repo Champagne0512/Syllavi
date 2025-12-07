@@ -33,8 +33,10 @@ class FocusService {
       };
       wx.setStorageSync(this.STORAGE_KEY, initialData);
       console.log('专注服务初始化完成');
+      return initialData;
     } else {
       console.log('专注服务已存在数据');
+      return existingData;
     }
   }
 
