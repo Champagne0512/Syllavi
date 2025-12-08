@@ -44,6 +44,7 @@ const MOCK_TASKS = [
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const IMPORTANT_EVENT_TYPES = new Set(['exam', 'deadline', 'holiday', 'birthday', 'anniversary']);
 
 // 空教室功能已迁移到工具模块
 
@@ -365,9 +366,7 @@ Page({
     // 只筛选重要事件：考试、论文Deadline、假期、生日、自定义纪念日
     const importantEvents = this.data.tasks.filter(t => {
       const d = new Date(t.rawDeadline);
-      return d.getFullYear() === year && d.getMonth() === month && 
-             (t.type === 'exam' || t.type === 'deadline' || t.type === 'holiday' || 
-              t.type === 'birthday' || t.type === 'anniversary' || t.urgent);
+      return d.getFullYear() === year && d.getMonth() === month && this.isImportantEvent(t);
     });
 
     // 计算倒计时数据 - 事件视界
@@ -669,41 +668,29 @@ Page({
     return today.getTime();
   },
 
+  isImportantEvent(task) {
+    if (!task) return false;
+    if (task.isImportant) return true;
+    return IMPORTANT_EVENT_TYPES.has(task.type);
+  },
+
   shouldDisplayTaskOnDate(task, targetTs, targetKey) {
     if (!task) return false;
-    
-    // 重要事件：提前3天开始显示
-    const isImportantEvent = task.type === 'exam' || 
-                            task.type === 'deadline' || 
-                            task.type === 'holiday' || 
-                            task.type === 'birthday' || 
-                            task.type === 'anniversary' || 
-                            task.urgent;
-    
-    if (task.mode === 'instant') {
-      // 重要瞬时事件：提前3天显示
-      if (isImportantEvent && task.deadlineTs) {
-        const threeDaysBefore = task.deadlineTs - (3 * DAY_MS);
-        return targetTs >= threeDaysBefore && targetTs <= task.deadlineTs;
-      }
-      // 普通瞬时事件：只在当天显示
+    const isImportantEvent = this.isImportantEvent(task);
+
+    if (task.mode === 'instant' && !isImportantEvent) {
       return task.deadlineKey === targetKey;
     }
-    
+
     const todayStart = this.getTodayStartTs();
-    let visibleStart = Math.max(task.visibleFromTs || todayStart, todayStart);
-    
-    // 重要持续事件：提前3天显示
-    if (isImportantEvent && task.deadlineTs) {
-      const threeDaysBefore = task.deadlineTs - (3 * DAY_MS);
-      visibleStart = Math.max(visibleStart, threeDaysBefore);
-    }
-    
-    return targetTs >= visibleStart && targetTs <= (task.deadlineTs || targetTs);
+    const visibleStart = Math.max(task.visibleFromTs || todayStart, todayStart);
+    const deadlineLimit = task.deadlineTs || targetTs;
+    return targetTs >= visibleStart && targetTs <= deadlineLimit;
   },
 
   getTimelineLabel(task, targetTs) {
-    if (task.mode === 'instant') {
+    const isImportantEvent = this.isImportantEvent(task);
+    if (task.mode === 'instant' && !isImportantEvent) {
       return formatTime(task.rawDeadline);
     }
     const diff = Math.max(0, Math.ceil(((task.deadlineTs || targetTs) - targetTs) / DAY_MS));
@@ -711,9 +698,16 @@ Page({
   },
 
   decorateTaskForDate(task, targetTs, targetKey) {
+    const isImportantEvent = this.isImportantEvent(task);
+    let badge = '持续待办';
+    if (isImportantEvent) {
+      badge = '重要事件';
+    } else if (task.mode === 'instant') {
+      badge = '瞬时事件';
+    }
     return {
       ...task,
-      dayBadge: task.mode === 'instant' ? '瞬时事件' : '持续待办',
+      dayBadge: badge,
       dayIndicator: this.getTimelineLabel(task, targetTs),
       instanceId: `${task.id}-${targetKey}`
     };
@@ -769,15 +763,17 @@ Page({
         const createdAt = row.created_at ? new Date(row.created_at) : null;
         const visibleFrom = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : new Date();
         visibleFrom.setHours(0, 0, 0, 0);
-        const mode = row.type === 'homework' ? 'persistent' : 'instant';
-        const displayBadge = mode === 'instant' ? '瞬时事件' : '持续待办';
+        const type = typeof row.type === 'string' ? row.type.toLowerCase() : 'homework';
+        const isImportant = IMPORTANT_EVENT_TYPES.has(type) || !!row.is_important;
+        const mode = type === 'homework' || isImportant ? 'persistent' : 'instant';
+        const displayBadge = isImportant ? '重要事件' : (mode === 'instant' ? '瞬时事件' : '持续待办');
         const displayTime = mode === 'instant' ? `${month}.${day} ${hour}:${minute}` : `${month}.${day} 截止`;
         const deadlineTs = dueMidnight.getTime();
         const visibleFromTs = visibleFrom.getTime();
         const daysLeft = Math.max(0, Math.ceil((deadlineTs - todayStartTs) / DAY_MS));
         return {
           id: row.id,
-          type: row.type,
+          type,
           mode,
           title: row.title,
           deadline: deadlineStr,
@@ -794,6 +790,7 @@ Page({
           completed: row.is_completed,
           // 标记小组任务和考试任务
           urgent: mode === 'instant' || row.type === 'group_task', // 小组任务也标记为紧急
+          isImportant,
           displayBadge,
           displayTime,
           deadlineTs,
@@ -823,10 +820,12 @@ Page({
         const now = t.rawDeadline ? new Date(t.rawDeadline) : new Date();
         now.setSeconds(0, 0);
         const deadlineTs = now.getTime();
+        const fallbackType = (t.type || 'homework').toLowerCase();
+        const fallbackImportant = IMPORTANT_EVENT_TYPES.has(fallbackType) || !!t.isImportant;
         return {
           id: t.id || `mock-${idx}`,
-          type: t.type || 'homework',
-          mode: (t.type || 'homework') === 'homework' ? 'persistent' : 'instant',
+          type: fallbackType,
+          mode: fallbackType === 'homework' || fallbackImportant ? 'persistent' : 'instant',
           title: t.title,
           description: t.description || '',
           rawDeadline: now.toISOString(),
@@ -837,12 +836,15 @@ Page({
           related_course_id: t.related_course_id || null,
           accent: t.accent || '#9BB5CE',
           completed: t.completed || t.is_completed || false,
-          urgent: (t.type || 'homework') !== 'homework',
-          displayBadge: (t.type || 'homework') === 'homework' ? '持续待办' : '瞬时事件',
+          urgent: fallbackType !== 'homework',
+          displayBadge: fallbackImportant
+            ? '重要事件'
+            : (fallbackType === 'homework' ? '持续待办' : '瞬时事件'),
           displayTime: '今天',
           deadlineTs,
           visibleFromTs: deadlineTs,
-          daysLeft: 0
+          daysLeft: 0,
+          isImportant: fallbackImportant
         };
       });
       
@@ -1056,8 +1058,10 @@ Page({
   // 选择事件类型
   selectEventType(e) {
     const { type } = e.currentTarget.dataset;
+    const currentType = this.data.taskForm.type;
+    const nextType = currentType === type ? '' : type;
     this.setData({
-      'taskForm.type': type,
+      'taskForm.type': nextType,
       'taskForm.urgent': false
     });
     wx.vibrateShort({ type: 'light' });
@@ -1285,8 +1289,7 @@ Page({
         description: taskForm.description.trim() || null,
         deadline: taskForm.deadline,
         is_completed: false,
-        related_course_id: taskForm.related_course_id || null,
-        urgent: taskForm.urgent || false
+        related_course_id: taskForm.related_course_id || null
       };
 
       if (editingTask) {

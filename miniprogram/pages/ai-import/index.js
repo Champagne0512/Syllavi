@@ -189,14 +189,7 @@ Page({
     if (item.kind === 'task') {
       try {
         wx.showLoading({ title: '导入中...' });
-        const mappedType = item.type === 'exam' ? 'exam' : 'homework';
-        const payload = {
-          user_id: userId,
-          type: mappedType,
-          title: item.title,
-          deadline: this.normalizeDeadline(item.deadline),
-          description: null
-        };
+        const payload = this.buildTaskPayload(item, userId);
         await createTask(payload);
         wx.hideLoading();
         wx.showToast({ title: '已写入待办', icon: 'success' });
@@ -312,19 +305,18 @@ Page({
     const items = this.data.result || [];
     if (!items.length) return;
     const app = getApp();
-    const userId = app?.globalData?.supabase?.userId;
+    const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id');
+
+    if (!userId) {
+      wx.showToast({ title: '请先登录再导入', icon: 'none' });
+      return;
+    }
 
     wx.showLoading({ title: '批量导入中...' });
     try {
       const taskPayloads = items
         .filter((it) => it.kind === 'task')
-        .map((item) => ({
-          user_id: userId,
-          type: item.type || 'homework',
-          title: item.title,
-          deadline: item.deadline,
-          description: null
-        }));
+        .map((item) => this.buildTaskPayload(item, userId));
 
       const courseItems = items.filter((it) => it.kind === 'course');
 
@@ -364,6 +356,20 @@ Page({
       wx.hideLoading();
       wx.showToast({ title: '批量导入失败', icon: 'none' });
     }
+  },
+
+  buildTaskPayload(item, userId) {
+    if (!item?.title) {
+      throw new Error('任务标题缺失');
+    }
+
+    return {
+      user_id: userId,
+      type: item.type === 'exam' ? 'exam' : 'homework',
+      title: item.title,
+      deadline: this.normalizeDeadline(item.deadline),
+      description: item.course || item.description || null
+    };
   },
   
   
