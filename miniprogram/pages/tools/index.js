@@ -46,6 +46,7 @@ Page({
 
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
+      const localStats = focusService.getStats();
       
       if (!userId) {
         console.warn('未找到用户ID，使用本地数据');
@@ -90,13 +91,7 @@ Page({
       };
 
       // 处理统计数据
-      const stats = remoteStats || {
-        total_minutes: 0,
-        total_sessions: 0,
-        longest_session: 0,
-        today_minutes: 0,
-        streak_days: 0
-      };
+      const mergedStats = this.normalizeStats(remoteStats, localStats);
 
       // 处理热力图数据
       const remoteHeatmap = heatmapRows && heatmapRows.length ? 
@@ -109,15 +104,15 @@ Page({
         focusService.getHourlyDistribution();
 
       const heatmapSummary = this.buildHeatmapSummary(remoteHeatmap);
-      const insightList = this.buildInsights(stats);
+      const insightList = this.buildInsights(mergedStats);
 
       // 更新页面数据
       this.setData({
         focusStats: {
-          todayFocus: stats.today_minutes,
-          totalSessions: stats.total_sessions,
-          streakDays: stats.streak_days,
-          longestSession: stats.longest_session
+          todayFocus: mergedStats.todayMinutes,
+          totalSessions: mergedStats.totalSessions,
+          streakDays: mergedStats.streakDays,
+          longestSession: mergedStats.longestSession
         },
         achievements: nextAchievements,
         achievementsMeta,
@@ -174,6 +169,26 @@ Page({
       ...map[key],
       info: focusService.getAchievementInfo(key)
     }));
+  },
+
+  normalizeStats(remoteStats, localStats = {}) {
+    const base = {
+      totalMinutes: localStats.totalMinutes || 0,
+      totalSessions: localStats.totalSessions || 0,
+      longestSession: localStats.longestSession || 0,
+      todayMinutes: localStats.todayMinutes || 0,
+      streakDays: localStats.streakDays || 0
+    };
+
+    if (remoteStats) {
+      base.totalMinutes = Math.max(base.totalMinutes, remoteStats.total_minutes || 0);
+      base.totalSessions = Math.max(base.totalSessions, remoteStats.total_sessions || 0);
+      base.longestSession = Math.max(base.longestSession, remoteStats.longest_session || 0);
+      base.todayMinutes = Math.max(base.todayMinutes, remoteStats.today_minutes || 0);
+      base.streakDays = Math.max(base.streakDays, remoteStats.streak_days || 0);
+    }
+
+    return base;
   },
 
   buildInsights(stats = {}) {
