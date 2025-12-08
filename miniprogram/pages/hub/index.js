@@ -1152,8 +1152,11 @@ Page({
     const deadline = new Date(task.rawDeadline);
     const dateStr = deadline.toISOString().split('T')[0];
     const timeStr = `${String(deadline.getHours()).padStart(2, '0')}:${String(deadline.getMinutes()).padStart(2, '0')}`;
-    const mode = task.type === 'homework' ? 'persistent' : 'instant';
+    const normalizedType = typeof task.type === 'string' ? task.type.toLowerCase() : '';
+    const isImportant = task.isImportant || IMPORTANT_EVENT_TYPES.has(normalizedType);
+    const mode = isImportant ? 'persistent' : (task.mode || (normalizedType === 'homework' ? 'persistent' : 'instant'));
     const hasExplicitTime = mode === 'instant' ? true : (deadline.getHours() !== 23 || deadline.getMinutes() !== 59);
+    const formType = isImportant && IMPORTANT_EVENT_TYPES.has(normalizedType) ? normalizedType : '';
     
     this.setData({
       showTaskEditor: true,
@@ -1167,7 +1170,7 @@ Page({
         deadline_time: timeStr,
         has_specific_time: hasExplicitTime,
         related_course_id: task.related_course_id || null,
-        type: task.type || '',
+        type: formType,
         urgent: task.urgent || false
       }
     });
