@@ -418,6 +418,42 @@
   margin-bottom: 8rpx;
 }
 
+.task-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+
+.tag {
+  font-size: 22rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(0, 0, 0, 0.05);
+  color: #2D3436;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.tag.important {
+  background: rgba(226, 194, 164, 0.35);
+  color: #BA7B49;
+}
+
+.tag.urgent {
+  background: rgba(224, 142, 121, 0.3);
+  color: #B84F3A;
+}
+
+.tag.type {
+  background: rgba(135, 168, 164, 0.25);
+  color: #4F726C;
+}
+
+.tag.mode {
+  background: rgba(188, 160, 188, 0.25);
+  color: #6A4F78;
+}
+
 .task-title.completed {
   color: #87A8A4;
   text-decoration: line-through;
@@ -632,6 +668,96 @@
   padding: 30rpx;
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.mode-item {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  color: rgba(245, 246, 251, 0.8);
+  font-size: 26rpx;
+  transition: all 0.3s ease;
+}
+
+.mode-item.active {
+  background: linear-gradient(135deg, #87A8A4, #BCA0BC);
+  color: #fff;
+  box-shadow: 0 12rpx 30rpx rgba(135, 168, 164, 0.35);
+}
+
+.type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.chip {
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
+  color: rgba(245, 246, 251, 0.7);
+}
+
+.chip.active {
+  background: rgba(226, 194, 164, 0.3);
+  color: #FFE1CE;
+  border-color: rgba(226, 194, 164, 0.6);
+}
+
+.toggles {
+  display: flex;
+  gap: 20rpx;
+}
+
+.toggle-item {
+  flex: 1;
+  border-radius: 24rpx;
+  padding: 16rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
+  color: rgba(245, 246, 251, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.toggle-dot {
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(245, 246, 251, 0.6);
+}
+
+.toggle-dot.on {
+  background: #87A8A4;
+  border-color: #87A8A4;
+}
+
+.toggle-dot.alert.on {
+  background: #E08E79;
+  border-color: #E08E79;
+}
+
+.specific-time .specific-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.specific-time {
+  margin-top: 10rpx;
 }
 
 .form-group {

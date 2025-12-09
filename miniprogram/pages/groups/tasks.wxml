@@ -72,6 +72,12 @@
         <view class="task-header">
           <view class="task-title-section">
             <text class="task-title {{item.isCompleted ? 'completed' : ''}}">{{item.title}}</text>
+            <view class="task-tags">
+              <text class="tag important" wx:if="{{item.isImportant}}">重点</text>
+              <text class="tag urgent" wx:if="{{item.urgent}}">紧急</text>
+              <text class="tag type" wx:if="{{item.displayType}}">{{item.displayType === 'exam' ? '考试' : item.displayType === 'homework' ? '作业' : item.displayType === 'group' ? '小组' : '其他'}}</text>
+              <text class="tag mode">{{item.displayMode === 'instant' ? '即时' : '持续'}}</text>
+            </view>
             <view class="task-source">
               <text class="source-text">创建于: {{item.created_at}}</text>
             </view>
@@ -90,8 +96,12 @@
               <text class="meta-text {{item.isOverdue ? 'overdue' : ''}}">{{item.formattedDeadline}}</text>
             </view>
             <view class="meta-item">
+              <text class="meta-icon">⚙️</text>
+              <text class="meta-text">模式: {{item.displayMode === 'instant' ? '即时任务' : '持续待办'}}</text>
+            </view>
+            <view class="meta-item">
               <text class="meta-icon">👥</text>
-              <text class="meta-text">状态: {{item.status === 'completed' ? '已完成' : '进行中'}}</text>
+              <text class="meta-text">状态: {{item.status === 'completed' ? '已完成' : '进行中'}}{{item.urgent ? ' · 紧急' : ''}}</text>
             </view>
           </view>
         </view>
@@ -121,22 +131,64 @@
       <view class="modal-body">
         <view class="form-group">
           <label class="form-label">任务标题</label>
-          <input class="form-input" placeholder="请输入任务标题" 
-                 value="{{newTaskTitle}}" bindinput="onTitleInput" />
+          <input class="form-input" placeholder="请输入任务标题"
+                 value="{{taskForm.title}}" bindinput="onTitleInput" />
         </view>
 
         <view class="form-group">
-          <label class="form-label">任务描述（可选）</label>
-          <textarea class="form-textarea" placeholder="请输入任务描述" 
-                    value="{{newTaskDescription}}" bindinput="onDescriptionInput" />
+          <label class="form-label">任务描述</label>
+          <textarea class="form-textarea" placeholder="描述任务背景或要求"
+                    value="{{taskForm.description}}" bindinput="onDescriptionInput" />
         </view>
 
         <view class="form-group">
-          <label class="form-label">截止时间（可选）</label>
-          <picker mode="date" value="{{newTaskDeadline}}" bindchange="onDeadlineChange">
+          <label class="form-label">任务模式</label>
+          <view class="mode-switch">
+            <view class="mode-item {{taskForm.mode === 'persistent' ? 'active' : ''}}" data-mode="persistent" bindtap="switchTaskMode">持续待办</view>
+            <view class="mode-item {{taskForm.mode === 'instant' ? 'active' : ''}}" data-mode="instant" bindtap="switchTaskMode">即时任务</view>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <label class="form-label">任务类型</label>
+          <view class="type-chips">
+            <view class="chip {{taskForm.type === 'homework' ? 'active' : ''}}" data-type="homework" bindtap="selectTaskType">作业</view>
+            <view class="chip {{taskForm.type === 'exam' ? 'active' : ''}}" data-type="exam" bindtap="selectTaskType">考试</view>
+            <view class="chip {{taskForm.type === 'group' ? 'active' : ''}}" data-type="group" bindtap="selectTaskType">小组任务</view>
+            <view class="chip {{taskForm.type === 'other' ? 'active' : ''}}" data-type="other" bindtap="selectTaskType">其他</view>
+          </view>
+        </view>
+
+        <view class="form-group toggles">
+          <view class="toggle-item" bindtap="toggleImportant">
+            <view class="toggle-dot {{taskForm.isImportant ? 'on' : ''}}"></view>
+            <text>重点任务</text>
+          </view>
+          <view class="toggle-item" bindtap="toggleUrgent">
+            <view class="toggle-dot alert {{taskForm.urgent ? 'on' : ''}}"></view>
+            <text>紧急提醒</text>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <label class="form-label">截止日期</label>
+          <picker mode="date" value="{{taskForm.deadline_date}}" bindchange="onDeadlineDateChange">
             <view class="date-picker">
-              <text class="date-text" wx:if="{{newTaskDeadline}}">{{newTaskDeadline}}</text>
-              <text class="date-placeholder" wx:else>选择截止日期</text>
+              <text class="date-text" wx:if="{{taskForm.deadline_date}}">{{taskForm.deadline_date}}</text>
+              <text class="date-placeholder" wx:else>选择日期</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="form-group specific-time">
+          <view class="specific-head">
+            <text class="form-label">具体时间</text>
+            <switch checked="{{taskForm.has_specific_time}}" bindchange="toggleSpecificTime" color="#87A8A4" />
+          </view>
+          <picker mode="time" value="{{taskForm.deadline_time || '08:00'}}" bindchange="onDeadlineTimeChange" wx:if="{{taskForm.has_specific_time}}">
+            <view class="date-picker">
+              <text class="date-text" wx:if="{{taskForm.deadline_time}}">{{taskForm.deadline_time}}</text>
+              <text class="date-placeholder" wx:else>选择时间</text>
             </view>
           </picker>
         </view>

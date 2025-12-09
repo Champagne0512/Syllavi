@@ -6,24 +6,37 @@ Page({
     groupId: null,
     groupInfo: {},
     userRole: '',
+    userId: '',
+    members: [],
     tasks: [],
-    newTaskTitle: '',
-    newTaskDescription: '',
-    newTaskDeadline: '',
+    taskForm: {
+      title: '',
+      description: '',
+      mode: 'persistent',
+      type: '',
+      isImportant: false,
+      urgent: false,
+      has_specific_time: false,
+      deadline_date: '',
+      deadline_time: '',
+      related_course_id: null
+    },
+    formDirty: false,
     showCreateModal: false,
-    loading: true
+    loading: true,
+    initialTaskId: ''
   },
 
   onLoad(options) {
     console.log('tasks.js - 页面加载，参数:', options)
-    const { groupId } = options
+    const groupId = options.groupId || options.id
     if (!groupId) {
       wx.showToast({ title: '参数错误', icon: 'none' })
       wx.navigateBack()
       return
     }
     
-    this.setData({ groupId })
+    this.setData({ groupId, initialTaskId: options.taskId || '' })
     this.loadGroupInfo()
   },
 
@@ -91,6 +104,7 @@ Page({
         userId
       })
       
+      await this.loadMembers()
       // 加载任务列表
       await this.loadTasks()
       
@@ -98,6 +112,19 @@ Page({
       console.error('加载小组信息失败:', error)
       wx.showToast({ title: '加载小组信息失败', icon: 'none' })
       this.setData({ loading: false })
+    }
+  },
+
+  async loadMembers() {
+    try {
+      const { request } = require('../../utils/supabase')
+      const members = await request('group_members', {
+        query: `group_id=eq.${this.data.groupId}`
+      })
+      this.setData({ members: members || [] })
+    } catch (error) {
+      console.error('加载小组成员失败:', error)
+      this.setData({ members: [] })
     }
   },
 
@@ -115,15 +142,23 @@ Page({
       
       // 格式化任务数据
       const formattedTasks = (tasks || []).map(task => {
-        // 计算任务状态和进度
+        let meta = task.meta || {}
+        if (typeof meta === 'string') {
+          try { meta = JSON.parse(meta) } catch (err) { meta = {} }
+        }
         const isCompleted = task.status === 'completed'
-        const isOverdue = !isCompleted && new Date(task.deadline) < new Date()
-        
+        const hasDeadline = !!task.deadline
+        const isOverdue = hasDeadline && !isCompleted && new Date(task.deadline) < new Date()
         return {
           ...task,
+          meta,
+          displayType: meta.type || '',
+          displayMode: meta.mode || 'persistent',
+          isImportant: !!meta.isImportant,
+          urgent: !!meta.urgent,
           isCompleted,
           isOverdue,
-          formattedDeadline: this.formatDate(task.deadline)
+          formattedDeadline: this.formatDate(task.deadline, meta)
         }
       })
       
@@ -160,99 +195,225 @@ Page({
   },
   
   // 格式化日期
-  formatDate(dateString) {
+  formatDate(dateString, meta = {}) {
     if (!dateString) return ''
-    
     const date = new Date(dateString)
     const now = new Date()
     const diffTime = date - now
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+    const dateLabel = `${date.getMonth() + 1}月${date.getDate()}日`
+    const timeLabel = meta.hasSpecificTime && meta.deadlineTime ? ` ${meta.deadlineTime}` : ''
+
     if (diffDays < 0) {
-      return `已过期 ${Math.abs(diffDays)} 天`
+      return `${dateLabel}${timeLabel} · 已过期 ${Math.abs(diffDays)} 天`
     } else if (diffDays === 0) {
-      return '今天到期'
+      return `${dateLabel}${timeLabel} · 今天到期`
     } else if (diffDays === 1) {
-      return '明天到期'
+      return `${dateLabel}${timeLabel} · 明天到期`
     } else if (diffDays <= 7) {
-      return `${diffDays} 天后到期`
-    } else {
-      return `${date.getMonth() + 1}月${date.getDate()}日到期`
+      return `${dateLabel}${timeLabel} · ${diffDays} 天后`
     }
+    return `${dateLabel}${timeLabel}`
   },
 
   // 显示创建任务模态框
   showCreateTask() {
+    wx.vibrateShort({ type: 'light' })
+    if (!this.data.members.length) {
+      this.loadMembers()
+    }
+    this.resetTaskForm()
     this.setData({ showCreateModal: true })
   },
 
-  // 隐藏创建任务模态框
   hideCreateTask() {
-    this.setData({ 
-      showCreateModal: false,
-      newTaskTitle: '',
-      newTaskDescription: '',
-      newTaskDeadline: ''
+    wx.vibrateShort({ type: 'light' })
+    this.setData({ showCreateModal: false })
+    this.resetTaskForm()
+  },
+
+  resetTaskForm() {
+    const today = new Date().toISOString().split('T')[0]
+    this.setData({
+      taskForm: {
+        title: '',
+        description: '',
+        mode: 'persistent',
+        type: '',
+        isImportant: false,
+        urgent: false,
+        has_specific_time: false,
+        deadline_date: today,
+        deadline_time: '',
+        related_course_id: null
+      },
+      formDirty: false
     })
   },
 
-  // 输入处理
+  setTaskField(field, value) {
+    this.setData({ [`taskForm.${field}`]: value, formDirty: true })
+  },
+
   onTitleInput(e) {
-    this.setData({ newTaskTitle: e.detail.value })
+    this.setTaskField('title', e.detail.value)
   },
 
   onDescriptionInput(e) {
-    this.setData({ newTaskDescription: e.detail.value })
+    this.setTaskField('description', e.detail.value)
   },
 
-  onDeadlineChange(e) {
-    this.setData({ newTaskDeadline: e.detail.value })
+  onDeadlineDateChange(e) {
+    this.setTaskField('deadline_date', e.detail.value)
   },
 
-  // 创建新任务
-  async createTask() {
-    const { newTaskTitle, newTaskDescription, newTaskDeadline, groupId, userId } = this.data
-    
-    if (!newTaskTitle.trim()) {
-      wx.showToast({ title: '请输入任务标题', icon: 'none' })
-      return
+  onDeadlineTimeChange(e) {
+    this.setTaskField('deadline_time', e.detail.value)
+  },
+
+  switchTaskMode(e) {
+    const mode = e.currentTarget.dataset.mode
+    if (!mode || mode === this.data.taskForm.mode) return
+    const updates = {
+      'taskForm.mode': mode,
+      formDirty: true
     }
+    if (mode === 'instant') {
+      updates['taskForm.has_specific_time'] = true
+      if (!this.data.taskForm.deadline_time) {
+        updates['taskForm.deadline_time'] = '08:00'
+      }
+    }
+    this.setData(updates)
+  },
+
+  toggleSpecificTime() {
+    const hasSpecificTime = !this.data.taskForm.has_specific_time
+    this.setData({
+      'taskForm.has_specific_time': hasSpecificTime,
+      formDirty: true
+    })
+  },
+
+  selectTaskType(e) {
+    const type = e.currentTarget.dataset.type
+    const current = this.data.taskForm.type
+    this.setData({
+      'taskForm.type': current === type ? '' : type,
+      formDirty: true
+    })
+  },
+
+  toggleImportant() {
+    this.setData({
+      'taskForm.isImportant': !this.data.taskForm.isImportant,
+      formDirty: true
+    })
+  },
+
+  toggleUrgent() {
+    this.setData({
+      'taskForm.urgent': !this.data.taskForm.urgent,
+      formDirty: true
+    })
+  },
+
+  async createTask() {
+    const payload = this.buildTaskPayload()
+    if (!payload) return
 
     wx.showLoading({ title: '创建中...' })
-    
     try {
       const { request } = require('../../utils/supabase')
-      
-      // 创建任务
       const result = await request('group_tasks', {
         method: 'POST',
-        data: [{
-          group_id: groupId,
-          title: newTaskTitle.trim(),
-          description: newTaskDescription.trim(),
-          deadline: newTaskDeadline,
-          created_by: userId,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        }]
+        headers: { Prefer: 'return=representation' },
+        data: [payload]
       })
-      
-      wx.hideLoading()
-      
-      if (result && result.length > 0) {
-        wx.showToast({ title: '任务创建成功' })
-        this.hideCreateTask()
-        
-        // 重新加载任务列表
-        this.loadTasks()
-      } else {
+
+      if (!result || !result.length) {
         throw new Error('创建任务失败')
       }
-      
+
+      const newTask = result[0]
+      await this.assignTaskToMembers(newTask.id)
+
+      wx.showToast({ title: '任务创建成功' })
+      this.hideCreateTask()
+      this.loadTasks()
     } catch (error) {
       console.error('创建任务失败:', error)
-      wx.hideLoading()
       wx.showToast({ title: '创建任务失败', icon: 'none' })
+    } finally {
+      wx.hideLoading()
+    }
+  },
+
+  buildTaskPayload() {
+    const { taskForm, groupId, userId } = this.data
+    if (!taskForm.title.trim()) {
+      wx.showToast({ title: '请输入任务标题', icon: 'none' })
+      return null
+    }
+
+    if (!taskForm.deadline_date) {
+      wx.showToast({ title: '请选择截止日期', icon: 'none' })
+      return null
+    }
+
+    const deadlineISO = this.getDeadlineISO()
+
+    return {
+      group_id: groupId,
+      created_by: userId,
+      title: taskForm.title.trim(),
+      description: taskForm.description.trim(),
+      deadline: deadlineISO,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      meta: {
+        mode: taskForm.mode,
+        type: taskForm.type,
+        urgent: taskForm.urgent,
+        isImportant: taskForm.isImportant,
+        hasSpecificTime: taskForm.has_specific_time,
+        deadlineDate: taskForm.deadline_date,
+        deadlineTime: taskForm.deadline_time,
+        relatedCourseId: taskForm.related_course_id
+      }
+    }
+  },
+
+  getDeadlineISO() {
+    const { deadline_date, deadline_time, has_specific_time } = this.data.taskForm
+    if (!deadline_date) return null
+    if (has_specific_time && deadline_time) {
+      return `${deadline_date}T${deadline_time}:00`
+    }
+    return `${deadline_date}T23:59:59`
+  },
+
+  async assignTaskToMembers(taskId) {
+    if (!taskId) return
+    const { request } = require('../../utils/supabase')
+    try {
+      const members = this.data.members.length ? this.data.members : await request('group_members', {
+        query: `group_id=eq.${this.data.groupId}`
+      })
+      if (!members || !members.length) return
+      const uniqueUserIds = [...new Set(members.map(member => member.user_id || member.id).filter(Boolean))]
+      if (!uniqueUserIds.length) return
+      const rows = uniqueUserIds.map(userId => ({
+        task_id: taskId,
+        user_id: userId,
+        is_completed: false
+      }))
+      await request('group_task_members', {
+        method: 'POST',
+        data: rows
+      })
+    } catch (error) {
+      console.error('为成员分配小组任务失败:', error)
     }
   },
 
@@ -277,6 +438,14 @@ Page({
         query: `id=eq.${taskId}`,
         data: {
           status: newStatus,
+          completed_at: newStatus === 'completed' ? new Date().toISOString() : null
+        }
+      })
+      await request('group_task_members', {
+        method: 'PATCH',
+        query: `task_id=eq.${taskId}`,
+        data: {
+          is_completed: newStatus === 'completed',
           completed_at: newStatus === 'completed' ? new Date().toISOString() : null
         }
       })
@@ -322,6 +491,10 @@ Page({
           try {
             const { request } = require('../../utils/supabase')
             
+            await request('group_task_members', {
+              method: 'DELETE',
+              query: `task_id=eq.${taskId}`
+            })
             const result = await request('group_tasks', {
               method: 'DELETE',
               query: `id=eq.${taskId}`
@@ -366,17 +539,22 @@ Page({
       {
         title: '完成小组项目需求文档',
         description: '整理并完成项目需求分析文档，包括功能规格和技术要求',
-        deadline: this.getDateAfterDays(7)
+        deadline_date: this.getDateAfterDays(7),
+        mode: 'persistent'
       },
       {
         title: '准备小组会议材料',
         description: '准备本周小组会议的议程和相关材料',
-        deadline: this.getDateAfterDays(2)
+        deadline_date: this.getDateAfterDays(2),
+        mode: 'instant',
+        has_specific_time: true,
+        deadline_time: '09:00'
       },
       {
         title: '代码审查与优化',
         description: '对小组成员提交的代码进行审查，并提供优化建议',
-        deadline: this.getDateAfterDays(5)
+        deadline_date: this.getDateAfterDays(5),
+        mode: 'persistent'
       }
     ]
     
@@ -389,33 +567,36 @@ Page({
           
           try {
             const { request } = require('../../utils/supabase')
-            
-            // 为每个示例任务添加必要字段
-            const formattedTasks = sampleTasks.map(task => ({
+            const payloads = sampleTasks.map(task => ({
               group_id: this.data.groupId,
+              created_by: userId,
               title: task.title,
               description: task.description,
-              deadline: task.deadline,
-              created_by: userId,
+              deadline: task.has_specific_time && task.deadline_time
+                ? `${task.deadline_date}T${task.deadline_time}:00`
+                : `${task.deadline_date}T23:59:59`,
               status: 'pending',
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
+              meta: {
+                mode: task.mode || 'persistent',
+                type: '',
+                urgent: false,
+                isImportant: false,
+                hasSpecificTime: !!task.has_specific_time,
+                deadlineDate: task.deadline_date,
+                deadlineTime: task.deadline_time || '',
+                relatedCourseId: null
+              }
             }))
-            
-            // 批量创建任务
             const result = await request('group_tasks', {
               method: 'POST',
-              data: formattedTasks
+              headers: { Prefer: 'return=representation' },
+              data: payloads
             })
-            
-            wx.hideLoading()
-            
-            if (result && result.length > 0) {
-              wx.showToast({ 
-                title: `成功创建${result.length}个任务`, 
-                icon: 'success' 
-              })
-              
-              // 重新加载任务列表
+
+            if (result && result.length) {
+              await Promise.all(result.map(task => this.assignTaskToMembers(task.id)))
+              wx.showToast({ title: `成功创建${result.length}个任务`, icon: 'success' })
               this.loadTasks()
             } else {
               throw new Error('创建任务失败')
@@ -423,8 +604,9 @@ Page({
             
           } catch (error) {
             console.error('快速创建任务失败:', error)
-            wx.hideLoading()
             wx.showToast({ title: '创建失败', icon: 'none' })
+          } finally {
+            wx.hideLoading()
           }
         }
       }

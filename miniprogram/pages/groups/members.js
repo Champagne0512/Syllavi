@@ -59,7 +59,7 @@ Page({
         role: member.role,
         joined_at: member.joined_at,
         nickname: member.profiles?.nickname || `用户${member.user_id?.slice(-6) || ''}`,
-        avatar_url: member.profiles?.avatar_url || '/assets/images/default-avatar.png'
+        avatar_url: member.profiles?.avatar_url || '/static/default-avatar.png'
       }))
 
       this.setData({ members: formattedMembers })

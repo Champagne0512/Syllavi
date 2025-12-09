@@ -1,120 +1,118 @@
 <!--pages/groups/batch-tasks.wxml-->
 <view class="container">
-  <!-- 加载状态 -->
   <view wx:if="{{loading}}" class="loading">
-    <text>加载中...</text>
+    <text class="loading-text">加载中...</text>
   </view>
 
-  <!-- 主要内容 -->
   <view wx:else class="content">
-    <!-- 标题栏 -->
-    <view class="header">
-      <text class="title">批量安排小组任务</text>
-      <text class="subtitle">{{groupInfo.name}}</text>
+    <view class="header-card glass">
+      <text class="header-title">新建「{{groupInfo.name}}」的小组任务</text>
+      <button class="ghost-btn" bindtap="fillExampleTask">填充示例</button>
     </view>
 
-    <!-- 任务表单 -->
-    <view class="form-section">
-      <view class="form-item">
-        <text class="label">任务标题 *</text>
-        <input 
-          class="input" 
-          placeholder="请输入任务标题" 
-          value="{{taskForm.title}}"
-          data-field="title"
-          bindinput="onInputChange"
-        />
-      </view>
-
-      <view class="form-item">
-        <text class="label">任务描述</text>
-        <textarea 
-          class="textarea" 
-          placeholder="请输入任务描述（可选）" 
-          value="{{taskForm.description}}"
-          data-field="description"
-          bindinput="onInputChange"
-          maxlength="500"
-        />
-      </view>
-
-      <view class="form-item">
-        <text class="label">截止日期 *</text>
-        <picker 
-          mode="date" 
-          value="{{taskForm.deadline}}"
-          bindchange="onDateChange"
-        >
-          <view class="picker">
-            {{taskForm.deadline ? taskForm.deadline : '请选择截止日期'}}
+    <scroll-view scroll-y class="form-scroll">
+      <view class="card glass">
+        <text class="card-title">任务类型</text>
+        <view class="mode-grid">
+          <view class="mode-card {{taskForm.mode === 'persistent' ? 'active' : ''}}" data-mode="persistent" bindtap="switchTaskMode">
+            <text class="mode-eyebrow">持续类</text>
+            <text class="mode-name">作业 / 项目</text>
+            <text class="mode-desc">截止日前每天都显示</text>
           </view>
-        </picker>
-      </view>
-
-      <!-- 分配方式 -->
-      <view class="form-item">
-        <view class="switch-container">
-          <text class="label">分配给全体成员</text>
-          <switch 
-            checked="{{taskForm.assignToAll}}"
-            bindchange="onAssignToAllChange"
-            color="#1989fa"
-          />
+          <view class="mode-card instant {{taskForm.mode === 'instant' ? 'active' : ''}}" data-mode="instant" bindtap="switchTaskMode">
+            <text class="mode-eyebrow">瞬时类</text>
+            <text class="mode-name">考试 / 活动</text>
+            <text class="mode-desc">只在事件当天提醒</text>
+          </view>
         </view>
       </view>
 
-      <!-- 成员选择（当不选择全体成员时显示） -->
-      <view wx:if="{{!taskForm.assignToAll}}" class="members-section">
-        <text class="section-title">选择要分配的成员 ({{taskForm.selectedMembers.length}}/{{members.length}})</text>
-        <view class="members-list">
-          <view 
-            wx:for="{{members}}" 
-            wx:key="id"
-            class="member-item {{item.selected ? 'selected' : ''}}"
-            data-index="{{index}}"
-            bindtap="onMemberSelect"
-          >
-            <view class="member-info">
-              <text class="member-name">{{item.role === 'leader' ? '👑 ' : ''}}{{item.nickname}}</text>
+      <view class="card glass">
+        <view class="form-field">
+          <text class="form-label">任务标题 *</text>
+          <input class="form-input" placeholder="例如：提交阶段性报告" value="{{taskForm.title}}" data-field="title" bindinput="onInputChange" />
+        </view>
+
+        <view class="form-field">
+          <text class="form-label">任务描述</text>
+          <textarea class="form-textarea" placeholder="补充背景、提交方式或参考链接..." value="{{taskForm.description}}" data-field="description" bindinput="onInputChange" />
+        </view>
+
+        <view class="deadline-row">
+          <picker mode="date" value="{{taskForm.deadline_date}}" data-field="deadline_date" bindchange="onDateChange">
+            <view class="deadline-pill">
+              <text class="pill-label">日期</text>
+              <text class="pill-value">{{taskForm.deadline_date || '选择日期'}}</text>
+            </view>
+          </picker>
+          <picker mode="time" value="{{taskForm.deadline_time}}" bindchange="onTimeChange" wx:if="{{taskForm.mode === 'instant' || taskForm.has_specific_time}}">
+            <view class="deadline-pill">
+              <text class="pill-label">时间</text>
+              <text class="pill-value">{{taskForm.deadline_time || '选择时间'}}</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="time-toggle" wx:if="{{taskForm.mode === 'persistent'}}">
+          <text class="toggle-label">需要具体时间提醒？</text>
+          <view class="toggle-switch {{taskForm.has_specific_time ? 'active' : ''}}" bindtap="toggleSpecificTime">
+            <view class="toggle-dot"></view>
+          </view>
+        </view>
+      </view>
+
+      <view class="card glass">
+        <view class="card-header">
+          <text class="card-title">重要事件</text>
+          <text class="card-subtitle">可视化到课程与待办视图</text>
+        </view>
+        <view class="event-grid">
+          <view class="event-chip {{taskForm.type === item.key ? 'active' : ''}}" wx:for="{{eventOptions}}" wx:key="key" data-type="{{item.key}}" bindtap="selectEventType">
+            <text class="chip-icon">{{item.icon}}</text>
+            <text class="chip-label">{{item.label}}</text>
+          </view>
+          <view class="event-chip urgent {{taskForm.urgent ? 'active' : ''}}" bindtap="toggleUrgent">
+            <text class="chip-icon">🔥</text>
+            <text class="chip-label">紧急事件</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card glass">
+        <view class="assign-row">
+          <view>
+            <text class="card-title">分配方式</text>
+            <text class="card-subtitle">默认发送给所有成员</text>
+          </view>
+          <switch checked="{{taskForm.assignToAll}}" bindchange="onAssignToAllChange" color="#87A8A4" />
+        </view>
+
+        <view wx:if="{{!taskForm.assignToAll}}">
+          <text class="section-hint">已选择 {{taskForm.selectedMembers.length}} / {{members.length}}</text>
+          <view class="member-grid">
+            <view class="member-chip {{item.selected ? 'selected' : ''}}" wx:for="{{members}}" wx:key="id" data-index="{{index}}" bindtap="onMemberSelect">
+              <text class="member-name">{{item.nickname}}</text>
               <text class="member-role">{{item.role === 'leader' ? '组长' : item.role === 'deputy_leader' ? '副组长' : '成员'}}</text>
             </view>
-            <view class="checkbox {{item.selected ? 'checked' : ''}}">
-              <text wx:if="{{item.selected}}">✓</text>
-            </view>
           </view>
         </view>
       </view>
+    </scroll-view>
 
-      <!-- 快速填写示例 -->
-      <view class="example-section">
-        <button class="example-btn" bindtap="fillExampleTask" size="mini">
-          快速填写示例任务
-        </button>
+    <view class="footer">
+      <view class="stats">
+        <view class="stat">
+          <text class="stat-value">{{members.length}}</text>
+          <text class="stat-label">小组成员</text>
+        </view>
+        <view class="stat">
+          <text class="stat-value">{{taskForm.assignToAll ? members.length : taskForm.selectedMembers.length}}</text>
+          <text class="stat-label">将收到任务</text>
+        </view>
       </view>
-
-      <!-- 提交按钮 -->
-      <view class="submit-section">
-        <button 
-          class="submit-btn" 
-          bindtap="createBatchTasks"
-          disabled="{{submitting}}"
-          loading="{{submitting}}"
-        >
-          {{submitting ? '创建中...' : '创建批量任务'}}
-        </button>
-      </view>
-    </view>
-
-    <!-- 统计信息 -->
-    <view class="stats-section">
-      <view class="stats-item">
-        <text class="stats-value">{{members.length}}</text>
-        <text class="stats-label">小组成员</text>
-      </view>
-      <view class="stats-item">
-        <text class="stats-value">{{taskForm.assignToAll ? members.length : taskForm.selectedMembers.length}}</text>
-        <text class="stats-label">将分配任务</text>
-      </view>
+      <button class="primary-btn" bindtap="createBatchTasks" loading="{{submitting}}" disabled="{{submitting}}">
+        {{submitting ? '创建中...' : '发布任务'}}
+      </button>
     </view>
   </view>
 </view>

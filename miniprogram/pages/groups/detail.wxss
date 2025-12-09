@@ -317,15 +317,97 @@
   transform: scale(0.95);
 }
 
+.group-name-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.group-name {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #2D3436;
+  letter-spacing: -0.5rpx;
+  line-height: 1.2;
+}
+
+.visibility-pill {
+  padding: 6rpx 18rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #fff;
+}
+
+.visibility-pill.public {
+  background: linear-gradient(135deg, #87A8A4, #A8D5BA);
+}
+
+.visibility-pill.private {
+  background: linear-gradient(135deg, #BCA0BC, #CFA8C9);
+}
+
 .group-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 24rpx;
 }
 
-.member-count, .group-type {
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.meta-label {
+  font-size: 22rpx;
+  color: rgba(45, 52, 54, 0.6);
+}
+
+.meta-text {
+  font-size: 28rpx;
+  color: #2D3436;
+  font-weight: 600;
+}
+
+.group-code-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-top: 20rpx;
+  flex-wrap: wrap;
+}
+
+.code-box {
+  flex: 1;
+  min-width: 0;
+  padding: 18rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(45, 52, 54, 0.08);
+}
+
+.code-label {
+  font-size: 22rpx;
+  color: rgba(45, 52, 54, 0.6);
+}
+
+.code-value {
+  display: block;
+  font-size: 30rpx;
+  font-family: 'JetBrains Mono', monospace;
+  color: #2D3436;
+  letter-spacing: 2rpx;
+  margin-top: 6rpx;
+}
+
+.copy-btn {
+  padding: 16rpx 26rpx;
+  border-radius: 20rpx;
+  background: #87A8A4;
+  color: #fff;
+  border: none;
   font-size: 26rpx;
-  color: #2D3436; /* 艺术设计规范中的主文字色 */
-  opacity: 0.7;
 }
 
 /* 用户角色 */
@@ -543,6 +625,57 @@
   opacity: 0.7;
 }
 
+.task-list-header {
+  margin: 30rpx 20rpx 0 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task-list-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.task-manage-btn {
+  border: none;
+  background: rgba(135, 168, 164, 0.18);
+  color: #2D3436;
+  font-size: 24rpx;
+  padding: 14rpx 28rpx;
+  border-radius: 24rpx;
+}
+
+.zen-summary-card {
+  background: rgba(255,255,255,0.75);
+  border-radius: 28rpx;
+  padding: 24rpx;
+  margin: 20rpx;
+  margin-bottom: 0;
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 12px 32px rgba(31,38,135,0.08);
+  display: flex;
+  gap: 20rpx;
+}
+
+.summary-item {
+  flex: 1;
+  text-align: center;
+}
+
+.summary-value {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.summary-label {
+  font-size: 22rpx;
+  color: rgba(45,52,54,0.65);
+}
+
 /* 增强的任务项样式 - 符合艺术设计规范 */
 .zen-task-card {
   padding: 25rpx;
@@ -635,8 +768,14 @@
   color: #E08E79; /* 艺术设计规范中的哑光珊瑚 */
 }
 
+.task-action {
+  margin-top: 12rpx;
+  display: flex;
+  gap: 16rpx;
+}
+
 .zen-task-btn {
-  margin-left: 20rpx;
+  flex: 1;
   font-size: 24rpx !important;
   border-radius: 12rpx; /* 符合艺术设计规范中的大圆角 */
   transition: all 0.3s ease;
@@ -651,6 +790,11 @@
 .zen-task-btn.undo {
   background: #E08E79; /* 艺术设计规范中的哑光珊瑚 */
   color: white;
+}
+
+.zen-task-btn.plain {
+  background: rgba(45, 52, 54, 0.08);
+  color: #2D3436;
 }
 
 .zen-task-btn:active {

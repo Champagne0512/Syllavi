@@ -12,6 +12,7 @@ const SUPABASE_ANON_KEY =
 const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xaXhhaGFzZmh3b2Z1c3V3c2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzY2MTUyNywiZXhwIjoyMDc5MjM3NTI3fQ.uNUTizbVayqD9Q4GQYwHjtPCrJfKDy6CTvsNaWIhCJs';
 
 const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+const GROUP_META_PREFIX = '__SYLLAVI_GROUP_META__:';
 const EMPTY_FOCUS_STATS = Object.freeze({
   today_minutes: 0,
   week_minutes: 0,
@@ -541,18 +542,21 @@ async function fetchTasks(userId) {
 async function fetchAllTasks(userId = DEMO_USER_ID) {
   try {
     // 获取个人任务（包括标记为小组任务的）
-    const personalTasks = await fetchTasks(userId);
+  const personalTasks = await fetchTasks(userId);
     
     // 处理标记为小组任务的个人任务
     const markedGroupTasks = (personalTasks || []).map(task => {
       if (task.title && task.title.startsWith('[小组任务]')) {
+        const { text: cleanedDescription, meta: embeddedMeta } = extractGroupMetaBlock(task.description);
         return {
           ...task,
           type: 'group_task', // 标记为小组任务
+          description: cleanedDescription,
+          meta: embeddedMeta || task.meta || {},
           // 从描述中提取小组信息
           groupInfo: {
-            groupId: extractGroupIdFromDescription(task.description) || null,
-            groupName: extractGroupNameFromDescription(task.description) || '学习小组'
+            groupId: extractGroupIdFromDescription(cleanedDescription) || null,
+            groupName: extractGroupNameFromDescription(cleanedDescription) || '学习小组'
           }
         };
       }
@@ -577,7 +581,7 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
           // 先尝试使用关联查询
           let taskDetailsQuery = [
             `id=in.(${taskIds})`,
-            'select=id,title,description,deadline,created_at,group_id,created_by,study_groups(id,name,description)'
+            'select=id,title,description,deadline,created_at,group_id,created_by,meta,study_groups(id,name,description)'
           ].join('&');
           
           let taskDetails = [];
@@ -590,7 +594,7 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
             // 如果关联查询失败，则分开查询任务和小组信息
             const taskDetailsOnlyQuery = [
               `id=in.(${taskIds})`,
-              'select=id,title,description,deadline,created_at,group_id,created_by'
+              'select=id,title,description,deadline,created_at,group_id,created_by,meta'
             ].join('&');
             
             taskDetails = await request('group_tasks', { query: taskDetailsOnlyQuery });
@@ -621,6 +625,7 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
           const groupTasks = groupTaskMembers.map(member => {
             const taskDetail = taskDetails.find(t => t.id === member.task_id);
             if (!taskDetail) return null;
+            const parsedMeta = parseGroupMeta(taskDetail.meta);
             
             return {
               id: taskDetail.id,
@@ -638,6 +643,7 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
                 groupName: taskDetail.study_groups?.name || '学习小组',
                 groupDescription: taskDetail.study_groups?.description || ''
               },
+              meta: parsedMeta,
               // 添加小组任务特有字段
               task_member_id: member.id,
               assigned_at: member.assigned_at,
@@ -670,10 +676,10 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
 
 // 从任务描述中提取小组名称
 function extractGroupNameFromDescription(description) {
-  if (!description) return null;
+  const cleanDesc = removeGroupMetaFromDescription(description);
+  if (!cleanDesc) return null;
   
-  // 查找"分配给: xxx"模式
-  const match = description.match(/分配给:\s*(.+?)(?:\n|$)/);
+  const match = cleanDesc.match(/分配给:\s*(.+?)(?:\n|$)/);
   if (match && match[1]) {
     return match[1].trim();
   }
@@ -683,15 +689,59 @@ function extractGroupNameFromDescription(description) {
 
 // 从任务描述中提取小组ID
 function extractGroupIdFromDescription(description) {
-  if (!description) return null;
+  const cleanDesc = removeGroupMetaFromDescription(description);
+  if (!cleanDesc) return null;
   
-  // 查找"小组ID: xxx"模式
-  const match = description.match(/小组ID:\s*(.+?)(?:\n|$)/);
+  const match = cleanDesc.match(/小组ID:\s*(.+?)(?:\n|$)/);
   if (match && match[1]) {
     return match[1].trim();
   }
   
   return null;
+}
+
+function removeGroupMetaFromDescription(description) {
+  if (!description) return '';
+  return description
+    .split('\n')
+    .filter(line => !line.startsWith(GROUP_META_PREFIX))
+    .join('\n')
+    .trim();
+}
+
+function extractGroupMetaBlock(description) {
+  if (!description) return { text: '', meta: null };
+  let meta = null;
+  const lines = description.split('\n').filter(line => {
+    if (line.startsWith(GROUP_META_PREFIX)) {
+      const raw = line.slice(GROUP_META_PREFIX.length)
+      try {
+        meta = JSON.parse(raw)
+      } catch (err) {
+        console.warn('解析小组任务内嵌元数据失败:', err)
+      }
+      return false
+    }
+    return true
+  })
+  return {
+    text: lines.join('\n').trim(),
+    meta
+  }
+}
+
+function parseGroupMeta(meta) {
+  if (!meta) return {}
+  if (typeof meta === 'object') return meta
+  if (typeof meta === 'string') {
+    try {
+      return JSON.parse(meta)
+    } catch (err) {
+      console.warn('解析 group_tasks.meta 失败:', err)
+      return {}
+    }
+  }
+  return {}
 }
 
 // 从冲突文件中提取的其他必要函数
@@ -1448,7 +1498,7 @@ async function uploadToStorage(bucket, filePath, fileName, options = {}) {
   }
 
   const userId = options.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
-  const token = options.token || wx.getStorageSync('access_token') || SUPABASE_ANON_KEY;
+  const token = await getValidAccessToken(options.token);
   const originalName = fileName || filePath.split('/').pop() || `upload_${Date.now()}`;
   
   // 清理文件名，移除特殊字符和中文字符，只保留字母、数字、下划线、连字符和点
@@ -1485,7 +1535,11 @@ async function uploadToStorage(bucket, filePath, fileName, options = {}) {
           });
         } else {
           console.error('上传失败，响应:', res);
-          reject(res);
+          if (res.statusCode === 400 && typeof res.data === 'string' && res.data.includes('exp')) {
+            refreshToken().finally(() => reject(res));
+          } else {
+            reject(res);
+          }
         }
       },
       fail(err) {
@@ -1494,6 +1548,23 @@ async function uploadToStorage(bucket, filePath, fileName, options = {}) {
       }
     });
   });
+}
+
+async function getValidAccessToken(explicitToken) {
+  if (explicitToken) return explicitToken;
+  let token = wx.getStorageSync('access_token') || wx.getStorageSync('syllaby_access_token');
+  const expiresAt = wx.getStorageSync('token_expires_at') || wx.getStorageSync('syllaby_token_expires_at');
+  const hasRefresh = wx.getStorageSync('refresh_token') || wx.getStorageSync('syllaby_refresh_token');
+  if (token && expiresAt && hasRefresh) {
+    const now = Date.now();
+    if ((expiresAt - now) < 60 * 1000) {
+      const result = await refreshToken();
+      if (result.success && result.access_token) {
+        token = result.access_token;
+      }
+    }
+  }
+  return token || SUPABASE_ANON_KEY;
 }
 
 module.exports = {

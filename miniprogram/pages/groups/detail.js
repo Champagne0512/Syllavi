@@ -6,6 +6,7 @@ Page({
   data: {
     groupId: '',
     groupInfo: null,
+    creatorName: '',
     members: [],
     tasks: [],
     loading: true,
@@ -74,6 +75,18 @@ Page({
       }
 
       const group = groupInfo[0]
+      let creatorName = ''
+      try {
+        const creatorProfile = await request('profiles', {
+          query: `id=eq.${group.created_by}&select=id,nickname,username,full_name`
+        })
+        if (creatorProfile && creatorProfile.length > 0) {
+          const profile = creatorProfile[0]
+          creatorName = profile.nickname || profile.username || profile.full_name || ''
+        }
+      } catch (creatorErr) {
+        console.warn('获取创建者信息失败:', creatorErr)
+      }
       
       // 检查用户是否是创建者（创建者自动为组长）
       let isMember = false
@@ -124,6 +137,7 @@ Page({
       
       this.setData({
         groupInfo: group,
+        creatorName,
         isMember,
         userRole
       })
@@ -165,7 +179,7 @@ Page({
         role: member.role,
         joined_at: member.joined_at,
         nickname: member.profiles?.nickname || `用户${member.user_id?.slice(-6) || ''}`,
-        avatar_url: member.profiles?.avatar_url || '/assets/images/default-avatar.png'
+        avatar_url: member.profiles?.avatar_url || '/static/default-avatar.png'
       }))
 
       this.setData({ 
@@ -185,7 +199,7 @@ Page({
           role: member.role,
           joined_at: member.joined_at,
           nickname: `用户${member.user_id?.slice(-6) || ''}`,
-          avatar_url: '/assets/images/default-avatar.png'
+          avatar_url: '/static/default-avatar.png'
         }))
         
         this.setData({ 
@@ -400,11 +414,24 @@ Page({
 
   // 查看任务管理
   viewTasks() {
+    this.openTaskManager()
+  },
+
+  openTaskManager() {
     // 添加触感反馈
     wx.vibrateShort({ type: 'light' })
     
     wx.navigateTo({
-      url: `/pages/groups/tasks?id=${this.data.groupId}`
+      url: `/pages/groups/tasks?groupId=${this.data.groupId}`
+    })
+  },
+
+  editTask(e) {
+    wx.vibrateShort({ type: 'light' })
+    const taskId = e.currentTarget.dataset.id
+    const suffix = taskId ? `&taskId=${taskId}` : ''
+    wx.navigateTo({
+      url: `/pages/groups/tasks?groupId=${this.data.groupId}${suffix}`
     })
   },
 

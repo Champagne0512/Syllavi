@@ -758,17 +758,30 @@ Page({
         const createdAt = row.created_at ? new Date(row.created_at) : null;
         const visibleFrom = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : new Date();
         visibleFrom.setHours(0, 0, 0, 0);
-        const type = typeof row.type === 'string' ? row.type.toLowerCase() : 'homework';
-        const isImportant = IMPORTANT_EVENT_TYPES.has(type) || !!row.is_important;
-        const mode = type === 'homework' || isImportant ? 'persistent' : 'instant';
+        let meta = row.meta || {};
+        if (typeof meta === 'string') {
+          try {
+            meta = JSON.parse(meta);
+          } catch (err) {
+            console.warn('解析任务 meta 失败:', err);
+            meta = {};
+          }
+        }
+        const baseType = typeof row.type === 'string' ? row.type.toLowerCase() : 'homework';
+        const metaEventType = typeof meta.eventType === 'string' ? meta.eventType.toLowerCase() : '';
+        const normalizedType = metaEventType || baseType;
+        const isImportantFromMeta = !!meta.isImportant || (metaEventType && IMPORTANT_EVENT_TYPES.has(metaEventType));
+        const isImportant = isImportantFromMeta || IMPORTANT_EVENT_TYPES.has(baseType) || !!row.is_important;
+        const mode = meta.mode || (baseType === 'homework' || isImportant ? 'persistent' : 'instant');
+        const hasSpecificTime = meta.hasSpecificTime || mode === 'instant';
         const displayBadge = isImportant ? '重要事件' : (mode === 'instant' ? '瞬时事件' : '持续待办');
-        const displayTime = mode === 'instant' ? `${month}.${day} ${hour}:${minute}` : `${month}.${day} 截止`;
+        const displayTime = hasSpecificTime ? `${month}.${day} ${hour}:${minute}` : `${month}.${day} 截止`;
         const deadlineTs = dueMidnight.getTime();
         const visibleFromTs = visibleFrom.getTime();
         const daysLeft = Math.max(0, Math.ceil((deadlineTs - todayStartTs) / DAY_MS));
         return {
           id: row.id,
-          type,
+          type: normalizedType,
           mode,
           title: row.title,
           deadline: deadlineStr,
@@ -784,7 +797,7 @@ Page({
           accent: row.type === 'group_task' ? '#FF6B6B' : MORANDI_COLORS[idx % MORANDI_COLORS.length],
           completed: row.is_completed,
           // 标记小组任务和考试任务
-          urgent: mode === 'instant' || row.type === 'group_task', // 小组任务也标记为紧急
+          urgent: typeof meta.urgent === 'boolean' ? meta.urgent : (mode === 'instant' || row.type === 'group_task'),
           isImportant,
           displayBadge,
           displayTime,
