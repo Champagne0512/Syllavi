@@ -1,15 +1,28 @@
 // pages/groups/create.js
 const app = getApp()
-const { request } = require('../../utils/supabase')
+const { request, uploadToStorage } = require('../../utils/supabase')
 
 Page({
   data: {
     form: {
       name: '',
       description: '',
-      maxMembers: 20
+      maxMembers: 20,
+      isPublic: true,
+      avatarUrl: ''
     },
-    submitting: false
+    memberOptions: [
+      { label: '5 人', value: 5 },
+      { label: '10 人', value: 10 },
+      { label: '15 人', value: 15 },
+      { label: '20 人', value: 20 },
+      { label: '30 人', value: 30 },
+      { label: '50 人', value: 50 }
+    ],
+    selectedMemberIndex: 3,
+    canSubmit: false,
+    submitting: false,
+    uploadingAvatar: false
   },
 
   // 生成唯一ID (UUID格式，匹配数据库表结构)
@@ -22,7 +35,7 @@ Page({
   },
 
   onLoad() {
-    // 页面加载时的初始化
+    this.updateCanSubmit()
   },
 
   // 返回上一页
@@ -35,16 +48,59 @@ Page({
     const field = e.currentTarget.dataset.field
     this.setData({
       [`form.${field}`]: e.detail.value
-    })
+    }, () => this.updateCanSubmit())
   },
 
 
 
   // 选择人数
   onMaxMembersChange(e) {
+    const index = Number(e.detail.value) || 0
+    const option = this.data.memberOptions[index] || this.data.memberOptions[0]
     this.setData({
-      'form.maxMembers': parseInt(e.detail.value)
+      selectedMemberIndex: index,
+      'form.maxMembers': option.value
     })
+  },
+
+  togglePublic(e) {
+    this.setData({
+      'form.isPublic': !!e.detail.value
+    })
+  },
+
+  async chooseAvatar() {
+    if (this.data.uploadingAvatar) return
+    try {
+      const { tempFilePaths } = await wx.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera']
+      })
+      if (!tempFilePaths || !tempFilePaths.length) return
+
+      const tempFilePath = tempFilePaths[0]
+      const ext = tempFilePath.split('.').pop().toLowerCase()
+      const fileName = `group-avatar.${ext}`
+
+      this.setData({ uploadingAvatar: true })
+      wx.showLoading({ title: '上传中...' })
+
+      const { publicUrl } = await uploadToStorage('group-avatars', tempFilePath, fileName, {
+        contentType: ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+      })
+
+      this.setData({
+        'form.avatarUrl': publicUrl
+      })
+      wx.showToast({ title: '上传成功', icon: 'success' })
+    } catch (error) {
+      console.error('上传小组头像失败:', error)
+      wx.showToast({ title: '上传失败，请重试', icon: 'none' })
+    } finally {
+      wx.hideLoading()
+      this.setData({ uploadingAvatar: false })
+    }
   },
 
   // 提交表单
@@ -96,6 +152,8 @@ Page({
           description: this.data.form.description.trim(),
           group_code: groupCode,
           max_members: this.data.form.maxMembers,
+          is_public: this.data.form.isPublic,
+          avatar_url: this.data.form.avatarUrl || null,
           created_by: userId
         }]
       })
@@ -203,5 +261,12 @@ Page({
     }
 
     return true
+  },
+
+  updateCanSubmit() {
+    const { name, description } = this.data.form
+    const validName = !!name.trim() && name.trim().length <= 50
+    const validDesc = description.trim().length <= 200
+    this.setData({ canSubmit: validName && validDesc })
   }
 })
