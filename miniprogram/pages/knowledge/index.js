@@ -355,57 +355,33 @@ Page({
   },
 
   // 使用浏览器打开文件的替代方案
-  openFileInBrowser(publicUrl, originalName) {
+  async openFileEntry(file) {
+    if (!file || !file.url) {
+      wx.showToast({ title: '暂无文件 URL', icon: 'none' })
+      return
+    }
+    const name = file.name || file.file_name || '文件'
+    const ext = (name.split('.').pop() || '').toLowerCase()
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
+    if (imageExts.includes(ext)) {
+      wx.previewImage({
+        current: file.url,
+        urls: [file.url]
+      })
+      return
+    }
+
+    wx.showLoading({ title: '打开中...' })
     try {
-      // 1. 复制 Supabase 公网链接到剪贴板
-      wx.setClipboardData({
-        data: publicUrl,
-        success: () => {
-          // 显示复制成功提示
-          wx.showToast({
-            title: '链接已复制到剪贴板 ✅',
-            icon: 'none',
-            duration: 2000
-          });
-          
-          // 2. 弹出引导弹窗，提示用户打开浏览器
-          setTimeout(() => {
-            wx.showModal({
-              title: '文件查看指引',
-              content: `1. 链接已复制到剪贴板\n2. 打开手机浏览器（如微信/Chrome）\n3. 粘贴链接并访问，即可下载/查看「${originalName}」`,
-              confirmText: '打开浏览器',
-              cancelText: '知道了',
-              success: (res) => {
-                if (res.confirm) {
-                  // 3. 尝试唤起微信内置浏览器
-                  wx.navigateTo({
-                    url: `/pages/web-view/web-view?url=${encodeURIComponent(publicUrl)}`,
-                    fail: () => {
-                      // 唤起失败则提示手动打开
-                      wx.showToast({
-                        title: '请手动打开浏览器粘贴链接',
-                        icon: 'none',
-                        duration: 4000
-                      });
-                    }
-                  });
-                }
-              }
-            });
-          }, 2000); // 延迟2秒显示弹窗，让用户先看到复制成功提示
-        },
-        fail: (err) => {
-          console.error('复制链接失败:', err);
-          wx.showToast({
-            title: '链接复制失败，请手动复制：' + publicUrl,
-            icon: 'none',
-            duration: 5000
-          });
-        }
-      });
+      const tempFilePath = await this.downloadRemoteFile(file.url)
+      const docExts = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt']
+      const fileType = docExts.includes(ext) ? ext : undefined
+      await this.openDocumentWithWx(tempFilePath, fileType)
     } catch (err) {
-      console.error('唤起浏览器失败:', err);
-      wx.showToast({ title: '操作失败，请重试', icon: 'none' });
+      console.error('打开文件失败:', err)
+      wx.showToast({ title: '无法打开该文件', icon: 'none' })
+    } finally {
+      wx.hideLoading()
     }
   },
   async openPdfInline(file) {
@@ -437,15 +413,18 @@ Page({
       });
     });
   },
-  openDocumentWithWx(filePath, fileType = 'pdf') {
+  openDocumentWithWx(filePath, fileType) {
     return new Promise((resolve, reject) => {
-      wx.openDocument({
+      const options = {
         filePath,
-        fileType,
         showMenu: true,
         success: resolve,
         fail: reject
-      });
+      }
+      if (fileType) {
+        options.fileType = fileType
+      }
+      wx.openDocument(options);
     });
   },
   async previewFile(e) {
@@ -457,14 +436,7 @@ Page({
     }
 
     this.persistLastOpenedFile(file);
-
-    if ((file.type || '').toLowerCase() === 'pdf') {
-      const opened = await this.openPdfInline(file);
-      if (opened) return;
-    }
-
-    // 直接使用浏览器打开方案，避免400错误
-    this.openFileInBrowser(file.url, file.name);
+    this.openFileEntry(file);
   },
 
   async uploadResource() {
@@ -1172,7 +1144,7 @@ Page({
       wx.showToast({ title: '先打开任意文件', icon: 'none' });
       return;
     }
-    this.openFileInBrowser(entry.url, entry.name);
+    this.openFileEntry(entry);
   },
 
   enterAiMode() {
