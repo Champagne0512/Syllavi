@@ -197,7 +197,7 @@ Page({
       console.log('joinGroup - 使用用户ID:', userId, '小组码:', groupCode)
       
       // 先根据小组码查找小组
-      const { data: groupData } = await request('study_groups', {
+      const groupData = await request('study_groups', {
         query: `group_code=eq.${groupCode}`
       })
       
@@ -210,7 +210,7 @@ Page({
       const group = groupData[0]
       
       // 检查是否已经是成员
-      const { data: existingMember } = await request('group_members', {
+      const existingMember = await request('group_members', {
         query: `group_id=eq.${group.id}&user_id=eq.${userId}`
       })
       
@@ -224,7 +224,7 @@ Page({
       }
 
       // 检查小组人数限制
-      const { data: memberCount } = await request('group_members', {
+      const memberCount = await request('group_members', {
         query: `group_id=eq.${group.id}`
       })
       
@@ -235,7 +235,7 @@ Page({
       }
 
       // 直接加入小组（简化流程）
-      const { data: joinResult } = await request('group_members', {
+      const joinResult = await request('group_members', {
         method: 'POST',
         data: [{
           group_id: group.id,
