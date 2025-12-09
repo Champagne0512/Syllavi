@@ -127,6 +127,8 @@ App({
         userId: storedUserId,
         accessToken
       };
+      this.globalData.user = this.globalData.user || {};
+      this.globalData.user.id = storedUserId;
 
       // 改进的登录态管理：检查 token 有效性
       this.checkAndRefreshToken(accessToken, refreshTok, expiresAt);
@@ -138,6 +140,8 @@ App({
         userId: DEMO_USER_ID,
         accessToken: null
       };
+      this.globalData.user = this.globalData.user || {};
+      this.globalData.user.id = DEMO_USER_ID;
     }
   },
 

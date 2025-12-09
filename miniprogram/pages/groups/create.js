@@ -1,6 +1,6 @@
 // pages/groups/create.js
 const app = getApp()
-const { request, uploadToStorage } = require('../../utils/supabase')
+const { request, uploadToStorage, getStoredUserId } = require('../../utils/supabase')
 
 Page({
   data: {
@@ -120,7 +120,7 @@ Page({
       }
 
       // 获取真实的用户ID
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+      const userId = getStoredUserId({ allowDemo: false })
       
       // 确保用户ID存在
       if (!userId) {

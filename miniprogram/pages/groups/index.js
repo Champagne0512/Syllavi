@@ -1,6 +1,6 @@
 // pages/groups/index.js
 const app = getApp()
-const { request, SUPABASE_URL, SUPABASE_ANON_KEY } = require('../../utils/supabase')
+const { request, SUPABASE_URL, SUPABASE_ANON_KEY, getStoredUserId } = require('../../utils/supabase')
 
 Page({
   data: {
@@ -31,9 +31,7 @@ Page({
       this.setData({ loading: true })
       
       // 获取用户ID - 与创建小组时保持一致
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId || 'demo-user'
-      
-      console.log('index.js - 使用用户ID:', userId)
+      const userId = getStoredUserId()
       
       console.log('index.js - 使用用户ID:', userId)
       
@@ -72,38 +70,7 @@ Page({
       // 获取公开小组 - 不需要认证的查询
       let publicGroups = []
       try {
-        // 使用匿名访问获取公开小组
-        const publicGroupsQuery = [
-          'select=*',
-          'is_public=eq.true',
-          'limit=20',
-          'order=created_at.desc'
-        ].join('&')
-        
-        // 创建匿名请求头
-        const anonymousHeaders = {
-          apikey: SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Prefer': 'return=representation'
-        }
-        
-        publicGroups = await wx.request({
-          url: `${SUPABASE_URL}/rest/v1/study_groups?${publicGroupsQuery}`,
-          method: 'GET',
-          header: anonymousHeaders
-        }).then(res => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            return res.data;
-          } else {
-            console.warn('公开小组查询失败:', res);
-            return [];
-          }
-        }).catch(err => {
-          console.warn('获取公开小组失败:', err);
-          return [];
-        });
-        
+        publicGroups = await this.fetchPublicGroups()
       } catch (err) {
         console.warn('获取公开小组失败:', err)
       }
@@ -154,6 +121,42 @@ Page({
     }
   },
 
+  fetchPublicGroups() {
+    return new Promise((resolve) => {
+      const publicGroupsQuery = [
+        'select=*',
+        'is_public=eq.true',
+        'limit=20',
+        'order=created_at.desc'
+      ].join('&')
+  
+      const anonymousHeaders = {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=representation'
+      }
+  
+      wx.request({
+        url: `${SUPABASE_URL}/rest/v1/study_groups?${publicGroupsQuery}`,
+        method: 'GET',
+        header: anonymousHeaders,
+        success: (res) => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(res.data || [])
+          } else {
+            console.warn('公开小组查询失败:', res)
+            resolve([])
+          }
+        },
+        fail: (err) => {
+          console.warn('获取公开小组失败:', err)
+          resolve([])
+        }
+      })
+    })
+  },
+
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab
     this.setData({ currentTab: tab })
@@ -190,9 +193,13 @@ Page({
       wx.showLoading({ title: '加入中...' })
       
       // 获取用户ID
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId || 'demo-user'
+      const userId = getStoredUserId({ allowDemo: false })
       
-      console.log('joinGroup - 使用用户ID:', userId, '小组码:', groupCode)
+      if (!userId) {
+        wx.hideLoading()
+        wx.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
       
       console.log('joinGroup - 使用用户ID:', userId, '小组码:', groupCode)
       

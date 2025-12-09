@@ -1,5 +1,6 @@
 // pages/groups/tasks.js
 const app = getApp()
+const { request, getStoredUserId } = require('../../utils/supabase')
 
 Page({
   data: {
@@ -67,10 +68,7 @@ Page({
   // 加载小组信息
   async loadGroupInfo() {
     try {
-      const { request } = require('../../utils/supabase')
-      
-      // 获取用户ID
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+      const userId = getStoredUserId({ allowDemo: false })
       
       if (!userId) {
         wx.showToast({ title: '请先登录', icon: 'none' })
@@ -117,7 +115,6 @@ Page({
 
   async loadMembers() {
     try {
-      const { request } = require('../../utils/supabase')
       const members = await request('group_members', {
         query: `group_id=eq.${this.data.groupId}`
       })
@@ -131,8 +128,6 @@ Page({
   // 加载任务列表
   async loadTasks() {
     try {
-      const { request } = require('../../utils/supabase')
-      
       // 获取任务列表
       const tasks = await request('group_tasks', {
         query: `group_id=eq.${this.data.groupId}&order=created_at.desc`
@@ -324,7 +319,6 @@ Page({
 
     wx.showLoading({ title: '创建中...' })
     try {
-      const { request } = require('../../utils/supabase')
       const result = await request('group_tasks', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
@@ -395,7 +389,6 @@ Page({
 
   async assignTaskToMembers(taskId) {
     if (!taskId) return
-    const { request } = require('../../utils/supabase')
     try {
       const members = this.data.members.length ? this.data.members : await request('group_members', {
         query: `group_id=eq.${this.data.groupId}`
@@ -430,8 +423,6 @@ Page({
       const newStatus = currentStatus === 'completed' ? 'pending' : 'completed'
       
       wx.showLoading({ title: '更新中...' })
-      
-      const { request } = require('../../utils/supabase')
       
       const result = await request('group_tasks', {
         method: 'PATCH',
@@ -489,8 +480,6 @@ Page({
           wx.showLoading({ title: '删除中...' })
           
           try {
-            const { request } = require('../../utils/supabase')
-            
             await request('group_task_members', {
               method: 'DELETE',
               query: `task_id=eq.${taskId}`
@@ -566,7 +555,6 @@ Page({
           wx.showLoading({ title: '创建中...' })
           
           try {
-            const { request } = require('../../utils/supabase')
             const payloads = sampleTasks.map(task => ({
               group_id: this.data.groupId,
               created_by: userId,

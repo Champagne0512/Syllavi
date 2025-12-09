@@ -12,6 +12,36 @@ const SUPABASE_ANON_KEY =
 const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xaXhhaGFzZmh3b2Z1c3V3c2FsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzY2MTUyNywiZXhwIjoyMDc5MjM3NTI3fQ.uNUTizbVayqD9Q4GQYwHjtPCrJfKDy6CTvsNaWIhCJs';
 
 const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+function getStoredUserId(options = {}) {
+  const { allowDemo = true } = options || {}
+  let userId = null
+
+  try {
+    const app = typeof getApp === 'function' ? getApp() : null
+    userId = app?.globalData?.supabase?.userId || app?.globalData?.user?.id || null
+  } catch (err) {
+    userId = null
+  }
+
+  if (!userId) {
+    userId =
+      wx.getStorageSync('user_id') ||
+      wx.getStorageSync('syllaby_user_id') ||
+      wx.getStorageSync('userId') ||
+      null
+  }
+
+  if (!userId) {
+    return allowDemo ? DEMO_USER_ID : null
+  }
+
+  if (!allowDemo && userId === DEMO_USER_ID) {
+    return null
+  }
+
+  return userId
+}
 const GROUP_META_PREFIX = '__SYLLAVI_GROUP_META__:';
 const EMPTY_FOCUS_STATS = Object.freeze({
   today_minutes: 0,
@@ -1602,5 +1632,6 @@ module.exports = {
   deleteFromStorage,
   summarizeFile,
   parseImageWithAI,
-  uploadToStorage
+  uploadToStorage,
+  getStoredUserId
 };

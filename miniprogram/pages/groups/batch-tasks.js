@@ -1,6 +1,6 @@
 // pages/groups/batch-tasks.js - 组长批量安排小组待办目标
 const app = getApp()
-const { request } = require('../../utils/supabase')
+const { request, getStoredUserId } = require('../../utils/supabase')
 
 const IMPORTANT_EVENT_TYPES = new Set(['exam', 'deadline', 'holiday', 'birthday', 'anniversary'])
 const GROUP_META_PREFIX = '__SYLLAVI_GROUP_META__:'
@@ -53,7 +53,7 @@ Page({
     try {
       this.setData({ loading: true })
 
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+      const userId = getStoredUserId({ allowDemo: false })
       if (!userId) {
         wx.showToast({ title: '请先登录', icon: 'none' })
         setTimeout(() => wx.navigateBack(), 1500)
@@ -268,7 +268,7 @@ Page({
       this.setData({ submitting: true })
       wx.showLoading({ title: '创建任务中...' })
 
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+      const userId = getStoredUserId({ allowDemo: false })
       if (!userId) {
         wx.hideLoading()
         wx.showToast({ title: '请先登录', icon: 'none' })
@@ -356,7 +356,7 @@ Page({
       `${GROUP_META_PREFIX}${JSON.stringify(meta)}`
     ].filter(Boolean)
     const mergedDescription = contextLines.join('\n')
-    const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+    const userId = getStoredUserId()
 
     const buildPayloads = () => {
       const baseMembers = this.data.taskForm.assignToAll

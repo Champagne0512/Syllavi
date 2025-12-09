@@ -1,6 +1,6 @@
 // pages/groups/detail.js
 const app = getApp()
-const { request } = require('../../utils/supabase')
+const { request, getStoredUserId } = require('../../utils/supabase')
 
 Page({
   data: {
@@ -45,7 +45,7 @@ Page({
       this.setData({ loading: true })
       
       // 获取用户ID - 从全局数据和本地存储中获取，确保使用真实用户ID
-      let userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+      const userId = getStoredUserId({ allowDemo: false })
       
       // 如果仍然没有获取到用户ID，提示用户登录
       if (!userId) {
@@ -217,7 +217,11 @@ Page({
   async loadTasks() {
     try {
       // 获取真实的用户ID
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+      const userId = getStoredUserId({ allowDemo: false })
+      if (!userId) {
+        wx.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
       
       // 获取小组任务列表
       const tasks = await request('group_tasks', {
@@ -341,7 +345,7 @@ Page({
     
     try {
       // 获取真实的用户ID
-      const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+      const userId = getStoredUserId({ allowDemo: false })
       
       // 确保用户ID存在
       if (!userId) {
@@ -467,7 +471,7 @@ Page({
             wx.showLoading({ title: '退出中...' })
             
             // 获取真实的用户ID
-            const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+            const userId = getStoredUserId({ allowDemo: false })
             
             // 确保用户ID存在
             if (!userId) {
@@ -525,7 +529,7 @@ Page({
             wx.showLoading({ title: '解散中...' })
             
             // 获取真实的用户ID
-            const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
+            const userId = getStoredUserId({ allowDemo: false })
             
             // 确保用户ID存在
             if (!userId) {
