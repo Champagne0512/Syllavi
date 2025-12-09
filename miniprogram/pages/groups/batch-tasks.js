@@ -286,9 +286,7 @@ Page({
         title: this.data.taskForm.title.trim(),
         description: this.data.taskForm.description.trim(),
         deadline: deadlineISO,
-        created_by: userId,
-        status: 'pending',
-        meta
+        created_by: userId
       }
 
       const taskResult = await request('group_tasks', {
@@ -360,47 +358,28 @@ Page({
     const mergedDescription = contextLines.join('\n')
     const userId = app.globalData?.user?.id || wx.getStorageSync('userId') || app.globalData?.supabase?.userId
 
-    const buildPayloads = (withGroupFields = true) => {
+    const buildPayloads = () => {
       const baseMembers = this.data.taskForm.assignToAll
         ? this.data.members.map(member => member.user_id)
         : this.data.taskForm.selectedMembers
       const uniqueMembers = [...new Set(baseMembers.filter(Boolean))]
       return uniqueMembers.map(memberId => {
-        const payload = {
+        return {
           user_id: memberId,
           type: this.data.taskForm.mode === 'persistent' ? 'homework' : 'exam',
           title: `[小组任务] ${this.data.taskForm.title.trim()}`,
           description: mergedDescription,
           deadline: deadlineISO,
           is_completed: false,
-          related_course_id: null,
-          event_type: this.data.taskForm.type || null,
-          is_important: !!this.data.taskForm.type
+          progress: 0
         }
-        if (withGroupFields) {
-          payload.group_id = this.data.groupId
-          payload.is_group_task = true
-          payload.created_by = userId
-        }
-        return payload
       })
-    }
-
-    try {
-      await request('tasks', {
-        method: 'POST',
-        headers: { Prefer: 'return=representation' },
-        data: buildPayloads(true)
-      })
-      return
-    } catch (error) {
-      console.warn('包含 group_id 字段创建失败，尝试降级:', error)
     }
 
     await request('tasks', {
       method: 'POST',
       headers: { Prefer: 'return=representation' },
-      data: buildPayloads(false)
+      data: buildPayloads()
     })
   },
 

@@ -581,7 +581,7 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
           // 先尝试使用关联查询
           let taskDetailsQuery = [
             `id=in.(${taskIds})`,
-            'select=id,title,description,deadline,created_at,group_id,created_by,meta,study_groups(id,name,description)'
+            'select=id,title,description,deadline,created_at,group_id,created_by,study_groups(id,name,description)'
           ].join('&');
           
           let taskDetails = [];
@@ -594,7 +594,7 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
             // 如果关联查询失败，则分开查询任务和小组信息
             const taskDetailsOnlyQuery = [
               `id=in.(${taskIds})`,
-              'select=id,title,description,deadline,created_at,group_id,created_by,meta'
+              'select=id,title,description,deadline,created_at,group_id,created_by'
             ].join('&');
             
             taskDetails = await request('group_tasks', { query: taskDetailsOnlyQuery });
@@ -625,7 +625,6 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
           const groupTasks = groupTaskMembers.map(member => {
             const taskDetail = taskDetails.find(t => t.id === member.task_id);
             if (!taskDetail) return null;
-            const parsedMeta = parseGroupMeta(taskDetail.meta);
             
             return {
               id: taskDetail.id,
@@ -643,7 +642,6 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
                 groupName: taskDetail.study_groups?.name || '学习小组',
                 groupDescription: taskDetail.study_groups?.description || ''
               },
-              meta: parsedMeta,
               // 添加小组任务特有字段
               task_member_id: member.id,
               assigned_at: member.assigned_at,
@@ -730,19 +728,20 @@ function extractGroupMetaBlock(description) {
   }
 }
 
-function parseGroupMeta(meta) {
-  if (!meta) return {}
-  if (typeof meta === 'object') return meta
-  if (typeof meta === 'string') {
-    try {
-      return JSON.parse(meta)
-    } catch (err) {
-      console.warn('解析 group_tasks.meta 失败:', err)
-      return {}
-    }
-  }
-  return {}
-}
+// 注释掉此函数，因为 group_tasks 表已经没有 meta 字段
+// function parseGroupMeta(meta) {
+//   if (!meta) return {}
+//   if (typeof meta === 'object') return meta
+//   if (typeof meta === 'string') {
+//     try {
+//       return JSON.parse(meta)
+//     } catch (err) {
+//       console.warn('解析 group_tasks.meta 失败:', err)
+//       return {}
+//     }
+//   }
+//   return {}
+// }
 
 // 从冲突文件中提取的其他必要函数
 async function createTask(taskData) {
