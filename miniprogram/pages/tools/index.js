@@ -1,4 +1,4 @@
-const { fetchFocusStats, fetchFocusHeatmapRemote, fetchFocusDistributionRemote, fetchRemoteAchievementsSnapshot } = require('../../utils/supabase');
+const { fetchFocusStats, fetchFocusHeatmapRemote, fetchRemoteAchievementsSnapshot } = require('../../utils/supabase');
 const focusService = require('../../utils/focusService');
 
 const FOCUS_PRESETS = [
@@ -15,7 +15,6 @@ Page({
       streakDays: 0
     },
     heatmapData: [],
-    distributionData: [],
     achievements: [],
     achievementsMeta: {
       unlocked: 0,
@@ -57,17 +56,13 @@ Page({
       console.log('开始加载专注数据，用户ID:', userId);
 
       // 并行获取所有远程数据
-      const [remoteStats, heatmapRows, distributionRows, achievementRows] = await Promise.all([
+      const [remoteStats, heatmapRows, achievementRows] = await Promise.all([
         fetchFocusStats(userId).catch(err => {
           console.warn('专注统计获取失败:', err);
           return null;
         }),
         fetchFocusHeatmapRemote(userId, 365).catch(err => {
           console.warn('热力图数据获取失败:', err);
-          return [];
-        }),
-        fetchFocusDistributionRemote(userId).catch(err => {
-          console.warn('时段分布获取失败:', err);
           return [];
         }),
         fetchRemoteAchievementsSnapshot(userId).catch(err => {
@@ -79,7 +74,6 @@ Page({
       console.log('远程数据获取完成:', {
         stats: remoteStats,
         heatmap: heatmapRows?.length,
-        distribution: distributionRows?.length,
         achievements: achievementRows?.length
       });
 
@@ -98,11 +92,6 @@ Page({
         this.normalizeHeatmapFromRemote(heatmapRows) : 
         focusService.getHeatmapData();
 
-      // 处理时段分布数据
-      const remoteDistribution = distributionRows && distributionRows.length ? 
-        this.normalizeDistributionFromRemote(distributionRows) : 
-        focusService.getHourlyDistribution();
-
       const heatmapSummary = this.buildHeatmapSummary(remoteHeatmap);
       const insightList = this.buildInsights(mergedStats);
 
@@ -118,7 +107,6 @@ Page({
         achievementsMeta,
         insightList,
         heatmapData: remoteHeatmap,
-        distributionData: remoteDistribution,
         heatmapSummary,
         showStats: true
       });
@@ -136,7 +124,6 @@ Page({
     const stats = focusService.getStats();
     const achievements = this.normalizeAchievements(focusService.getAchievements());
     const heatmapData = focusService.getHeatmapData();
-    const distributionData = focusService.getHourlyDistribution();
     const insightList = this.buildInsights(stats);
     const heatmapSummary = this.buildHeatmapSummary(heatmapData);
     const achievementsMeta = {
@@ -155,7 +142,6 @@ Page({
       achievementsMeta,
       insightList,
       heatmapData: heatmapData,
-      distributionData: distributionData,
       heatmapSummary,
       showStats: true
     });
@@ -235,21 +221,6 @@ Page({
     }));
   },
 
-  normalizeDistributionFromRemote(rows = []) {
-    const base = Array.from({ length: 24 }, (_, hour) => ({
-      hour,
-      minutes: 0,
-      label: `${hour.toString().padStart(2, '0')}:00`
-    }));
-    rows.forEach(item => {
-      const hour = Number(item.hour);
-      if (!Number.isNaN(hour) && base[hour]) {
-        base[hour].minutes = Number(item.minutes) || 0;
-      }
-    });
-    return base;
-  },
-
   mergeRemoteAchievements(remoteList = []) {
     const merged = this.normalizeAchievements(focusService.getAchievements());
     const map = merged.reduce((acc, item) => {
@@ -297,18 +268,6 @@ Page({
       wx.showModal({
         title: '专注记录',
         content: `${date}\n专注时长：${focusService.formatMinutes(minutes)}`,
-        showCancel: false
-      });
-    }
-  },
-
-  // 时段分布点击
-  onDistributionHourTap(e) {
-    const { hour, data } = e.detail;
-    if (data.minutes > 0) {
-      wx.showModal({
-        title: '时段统计',
-        content: `${data.label}\n专注时长：${focusService.formatMinutes(data.minutes)}`,
         showCancel: false
       });
     }

@@ -29,18 +29,16 @@ Component({
   },
 
   observers: {
-    'data': function(data) {
-      if (Array.isArray(data) && data.length > 0) {
-        this.processData(data);
-      }
+    data(data = []) {
+      const payload = Array.isArray(data) ? data : [];
+      this.processData(payload);
     }
   },
 
   lifetimes: {
     attached() {
-      if (Array.isArray(this.properties.data) && this.properties.data.length > 0) {
-        this.processData(this.properties.data);
-      }
+      const payload = Array.isArray(this.properties.data) ? this.properties.data : [];
+      this.processData(payload);
       // 触发动画
       setTimeout(() => {
         this.setData({ animationReady: true });
@@ -49,8 +47,12 @@ Component({
   },
 
   methods: {
-    processData(rawData) {
-      const data = rawData.map(item => ({
+    processData(rawData = []) {
+      const source = Array.isArray(rawData) && rawData.length > 0
+        ? rawData
+        : this.createEmptyDistribution();
+
+      const data = source.map(item => ({
         hour: item.hour,
         minutes: item.minutes || 0,
         label: item.label || `${item.hour.toString().padStart(2, '0')}:00`
@@ -98,6 +100,14 @@ Component({
       });
 
       this.generateInsights();
+    },
+
+    createEmptyDistribution() {
+      return Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        minutes: 0,
+        label: `${hour.toString().padStart(2, '0')}:00`
+      }));
     },
 
     generateInsights() {

@@ -588,19 +588,14 @@ Page({
   // 是否应该显示心情打卡
   shouldShowMoodCheckIn(year, month) {
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const todayKey = formatDateKey(today);
     
-    // 昨天的日期
-    const yesterdayKey = formatDateKey(yesterday);
-    
-    // 获取昨天的心情记录
+    // 获取今天的心情记录
     const moodData = this.getMoodDataForMonth(year, month);
-    const yesterdayMood = moodData.find(m => m.date === yesterdayKey);
+    const todayMood = moodData.find(m => m.date === todayKey);
     
-    // 如果昨天没有打卡且是最近2天内，显示打卡提醒
-    const daysSinceYesterday = Math.floor((today - yesterday) / (24 * 60 * 60 * 1000));
-    return !yesterdayMood && daysSinceYesterday <= 2;
+    // 当天未打卡则提示
+    return !todayMood;
   },
 
   // 获取心情数据
@@ -861,23 +856,23 @@ Page({
   // 保存心情打卡
   saveMoodCheckIn(e) {
     const { mood } = e.currentTarget.dataset;
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = formatDateKey(yesterday);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = formatDateKey(today);
     
     // 获取当前月份的心情数据
-    const year = yesterday.getFullYear();
-    const month = yesterday.getMonth();
+    const year = today.getFullYear();
+    const month = today.getMonth();
     const moodKey = `mood_${year}_${month}`;
     const moodData = wx.getStorageSync(moodKey) || [];
     
     // 检查是否已经打卡
-    const existingIndex = moodData.findIndex(m => m.date === yesterdayKey);
+    const existingIndex = moodData.findIndex(m => m.date === todayKey);
     if (existingIndex >= 0) {
       moodData[existingIndex].mood = mood;
     } else {
       moodData.push({
-        date: yesterdayKey,
+        date: todayKey,
         mood: mood,
         timestamp: Date.now()
       });
@@ -1279,10 +1274,10 @@ Page({
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId || wx.getStorageSync('user_id') || DEMO_USER_ID;
       
-      // 确定任务类型：优先使用用户选择的重要事件类型，否则使用默认类型
+      // 确定任务类型：优先使用用户选择的重要事件类型，否则根据模式落到普通类型
       let recordType = taskForm.type || '';
       if (!recordType) {
-        recordType = taskForm.mode === 'instant' ? 'exam' : 'homework';
+        recordType = taskForm.mode === 'instant' ? 'instant' : 'homework';
       }
 
       const payload = {

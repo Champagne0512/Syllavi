@@ -239,17 +239,31 @@ class FocusService {
   }
 
   // 获取专注时段分布（24小时）
-  getHourlyDistribution() {
+  getHourlyDistribution(lookbackDays = 7) {
     const data = this.getData();
     const hourlyData = Array(24).fill(0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfWindow = new Date(today);
+    startOfWindow.setDate(startOfWindow.getDate() - Math.max(lookbackDays - 1, 0));
+    const activeDays = new Set();
     
     data.records.forEach(record => {
-      hourlyData[record.hour] += record.minutes;
+      if (!record.date) return;
+      const recordDate = new Date(record.date);
+      recordDate.setHours(0, 0, 0, 0);
+      if (recordDate < startOfWindow || recordDate > today) {
+        return;
+      }
+      const hour = Math.min(Math.max(record.hour || 0, 0), 23);
+      hourlyData[hour] += record.minutes;
+      activeDays.add(record.date);
     });
+    const divisor = activeDays.size || 1;
     
     return hourlyData.map((minutes, hour) => ({
       hour: hour,
-      minutes: minutes,
+      minutes: Math.round(minutes / divisor),
       label: `${hour.toString().padStart(2, '0')}:00`
     }));
   }

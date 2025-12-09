@@ -381,12 +381,6 @@
   z-index: 200;
 }
 
-
-
-
-
-
-
 .slider-block {
   display: flex;
   flex-direction: column;

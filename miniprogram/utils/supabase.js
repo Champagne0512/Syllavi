@@ -978,33 +978,46 @@ async function fetchFocusHeatmapRemote(userId, days = 365) {
 }
 
 // 获取专注时段分布数据
-async function fetchFocusDistributionRemote(userId) {
+async function fetchFocusDistributionRemote(userId, lookbackDays = 7) {
   try {
-    // 查询专注会话的时段分布
+    const endOfDay = new Date();
+    endOfDay.setHours(0, 0, 0, 0);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+    const startOfWindow = new Date(endOfDay);
+    startOfWindow.setDate(startOfWindow.getDate() - Math.max(lookbackDays, 1));
+
+    const rangeFilter = encodeURIComponent(
+      `(started_at.gte.${startOfWindow.toISOString()},started_at.lt.${endOfDay.toISOString()})`
+    );
+    const dateFilter = `and=${rangeFilter}`;
     const query = [
       `user_id=eq.${userId}`,
       'completed=eq.true',
-      'select=started_at'
+      dateFilter,
+      'select=duration,started_at'
     ].join('&');
     
     const sessions = await request('focus_sessions', { query });
     
-    // 统计24小时分布
     const hourlyData = Array(24).fill(0);
+    const activeDays = new Set();
     
     if (sessions && sessions.length > 0) {
       sessions.forEach(session => {
         if (session.started_at) {
-          const hour = new Date(session.started_at).getHours();
-          hourlyData[hour] += 1; // 统计次数，而不是分钟数
+          const startedAt = new Date(session.started_at);
+          const hour = startedAt.getHours();
+          const duration = Math.max(Number(session.duration) || 0, 0);
+          hourlyData[hour] += duration;
+          activeDays.add(startedAt.toISOString().slice(0, 10));
         }
       });
     }
+    const divisor = activeDays.size || 1;
     
-    const distribution = hourlyData.map((count, hour) => ({
-      hour: hour,
-      sessions: count,
-      minutes: count * 30, // 假设平均每次30分钟
+    const distribution = hourlyData.map((minutes, hour) => ({
+      hour,
+      minutes: Math.round(minutes / divisor),
       label: `${hour.toString().padStart(2, '0')}:00`
     }));
     

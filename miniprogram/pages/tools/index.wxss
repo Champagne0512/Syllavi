@@ -312,61 +312,10 @@ scroll-view {
   border-radius: 999rpx;
 }
 
-.ring-card focus-distribution,
+/* heatmap 组件通用样式 */
 .heat-card heatmap-chart {
   width: 100%;
   display: block;
-}
-
-/* 确保全天节奏图表在卡片中正确显示 */
-.data-card .focus-distribution-container.embedded {
-  width: 100%;
-  height: auto;
-  min-height: 360rpx;
-  overflow: hidden;
-  position: relative;
-  will-change: transform;
-  contain: layout;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.data-card .focus-distribution-container.embedded .chart-wrapper {
-  width: 100%;
-  height: 360rpx;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  position: relative;
-  transform: none !important;
-  will-change: transform;
-  contain: layout;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-}
-
-.data-card .focus-distribution-container.embedded .focus-chart {
-  width: 340rpx !important;
-  height: 340rpx !important;
-  max-width: none !important;
-  max-height: none !important;
-  min-width: 340rpx !important;
-  min-height: 340rpx !important;
-  border-radius: 0;
-  overflow: hidden;
-  display: block;
-  position: relative;
-  transform: none !important;
-  left: 0 !important;
-  top: 0 !important;
-  will-change: transform;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 
 .achievements-container {
@@ -526,6 +475,7 @@ scroll-view {
   align-items: center;
   margin-bottom: 32rpx;
   position: relative;
+  gap: 16rpx;
 }
 
 .modal-badge {
@@ -587,6 +537,7 @@ scroll-view {
 
 .modal-title-section {
   flex: 1;
+  min-width: 0;
 }
 
 .modal-title {
@@ -595,13 +546,16 @@ scroll-view {
   color: #2D3436;
   display: block;
   margin-bottom: 8rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .modal-rarity-tag {
   display: inline-block;
-  padding: 6rpx 16rpx;
-  border-radius: 16rpx;
-  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 14rpx;
+  font-size: 18rpx;
   font-weight: 600;
   color: white;
 }
@@ -627,17 +581,28 @@ scroll-view {
 }
 
 .modal-close {
-  width: 60rpx;
-  height: 60rpx;
+  width: 32rpx;
+  height: 32rpx;
   border-radius: 50%;
   background: rgba(135, 168, 164, 0.1);
   border: none;
   color: #2D3436;
-  font-size: 24rpx;
-  display: flex;
+  font-size: 18rpx;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+  min-width: 32rpx;
+  min-height: 32rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.modal-close::after {
+  display: none;
 }
 
 .modal-close:active {
