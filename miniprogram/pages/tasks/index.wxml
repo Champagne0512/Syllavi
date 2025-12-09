@@ -17,21 +17,33 @@
   </view>
 
   <scroll-view class="zen-scroll" scroll-y="true" enable-flex="true">
+    <view class="top-actions" wx:if="{{!selectionMode && tasks.length > 0}}">
+      <view class="top-actions-head">
+        <text class="top-actions-title">快捷操作</text>
+        <text class="top-actions-subtitle">批量整理，一键清空</text>
+      </view>
+      <view class="top-buttons">
+        <button class="top-btn primary" bindtap="enterSelectionMode">
+          <view class="top-btn-icon plus"></view>
+          <text class="top-btn-text">批量操作</text>
+        </button>
+        <button class="top-btn danger" bindtap="showDeleteConfirm">
+          <view class="top-btn-icon trash"></view>
+          <text class="top-btn-text">清空所有</text>
+        </button>
+      </view>
+    </view>
     <!-- 批量操作工具栏 -->
     <view class="batch-toolbar" wx:if="{{selectionMode}}">
-      <view class="batch-info">
-        <text class="selected-count">已选择 {{selectedTasks.length}} 项</text>
+      <view class="batch-summary">
+        <text class="summary-label">已选择</text>
+        <text class="summary-count">{{selectedTasks.length}}</text>
+        <text class="summary-label">项</text>
       </view>
       <view class="batch-actions">
-        <button class="batch-action-btn complete-btn" bindtap="showCompleteConfirm">
-          完成任务
-        </button>
-        <button class="batch-action-btn delete-btn" bindtap="showDeleteSelectedConfirm">
-          删除选中
-        </button>
-        <button class="batch-action-btn cancel-btn" bindtap="exitSelectionMode">
-          取消
-        </button>
+        <button class="batch-action-btn success" bindtap="showCompleteConfirm">标记完成</button>
+        <button class="batch-action-btn danger" bindtap="showDeleteSelectedConfirm">删除任务</button>
+        <button class="batch-action-btn ghost" bindtap="exitSelectionMode">取消</button>
       </view>
     </view>
 
@@ -39,15 +51,13 @@
     <view class="tasks-container">
       <view class="tasks-list" wx:if="{{tasks.length > 0 && !loading}}">
         <block wx:for="{{tasks}}" wx:key="id">
-          <view class="task-item {{item.is_completed ? 'completed' : ''}} {{selectionMode ? 'selection-mode' : ''}} {{selectedTasks.indexOf(item.id) !== -1 ? 'selected' : ''}}"
+          <view class="task-item {{item.is_completed ? 'completed' : ''}} {{selectionMode ? 'selection-mode' : ''}} {{item.isSelected ? 'selected' : ''}}"
             data-id="{{item.id}}"
-            bindtap="{{selectionMode ? 'toggleTaskSelection' : ''}}">
+            bindtap="toggleTaskSelection">
             
             <!-- 选择模式下的复选框 -->
             <view class="task-checkbox" wx:if="{{selectionMode}}">
-              <view class="checkbox-outer {{selectedTasks.indexOf(item.id) !== -1 ? 'checked' : ''}}">
-                <view class="checkbox-inner {{selectedTasks.indexOf(item.id) !== -1 ? 'checked' : ''}}"></view>
-              </view>
+              <view class="checkbox {{item.isSelected ? 'checked' : ''}}"></view>
             </view>
             
             <view class="task-content">
@@ -81,18 +91,6 @@
   </scroll-view>
 
   <!-- 底部操作栏 -->
-  <view class="bottom-toolbar" wx:if="{{!selectionMode && tasks.length > 0}}">
-    <view class="toolbar-buttons">
-      <button class="toolbar-btn primary-btn" bindtap="enterSelectionMode">
-        <view class="btn-icon"></view>
-        <text class="btn-text">批量操作</text>
-      </button>
-      <button class="toolbar-btn danger-btn" bindtap="showDeleteConfirm">
-        <view class="btn-icon delete-icon"></view>
-        <text class="btn-text">清空所有</text>
-      </button>
-    </view>
-  </view>
 
   <!-- 完成确认弹窗 -->
   <view class="confirm-modal" wx:if="{{showCompleteConfirm}}">

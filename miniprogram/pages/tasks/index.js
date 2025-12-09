@@ -51,7 +51,7 @@ Page({
           return new Date(a.deadline) - new Date(b.deadline);
         });
         
-        this.setData({ tasks: sortedTasks });
+        this.setData({ tasks: this.decorateTasks(sortedTasks) });
       } else {
         this.setData({ tasks: [] });
       }
@@ -89,19 +89,31 @@ Page({
   enterSelectionMode() {
     this.setData({ 
       selectionMode: true, 
-      selectedTasks: [] 
+      selectedTasks: [],
+      tasks: this.decorateTasks(this.data.tasks, [])
     });
     wx.vibrateShort({ type: 'light' });
   },
   
   exitSelectionMode() {
     this.setData({ 
-      selectionMode: false, 
-      selectedTasks: [] 
-    });
+    selectionMode: false, 
+    selectedTasks: [],
+    tasks: this.decorateTasks(this.data.tasks, [])
+  });
   },
-  
+
+  decorateTasks(tasks = [], selectedIds = this.data.selectedTasks) {
+    if (!Array.isArray(tasks)) return []
+    const selectedSet = new Set(selectedIds || [])
+    return tasks.map(task => ({
+      ...task,
+      isSelected: selectedSet.has(task.id)
+    }))
+  },
+
   toggleTaskSelection(e) {
+    if (!this.data.selectionMode) return
     const { id } = e.currentTarget.dataset;
     const { selectedTasks } = this.data;
     const index = selectedTasks.indexOf(id);
@@ -113,7 +125,10 @@ Page({
       newSelectedTasks = selectedTasks.filter(taskId => taskId !== id);
     }
     
-    this.setData({ selectedTasks: newSelectedTasks });
+    this.setData({ 
+      selectedTasks: newSelectedTasks,
+      tasks: this.decorateTasks(this.data.tasks, newSelectedTasks)
+    });
     wx.vibrateShort({ type: 'light' });
   },
   
