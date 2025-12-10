@@ -18,6 +18,7 @@ Page({
   onShow() {
     const app = getApp();
     app.syncTabBar(); // 使用全局同步方法
+    this.loadGroups()
   },
 
   onPullDownRefresh() {
@@ -268,6 +269,16 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '加入失败', icon: 'none' })
     }
+  },
+
+  // 从公开列表申请加入
+  joinFromPublic(e) {
+    const code = e.currentTarget.dataset.code
+    if (!code) {
+      wx.showToast({ title: '缺少小组码', icon: 'none' })
+      return
+    }
+    this.handleJoinGroup(code.trim().toUpperCase())
   },
 
   // 查看小组详情
