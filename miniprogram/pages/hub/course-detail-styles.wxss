@@ -1,3 +1,8 @@
+/* 定义变量 */
+:root {
+  --accent: #87A8A4;
+}
+
 /* 课程英雄区域 */
 .course-hero {
   position: relative;

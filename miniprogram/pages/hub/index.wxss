@@ -2314,9 +2314,9 @@
   align-items: center;
 }
 
-.save-btn {
-  background: #1C1C1E;
-  color: #fff;
+.action-btn.save-btn {
+  background: #87A8A4 !important;
+  color: #fff !important;
   padding: 20rpx 60rpx;
   border-radius: 999rpx;
   font-weight: 600;
