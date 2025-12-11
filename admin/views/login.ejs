@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 3rem;
+      max-width: 400px;
+      width: 100%;
+    }
+    .brand-icon {
+      font-size: 3rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    .form-control:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .btn-login {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      padding: 0.75rem 2rem;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    .loading-spinner {
+      display: none;
+    }
+    .error-message {
+      display: none;
+      background: #f8d7da;
+      color: #721c24;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="login-container">
+          <div class="text-center">
+            <i class="bi bi-mortarboard-fill brand-icon"></i>
+            <h2 class="mb-4">Syllaby 后台管理</h2>
+            <p class="text-muted mb-4">Academic Zen · 学术禅意</p>
+          </div>
+          
+          <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="error-message" id="errorMessage"></div>
+            
+            <div class="mb-3">
+              <label for="username" class="form-label">
+                <i class="bi bi-person me-2"></i>用户名
+              </label>
+              <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            
+            <div class="mb-4">
+              <label for="password" class="form-label">
+                <i class="bi bi-lock me-2"></i>密码
+              </label>
+              <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="rememberMe">
+                <label class="form-check-label" for="rememberMe">
+                  记住我
+                </label>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-login w-100 mb-3">
+              <span class="button-text">登录</span>
+              <span class="loading-spinner">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                登录中...
+              </span>
+            </button>
+            
+            <div class="text-center">
+              <a href="#" class="text-muted text-decoration-none" onclick="showHelp()">
+                <i class="bi bi-question-circle me-1"></i>遇到问题？
+              </a>
+            </div>
+          </form>
+          
+          <div class="mt-4 text-center">
+            <small class="text-muted">
+              &copy; 2024 Syllaby. All rights reserved.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    // 检查是否已登录
+    document.addEventListener('DOMContentLoaded', function() {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        // 验证token有效性
+        fetch('/api/auth/verify', {
+          headers: {
+            'Authorization': \`Bearer \${token}\`
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = '/';
+          }
+        })
+        .catch(error => {
+          localStorage.removeItem('adminToken');
+        });
+      }
+      
+      // 自动填充测试账号（仅在开发环境）
+      if (window.location.hostname === 'localhost') {
+        document.getElementById('username').value = 'admin';
+        document.getElementById('password').value = 'admin123';
+      }
+    });
+
+    // 处理登录
+    async function handleLogin(event) {
+      event.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const rememberMe = document.getElementById('rememberMe').checked;
+      
+      // 显示加载状态
+      showLoading(true);
+      hideError();
+      
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // 保存token
+          if (rememberMe) {
+            localStorage.setItem('adminToken', data.data.token);
+          } else {
+            sessionStorage.setItem('adminToken', data.data.token);
+          }
+          
+          showAlert('登录成功！正在跳转...', 'success');
+          
+          // 跳转到仪表板
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
+          
+        } else {
+          showError(data.message || '登录失败，请检查用户名和密码');
+        }
+      } catch (error) {
+        console.error('登录错误:', error);
+        showError('网络错误，请稍后重试');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // 显示/隐藏加载状态
+    function showLoading(show) {
+      const buttonText = document.querySelector('.button-text');
+      const loadingSpinner = document.querySelector('.loading-spinner');
+      const submitButton = document.querySelector('button[type="submit"]');
+      
+      if (show) {
+        buttonText.style.display = 'none';
+        loadingSpinner.style.display = 'inline';
+        submitButton.disabled = true;
+      } else {
+        buttonText.style.display = 'inline';
+        loadingSpinner.style.display = 'none';
+        submitButton.disabled = false;
+      }
+    }
+
+    // 显示错误信息
+    function showError(message) {
+      const errorElement = document.getElementById('errorMessage');
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+
+    // 隐藏错误信息
+    function hideError() {
+      const errorElement = document.getElementById('errorMessage');
+      errorElement.style.display = 'none';
+    }
+
+    // 显示帮助信息
+    function showHelp() {
+      const helpContent = \`
+        <h5>登录帮助</h5>
+        <p><strong>测试账号：</strong>admin / admin123</p>
+        <p><strong>说明：</strong></p>
+        <ul>
+          <li>请确保用户名和密码输入正确</li>
+          <li>如果忘记密码，请联系系统管理员</li>
+          <li>建议使用Chrome、Firefox等现代浏览器</li>
+        </ul>
+        <p><strong>技术支持：</strong>syllaby@example.com</p>
+      \`;
+      
+      document.getElementById('modalTitle').textContent = '登录帮助';
+      document.getElementById('modalContent').innerHTML = helpContent;
+      
+      // 创建模态框（如果没有Bootstrap模态框）
+      const modalHtml = \`
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">登录帮助</h5>
+                <button type="button" class="btn-close" onclick="closeHelpModal()"></button>
+              </div>
+              <div class="modal-body">
+                \${helpContent}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeHelpModal()">关闭</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      \`;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    // 关闭帮助模态框
+    function closeHelpModal() {
+      const modal = document.querySelector('.modal.show');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    // 显示提示信息
+    function showAlert(message, type = 'info') {
+      // 简单的提示实现
+      const alertHtml = \`
+        <div class="alert alert-\${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999;">
+          \${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      \`;
+      
+      document.body.insertAdjacentHTML('beforeend', alertHtml);
+      
+      // 3秒后自动消失
+      setTimeout(() => {
+        const alert = document.querySelector('.alert');
+        if (alert) {
+          alert.remove();
+        }
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<%- include('layout', {title: title, user: user, currentPage: currentPage, body: `
+<div class="row">
+  <div class="col-12">
+    <!-- 搜索和筛选 -->
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <div class="row align-items-center">
+          <div class="col">
+            <h6 class="m-0 font-weight-bold text-primary">用户管理</h6>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary btn-sm" onclick="showUserModal()">
+              <i class="bi bi-plus-circle me-1"></i>添加用户
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="input-group">
+              <input type="text" class="form-control" id="searchInput" placeholder="搜索用户...">
+              <button class="btn btn-outline-secondary" onclick="searchUsers()">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="statusFilter" onchange="searchUsers()">
+              <option value="">全部状态</option>
+              <option value="active">活跃用户</option>
+              <option value="inactive">非活跃用户</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-success" onclick="exportUsers()">
+              <i class="bi bi-download me-1"></i>导出
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 用户列表 -->
+    <div class="card shadow">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                <th>用户ID</th>
+                <th>昵称</th>
+                <th>学校</th>
+                <th>年级</th>
+                <th>课程数</th>
+                <th>任务数</th>
+                <th>专注时长</th>
+                <th>注册时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr>
+                <td colspan="10" class="text-center">
+                  <span class="spinner-border spinner-border-sm"></span> 加载中...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- 分页 -->
+        <nav class="mt-3">
+          <ul class="pagination justify-content-center" id="pagination">
+            <!-- 分页内容由JavaScript动态生成 -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 用户详情模态框 -->
+<div class="modal fade" id="userDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">用户详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="userDetailContent">
+        <!-- 用户详情内容 -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentPage = 1;
+let selectedUsers = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadUsers();
+});
+
+// 加载用户列表
+async function loadUsers(page = 1) {
+  try {
+    showLoading();
+    
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    const params = new URLSearchParams({
+      page: page,
+      limit: 20,
+      search: search,
+      status: status
+    });
+    
+    const response = await fetch(\`/api/users?\${params}\`, {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      displayUsers(data.data.users);
+      displayPagination(data.data.pagination);
+      currentPage = page;
+    }
+  } catch (error) {
+    console.error('加载用户列表失败:', error);
+    showAlert('加载用户列表失败', 'danger');
+  } finally {
+    hideLoading();
+  }
+}
+
+// 显示用户列表
+function displayUsers(users) {
+  const tbody = document.getElementById('usersTableBody');
+  
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">暂无用户数据</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = users.map(user => \`
+    <tr>
+      <td><input type="checkbox" value="\${user.id}" onchange="toggleUserSelection()"></td>
+      <td><code>\${user.id.substring(0, 8)}...</code></td>
+      <td>
+        <div class="d-flex align-items-center">
+          <img src="\${user.avatar_url || '/static/default-avatar.png'}" class="rounded-circle me-2" width="32" height="32">
+          <div>
+            <div>\${user.nickname}</div>
+            <small class="text-muted">\${user.status === 'active' ? '活跃' : '非活跃'}</small>
+          </div>
+        </div>
+      </td>
+      <td>\${user.school_name || '-'}</td>
+      <td>\${user.grade || '-'}</td>
+      <td><span class="badge bg-primary">\${user.stats?.courses_count || 0}</span></td>
+      <td><span class="badge bg-info">\${user.stats?.tasks_count || 0}</span></td>
+      <td>\${Math.round((user.stats?.total_focus_minutes || 0) / 60)}小时</td>
+      <td>\${formatDate(user.created_at)}</td>
+      <td>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-primary" onclick="viewUserDetail('\${user.id}')">
+            <i class="bi bi-eye"></i>
+          </button>
+          <button class="btn btn-outline-info" onclick="viewUserCourses('\${user.id}')">
+            <i class="bi bi-book"></i>
+          </button>
+          <button class="btn btn-outline-danger" onclick="deleteUser('\${user.id}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  \`).join('');
+}
+
+// 显示分页
+function displayPagination(pagination) {
+  const paginationElement = document.getElementById('pagination');
+  
+  if (pagination.totalPages <= 1) {
+    paginationElement.innerHTML = '';
+    return;
+  }
+  
+  let html = '';
+  
+  // 上一页
+  if (pagination.page > 1) {
+    html += \`<li class="page-item"><a class="page-link" href="#" onclick="loadUsers(\${pagination.page - 1})">上一页</a></li>\`;
+  }
+  
+  // 页码
+  for (let i = 1; i <= pagination.totalPages; i++) {
+    if (i === pagination.page) {
+      html += \`<li class="page-item active"><a class="page-link" href="#">\${i}</a></li>\`;
+    } else {
+      html += \`<li class="page-item"><a class="page-link" href="#" onclick="loadUsers(\${i})">\${i}</a></li>\`;
+    }
+  }
+  
+  // 下一页
+  if (pagination.page < pagination.totalPages) {
+    html += \`<li class="page-item"><a class="page-link" href="#" onclick="loadUsers(\${pagination.page + 1})">下一页</a></li>\`;
+  }
+  
+  paginationElement.innerHTML = html;
+}
+
+// 搜索用户
+function searchUsers() {
+  loadUsers(1);
+}
+
+// 查看用户详情
+async function viewUserDetail(userId) {
+  try {
+    showLoading();
+    
+    const response = await fetch(\`/api/users/\${userId}\`, {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      const user = data.data;
+      const content = \`
+        <div class="row">
+          <div class="col-md-4 text-center">
+            <img src="\${user.avatar_url || '/static/default-avatar.png'}" class="rounded-circle mb-3" width="120" height="120">
+            <h5>\${user.nickname}</h5>
+            <p class="text-muted">\${user.school_name || '未填写学校'}</p>
+            <span class="badge bg-primary">\${user.grade || '未填写年级'}</span>
+          </div>
+          <div class="col-md-8">
+            <h6>统计数据</h6>
+            <div class="row">
+              <div class="col-6">
+                <div class="mb-2">
+                  <strong>课程数量:</strong> \${user.stats?.courses_count || 0}
+                </div>
+                <div class="mb-2">
+                  <strong>课程安排:</strong> \${user.stats?.schedules_count || 0}
+                </div>
+                <div class="mb-2">
+                  <strong>任务总数:</strong> \${user.stats?.tasks_count || 0}
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="mb-2">
+                  <strong>已完成任务:</strong> \${user.stats?.completed_tasks_count || 0}
+                </div>
+                <div class="mb-2">
+                  <strong>专注次数:</strong> \${user.stats?.focus_sessions_count || 0}
+                </div>
+                <div class="mb-2">
+                  <strong>总专注时长:</strong> \${Math.round((user.stats?.total_focus_minutes || 0) / 60)}小时
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      \`;
+      
+      document.getElementById('userDetailContent').innerHTML = content;
+      new bootstrap.Modal(document.getElementById('userDetailModal')).show();
+    }
+  } catch (error) {
+    console.error('加载用户详情失败:', error);
+    showAlert('加载用户详情失败', 'danger');
+  } finally {
+    hideLoading();
+  }
+}
+
+// 删除用户
+function deleteUser(userId) {
+  if (confirm('确定要删除这个用户吗？此操作不可撤销！')) {
+    fetch(\`/api/users/\${userId}\`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showAlert('用户删除成功', 'success');
+        loadUsers(currentPage);
+      } else {
+        showAlert('删除失败: ' + data.message, 'danger');
+      }
+    })
+    .catch(error => {
+      console.error('删除用户失败:', error);
+      showAlert('删除用户失败', 'danger');
+    });
+  }
+}
+
+// 导出用户数据
+function exportUsers() {
+  const params = new URLSearchParams({
+    search: document.getElementById('searchInput').value,
+    status: document.getElementById('statusFilter').value
+  });
+  
+  window.open(\`/api/stats/export/users?\${params}\`);
+}
+
+// 全选/取消全选
+function toggleSelectAll() {
+  const selectAll = document.getElementById('selectAll');
+  const checkboxes = document.querySelectorAll('#usersTableBody input[type="checkbox"]');
+  
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = selectAll.checked;
+  });
+  
+  toggleUserSelection();
+}
+
+// 切换用户选择
+function toggleUserSelection() {
+  const checkboxes = document.querySelectorAll('#usersTableBody input[type="checkbox"]:checked');
+  selectedUsers = Array.from(checkboxes).map(cb => cb.value);
+}
+</script>
+`}) %>

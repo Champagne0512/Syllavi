@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/admin.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/dashboard">
+        <i class="bi bi-speedometer2"></i>
+        Syllaby 后台管理系统
+      </a>
+      
+      <div class="navbar-nav ms-auto">
+        <div class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i> <%= user.nickname || '管理员' %>
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/settings">系统设置</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" onclick="logout()">退出登录</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 侧边栏 -->
+  <div class="container-fluid">
+    <div class="row">
+      <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+        <div class="position-sticky pt-3">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="/dashboard">
+                <i class="bi bi-speedometer2"></i> 仪表板
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/users">
+                <i class="bi bi-people"></i> 用户管理
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/courses">
+                <i class="bi bi-book"></i> 课程管理
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/ai">
+                <i class="bi bi-cpu"></i> AI管理
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/stats">
+                <i class="bi bi-graph-up"></i> 数据统计
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/settings">
+                <i class="bi bi-gear"></i> 系统设置
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- 主内容区 -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">仪表板</h1>
+          <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                <i class="bi bi-arrow-clockwise"></i> 刷新
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+              <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">总用户数</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalUsers">-</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="bi bi-people fa-2x text-gray-300"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+              <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">总课程数</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalCourses">-</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="bi bi-book fa-2x text-gray-300"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+              <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">总任务数</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalTasks">-</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="bi bi-check-square fa-2x text-gray-300"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+              <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">专注时长</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalFocusTime">-</div>
+                  </div>
+                  <div class="col-auto">
+                    <i class="bi bi-clock fa-2x text-gray-300"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">用户增长趋势</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="userGrowthChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">学校分布</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="schoolChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">年级分布</h6>
+              </div>
+              <div class="card-body">
+                <canvas id="gradeChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">系统状态</h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-sm-6">
+                    <p><strong>数据库状态:</strong> <span class="badge bg-success">正常</span></p>
+                    <p><strong>API状态:</strong> <span class="badge bg-success">正常</span></p>
+                  </div>
+                  <div class="col-sm-6">
+                    <p><strong>最后更新:</strong> <span id="lastUpdate">-</span></p>
+                    <p><strong>活跃用户:</strong> <span id="activeUsers">-</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/admin.js"></script>
+  <script>
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDashboardData();
+      loadCharts();
+    });
+
+    // 加载仪表板数据
+    async function loadDashboardData() {
+      try {
+        const response = await fetch('/api/stats/overview', {
+          headers: getAuthHeaders()
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          document.getElementById('totalUsers').textContent = data.data.totalUsers || 0;
+          document.getElementById('totalCourses').textContent = data.data.totalCourses || 0;
+          document.getElementById('totalTasks').textContent = data.data.totalTasks || 0;
+          document.getElementById('totalFocusTime').textContent = Math.round(data.data.totalFocusMinutes / 60) + '小时';
+          document.getElementById('activeUsers').textContent = data.data.activeUsers || 0;
+          document.getElementById('lastUpdate').textContent = new Date().toLocaleString('zh-CN');
+        }
+      } catch (error) {
+        console.error('加载仪表板数据失败:', error);
+      }
+    }
+
+    // 加载图表
+    async function loadCharts() {
+      try {
+        // 用户增长趋势
+        const growthResponse = await fetch('/api/stats/user-growth', {
+          headers: getAuthHeaders()
+        });
+        const growthData = await growthResponse.json();
+        
+        if (growthData.success) {
+          createUserGrowthChart(growthData.data);
+        }
+
+        // 学校分布
+        const schoolResponse = await fetch('/api/stats/school-distribution', {
+          headers: getAuthHeaders()
+        });
+        const schoolData = await schoolResponse.json();
+        
+        if (schoolData.success) {
+          createSchoolChart(schoolData.data);
+        }
+
+        // 年级分布
+        const gradeResponse = await fetch('/api/stats/grade-distribution', {
+          headers: getAuthHeaders()
+        });
+        const gradeData = await gradeResponse.json();
+        
+        if (gradeData.success) {
+          createGradeChart(gradeData.data);
+        }
+      } catch (error) {
+        console.error('加载图表数据失败:', error);
+      }
+    }
+
+    // 创建用户增长图表
+    function createUserGrowthChart(data) {
+      const ctx = document.getElementById('userGrowthChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map(item => item.date),
+          datasets: [{
+            label: '新增用户',
+            data: data.map(item => item.newUsers),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // 创建学校分布图表
+    function createSchoolChart(data) {
+      const ctx = document.getElementById('schoolChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: data.map(item => item.name),
+          datasets: [{
+            data: data.map(item => item.count),
+            backgroundColor: [
+              '#FF6384',
+              '#36A2EB',
+              '#FFCE56',
+              '#4BC0C0',
+              '#9966FF',
+              '#FF9F40'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    }
+
+    // 创建年级分布图表
+    function createGradeChart(data) {
+      const ctx = document.getElementById('gradeChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.map(item => item.name),
+          datasets: [{
+            label: '用户数',
+            data: data.map(item => item.count),
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // 刷新数据
+    function refreshData() {
+      loadDashboardData();
+      loadCharts();
+    }
+
+    // 退出登录
+    function logout() {
+      localStorage.removeItem('adminToken');
+      document.cookie = 'adminToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

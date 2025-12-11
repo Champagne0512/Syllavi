@@ -1,0 +1,508 @@
+<%- include('layout', {title: title, user: user, currentPage: currentPage, body: `
+<div class="row">
+  <!-- AI使用统计卡片 -->
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-primary shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+              今日调用
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800" id="todayCalls">
+              <span class="spinner-border spinner-border-sm"></span>
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="bi bi-cpu fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-success shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+              成功率
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800" id="successRate">
+              <span class="spinner-border spinner-border-sm"></span>
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-info shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+              响应时间
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800" id="responseTime">
+              <span class="spinner-border spinner-border-sm"></span>
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="bi bi-speedometer2 fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-warning shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+              本月调用
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800" id="monthlyCalls">
+              <span class="spinner-border spinner-border-sm"></span>
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="bi bi-calendar3 fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI管理区域 -->
+<div class="row">
+  <!-- AI配置 -->
+  <div class="col-lg-6">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <div class="row align-items-center">
+          <div class="col">
+            <h6 class="m-0 font-weight-bold text-primary">AI服务配置</h6>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary btn-sm" onclick="refreshAIConfig()">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="aiConfigList">
+          <div class="text-center">
+            <span class="spinner-border spinner-border-sm"></span> 加载中...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI使用趋势 -->
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">使用趋势</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="usageTrendChart" style="height: 250px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- 功能使用统计 -->
+  <div class="col-lg-6">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">功能使用统计</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="featureUsageChart" style="height: 200px;"></canvas>
+      </div>
+    </div>
+
+    <!-- 调用日志 -->
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <div class="row align-items-center">
+          <div class="col">
+            <h6 class="m-0 font-weight-bold text-primary">最新调用日志</h6>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-outline-primary btn-sm" onclick="showAllLogs()">
+              查看全部
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm" id="recentLogs">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>AI服务</th>
+                <th>功能</th>
+                <th>状态</th>
+                <th>响应时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="5" class="text-center">
+                  <span class="spinner-border spinner-border-sm"></span> 加载中...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI配置模态框 -->
+<div class="modal fade" id="aiConfigModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">AI服务配置</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="aiConfigForm">
+          <div class="mb-3">
+            <label for="providerSelect" class="form-label">AI服务提供商</label>
+            <select class="form-select" id="providerSelect" onchange="loadProviderConfig()">
+              <option value="">选择提供商</option>
+              <option value="qwen">Qwen (通义千问)</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="coze">Coze</option>
+            </select>
+          </div>
+          
+          <div id="configFields"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" onclick="saveAIConfig()">保存配置</button>
+        <button type="button" class="btn btn-info" onclick="testAIConnection()">测试连接</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  loadAIStats();
+  loadAIConfig();
+  loadAILogs();
+});
+
+// 加载AI统计数据
+async function loadAIStats() {
+  try {
+    const response = await fetch('/api/ai/stats', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 更新统计卡片
+      document.getElementById('todayCalls').textContent = data.data.overview.today.calls;
+      document.getElementById('successRate').textContent = data.data.overview.today.successRate.toFixed(1) + '%';
+      document.getElementById('responseTime').textContent = data.data.overview.today.avgResponseTime.toFixed(2) + 's';
+      document.getElementById('monthlyCalls').textContent = data.data.overview.month.calls;
+      
+      // 创建趋势图
+      createUsageTrendChart(data.data.dailyTrend);
+      createFeatureUsageChart(data.data.featureBreakdown);
+    }
+  } catch (error) {
+    console.error('加载AI统计失败:', error);
+  }
+}
+
+// 加载AI配置
+async function loadAIConfig() {
+  try {
+    const response = await fetch('/api/ai/config', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      displayAIConfig(data.data);
+    }
+  } catch (error) {
+    console.error('加载AI配置失败:', error);
+  }
+}
+
+// 显示AI配置
+function displayAIConfig(config) {
+  const configList = document.getElementById('aiConfigList');
+  
+  const providers = ['qwen', 'deepseek', 'coze'];
+  
+  configList.innerHTML = providers.map(provider => {
+    const providerConfig = config[provider];
+    const status = providerConfig.enabled ? 'success' : 'secondary';
+    const statusText = providerConfig.enabled ? '已配置' : '未配置';
+    
+    return \`
+      <div class="d-flex justify-content-between align-items-center p-3 border rounded mb-2">
+        <div>
+          <h6 class="mb-1">\${provider.toUpperCase()}</h6>
+          <small class="text-muted">模型: \${providerConfig.model}</small>
+        </div>
+        <div>
+          <span class="badge bg-\${status}">\${statusText}</span>
+          <button class="btn btn-sm btn-outline-primary ms-2" onclick="editAIConfig('\${provider}')">
+            <i class="bi bi-gear"></i>
+          </button>
+        </div>
+      </div>
+    \`;
+  }).join('');
+}
+
+// 创建使用趋势图
+function createUsageTrendChart(trendData) {
+  const ctx = document.getElementById('usageTrendChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: trendData.map(d => d.date).reverse(),
+      datasets: [{
+        label: '调用次数',
+        data: trendData.map(d => d.calls).reverse(),
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// 创建功能使用图表
+function createFeatureUsageChart(featureData) {
+  const ctx = document.getElementById('featureUsageChart').getContext('2d');
+  
+  const features = Object.keys(featureData);
+  const calls = features.map(f => featureData[f].calls);
+  
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: features.map(f => {
+        const labels = {
+          imageRecognition: '图片识别',
+          textSummary: '文本摘要',
+          courseExtraction: '课程提取'
+        };
+        return labels[f] || f;
+      }),
+      datasets: [{
+        data: calls,
+        backgroundColor: [
+          'rgba(75, 192, 192, 0.8)',
+          'rgba(255, 206, 86, 0.8)',
+          'rgba(255, 99, 132, 0.8)'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+}
+
+// 加载AI调用日志
+async function loadAILogs() {
+  try {
+    const response = await fetch('/api/ai/logs?limit=10', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      displayAILogs(data.data.logs);
+    }
+  } catch (error) {
+    console.error('加载AI日志失败:', error);
+  }
+}
+
+// 显示AI调用日志
+function displayAILogs(logs) {
+  const tbody = document.querySelector('#recentLogs tbody');
+  
+  if (logs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">暂无日志</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = logs.map(log => \`
+    <tr>
+      <td>\${formatDate(log.timestamp)}</td>
+      <td><span class="badge bg-primary">\${log.provider.toUpperCase()}</span></td>
+      <td>\${log.feature}</td>
+      <td><span class="badge bg-\${log.status === 'success' ? 'success' : 'danger'}">\${log.status}</span></td>
+      <td>\${log.responseTime}ms</td>
+    </tr>
+  \`).join('');
+}
+
+// 刷新AI配置
+async function refreshAIConfig() {
+  showAlert('正在刷新配置...', 'info');
+  await loadAIConfig();
+  showAlert('配置刷新成功', 'success');
+}
+
+// 编辑AI配置
+function editAIConfig(provider) {
+  document.getElementById('providerSelect').value = provider;
+  loadProviderConfig();
+  new bootstrap.Modal(document.getElementById('aiConfigModal')).show();
+}
+
+// 加载提供商配置
+function loadProviderConfig() {
+  const provider = document.getElementById('providerSelect').value;
+  const configFields = document.getElementById('configFields');
+  
+  if (!provider) {
+    configFields.innerHTML = '';
+    return;
+  }
+  
+  const fields = {
+    qwen: [
+      { name: 'apiKey', label: 'API密钥', type: 'password' },
+      { name: 'apiUrl', label: 'API地址', type: 'text' },
+      { name: 'model', label: '模型', type: 'text' }
+    ],
+    deepseek: [
+      { name: 'apiKey', label: 'API密钥', type: 'password' },
+      { name: 'apiUrl', label: 'API地址', type: 'text' }
+    ],
+    coze: [
+      { name: 'botId', label: '机器人ID', type: 'text' },
+      { name: 'apiKey', label: 'API密钥', type: 'password' }
+    ]
+  };
+  
+  const providerFields = fields[provider] || [];
+  
+  configFields.innerHTML = providerFields.map(field => \`
+    <div class="mb-3">
+      <label for="\${field.name}" class="form-label">\${field.label}</label>
+      <input type="\${field.type}" class="form-control" id="\${field.name}" name="\${field.name}">
+    </div>
+  \`).join('');
+}
+
+// 保存AI配置
+async function saveAIConfig() {
+  const provider = document.getElementById('providerSelect').value;
+  
+  if (!provider) {
+    showAlert('请选择AI服务提供商', 'warning');
+    return;
+  }
+  
+  const formData = new FormData(document.getElementById('aiConfigForm'));
+  const settings = Object.fromEntries(formData.entries());
+  
+  try {
+    const response = await fetch('/api/ai/config', {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ provider, settings })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showAlert('配置保存成功', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('aiConfigModal')).hide();
+      loadAIConfig();
+    } else {
+      showAlert('配置保存失败: ' + data.message, 'danger');
+    }
+  } catch (error) {
+    console.error('保存AI配置失败:', error);
+    showAlert('保存配置失败', 'danger');
+  }
+}
+
+// 测试AI连接
+async function testAIConnection() {
+  const provider = document.getElementById('providerSelect').value;
+  
+  if (!provider) {
+    showAlert('请选择AI服务提供商', 'warning');
+    return;
+  }
+  
+  try {
+    showAlert('正在测试连接...', 'info');
+    
+    const response = await fetch(\`/api/ai/test/\${provider}\`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      const result = data.data;
+      if (result.success) {
+        showAlert(\`连接成功！响应时间: \${result.responseTime}ms\`, 'success');
+      } else {
+        showAlert('连接失败: ' + result.message, 'danger');
+      }
+    }
+  } catch (error) {
+    console.error('测试AI连接失败:', error);
+    showAlert('测试连接失败', 'danger');
+  }
+}
+
+// 显示全部日志
+function showAllLogs() {
+  window.open('/api/ai/logs', '_blank');
+}
+</script>
+`}) %>

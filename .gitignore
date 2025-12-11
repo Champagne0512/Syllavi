@@ -1,1 +1,4 @@
 miniprogram/dev-config.js
+node_modules/
+.env
+admin/.env

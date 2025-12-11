@@ -1,0 +1,537 @@
+<%- include('layout', {title: title, user: user, currentPage: currentPage, body: `
+<div class="row">
+  <!-- 时间范围选择 -->
+  <div class="col-12 mb-4">
+    <div class="card shadow">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-3">
+            <label class="form-label">开始日期</label>
+            <input type="date" class="form-control" id="startDate">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">结束日期</label>
+            <input type="date" class="form-control" id="endDate">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-primary d-block w-100" onclick="updateDateRange()">
+              <i class="bi bi-funnel me-1"></i>筛选数据
+            </button>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <div class="btn-group d-block w-100">
+              <button class="btn btn-outline-secondary" onclick="exportData('users')">
+                <i class="bi bi-download me-1"></i>导出用户
+              </button>
+              <button class="btn btn-outline-secondary" onclick="exportData('courses')">
+                <i class="bi bi-download me-1"></i>导出课程
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 核心指标 -->
+<div class="row">
+  <div class="col-xl-4 col-lg-5">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">核心指标</h6>
+      </div>
+      <div class="card-body">
+        <div id="coreMetrics">
+          <div class="text-center">
+            <span class="spinner-border spinner-border-sm"></span> 加载中...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-8 col-lg-7">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">用户增长趋势</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="userGrowthChart" style="height: 300px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 详细统计 -->
+<div class="row">
+  <!-- 用户活跃度 -->
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">用户活跃度</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="userActivityChart" style="height: 250px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- 功能使用统计 -->
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">功能使用统计</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="featureUsageChart" style="height: 250px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 用户分布 -->
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">学校分布</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="schoolDistributionChart" style="height: 300px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">年级分布</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="gradeDistributionChart" style="height: 300px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 用户留存分析 -->
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">用户留存分析</h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-lg-8">
+            <canvas id="retentionChart" style="height: 250px;"></canvas>
+          </div>
+          <div class="col-lg-4">
+            <h6 class="mb-3">功能渗透率</h6>
+            <div id="adoptionRates"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 设置默认日期范围（最近30天）
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
+  
+  document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+  document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+  
+  loadOverviewStats();
+  loadUserActivity();
+  loadFeatureUsage();
+  loadSchoolDistribution();
+  loadRetentionData();
+});
+
+// 加载总览统计
+async function loadOverviewStats() {
+  try {
+    const response = await fetch('/api/stats/overview', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      displayCoreMetrics(data.data);
+    }
+  } catch (error) {
+    console.error('加载总览统计失败:', error);
+  }
+}
+
+// 显示核心指标
+function displayCoreMetrics(data) {
+  const container = document.getElementById('coreMetrics');
+  
+  container.innerHTML = \`
+    <div class="row">
+      <div class="col-6 mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted">总用户数</span>
+          <strong>\${formatNumber(data.users.total_users)}</strong>
+        </div>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-primary" style="width: 100%"></div>
+        </div>
+      </div>
+      <div class="col-6 mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted">总课程数</span>
+          <strong>\${formatNumber(data.courses.total_courses)}</strong>
+        </div>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-success" style="width: 80%"></div>
+        </div>
+      </div>
+      <div class="col-6 mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted">完成任务</span>
+          <strong>\${formatNumber(data.tasks.completed_tasks)}</strong>
+        </div>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-info" style="width: 65%"></div>
+        </div>
+      </div>
+      <div class="col-6 mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted">专注时长</span>
+          <strong>\${Math.round(data.focus.total_minutes / 60)}小时</strong>
+        </div>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-warning" style="width: 45%"></div>
+        </div>
+      </div>
+    </div>
+  \`;
+}
+
+// 加载用户活跃度
+async function loadUserActivity() {
+  try {
+    const response = await fetch('/api/stats/user-activity', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      createUserGrowthChart(data.data.userRegistration);
+      createUserActivityChart(data.data.dailyActive);
+    }
+  } catch (error) {
+    console.error('加载用户活跃度失败:', error);
+  }
+}
+
+// 创建用户增长图表
+function createUserGrowthChart(registrationData) {
+  const ctx = document.getElementById('userGrowthChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: registrationData.map(d => d.date).reverse(),
+      datasets: [{
+        label: '新增用户',
+        data: registrationData.map(d => d.new_users).reverse(),
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// 创建用户活跃度图表
+function createUserActivityChart(activityData) {
+  const ctx = document.getElementById('userActivityChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: activityData.map(d => d.date).reverse(),
+      datasets: [{
+        label: '日活用户',
+        data: activityData.map(d => d.daily_active_users).reverse(),
+        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+      }, {
+        label: '专注时长(分钟)',
+        data: activityData.map(d => d.total_focus_minutes).reverse(),
+        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// 加载功能使用统计
+async function loadFeatureUsage() {
+  try {
+    const response = await fetch('/api/stats/feature-usage', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      createFeatureUsageChart(data.data);
+    }
+  } catch (error) {
+    console.error('加载功能使用统计失败:', error);
+  }
+}
+
+// 创建功能使用图表
+function createFeatureUsageChart(featureData) {
+  const ctx = document.getElementById('featureUsageChart').getContext('2d');
+  
+  // 合并最近7天的数据
+  const last7Days = new Date();
+  last7Days.setDate(last7Days.getDate() - 7);
+  
+  const courseData = featureData.courses.filter(d => new Date(d.date) >= last7Days);
+  const taskData = featureData.tasks.filter(d => new Date(d.date) >= last7Days);
+  const focusData = featureData.focus.filter(d => new Date(d.date) >= last7Days);
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: courseData.map(d => d.date),
+      datasets: [{
+        label: '课程创建',
+        data: courseData.map(d => d.count),
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+      }, {
+        label: '任务完成',
+        data: taskData.map(d => d.completed_count),
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+      }, {
+        label: '专注次数',
+        data: focusData.map(d => d.session_count),
+        borderColor: 'rgb(255, 206, 86)',
+        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// 加载学校分布
+async function loadSchoolDistribution() {
+  try {
+    const response = await fetch('/api/stats/school-distribution', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      createSchoolDistributionChart(data.data.schools);
+      createGradeDistributionChart(data.data.grades);
+    }
+  } catch (error) {
+    console.error('加载学校分布失败:', error);
+  }
+}
+
+// 创建学校分布图表
+function createSchoolDistributionChart(schoolData) {
+  const ctx = document.getElementById('schoolDistributionChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: schoolData.slice(0, 8).map(s => s.school_name),
+      datasets: [{
+        data: schoolData.slice(0, 8).map(s => s.user_count),
+        backgroundColor: [
+          '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e',
+          '#e74a3b', '#858796', '#5a5c69', '#2e59d9'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    }
+  });
+}
+
+// 创建年级分布图表
+function createGradeDistributionChart(gradeData) {
+  const ctx = document.getElementById('gradeDistributionChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: gradeData.map(g => g.grade),
+      datasets: [{
+        data: gradeData.map(g => g.user_count),
+        backgroundColor: [
+          '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e',
+          '#e74a3b', '#858796', '#5a5c69', '#2e59d9'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+}
+
+// 加载留存数据
+async function loadRetentionData() {
+  try {
+    const response = await fetch('/api/stats/retention', {
+      headers: getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      createRetentionChart(data.data.retention);
+      displayAdoptionRates(data.data.adoption);
+    }
+  } catch (error) {
+    console.error('加载留存数据失败:', error);
+  }
+}
+
+// 创建留存图表
+function createRetentionChart(retentionData) {
+  const ctx = document.getElementById('retentionChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: retentionData.map(r => r.cohort_date).reverse(),
+      datasets: [{
+        label: '7日留存率 (%)',
+        data: retentionData.map(r => r.retention_rate).reverse(),
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: function(value) {
+              return value + '%';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// 显示功能渗透率
+function displayAdoptionRates(adoptionData) {
+  const container = document.getElementById('adoptionRates');
+  
+  container.innerHTML = adoptionData.map(feature => \`
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span>\${feature.feature === 'courses' ? '课程功能' : 
+                feature.feature === 'tasks' ? '任务功能' : 
+                feature.feature === 'focus' ? '专注功能' : 
+                feature.feature === 'resources' ? '资源功能' : feature.feature}</span>
+        <strong>\${feature.adoption_rate.toFixed(1)}%</strong>
+      </div>
+      <div class="progress" style="height: 8px;">
+        <div class="progress-bar bg-primary" style="width: \${feature.adoption_rate}%"></div>
+      </div>
+      <small class="text-muted">\${feature.user_count} 用户</small>
+    </div>
+  \`).join('');
+}
+
+// 更新日期范围
+function updateDateRange() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  
+  if (startDate && endDate) {
+    // 重新加载所有数据
+    loadOverviewStats();
+    loadUserActivity();
+    loadFeatureUsage();
+    loadSchoolDistribution();
+    loadRetentionData();
+    
+    showAlert('数据已更新', 'success');
+  }
+}
+
+// 导出数据
+function exportData(type) {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  
+  const params = new URLSearchParams({
+    startDate: startDate,
+    endDate: endDate
+  });
+  
+  window.open(\`/api/stats/export/\${type}?\${params}\`);
+}
+</script>
+`}) %>
