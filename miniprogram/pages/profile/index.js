@@ -4,6 +4,7 @@ const {
   fetchProfile,
   fetchFocusStats,
   fetchTasks,
+  fetchAllTasks,
   fetchCourses,
   fetchResources,
   updateProfile,
@@ -230,7 +231,7 @@ Page({
           console.warn('专注统计获取失败:', err);
           return null;
         }),
-        fetchTasks(userId).catch(err => {
+        fetchAllTasks(userId).catch(err => {
           console.warn('任务数据获取失败:', err);
           return [];
         }),
@@ -247,6 +248,9 @@ Page({
       console.log('个人主页数据获取完成:', {
         focusStats: focusStats,
         tasks: tasks?.length,
+        tasksCompleted: tasks?.filter(t => t.is_completed).length,
+        tasksPending: tasks?.filter(t => !t.is_completed).length,
+        groupTasks: tasks?.filter(t => t.type === 'group_task')?.length,
         courses: courses?.length,
         resources: resources?.length
       });

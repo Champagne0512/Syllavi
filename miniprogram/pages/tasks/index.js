@@ -1,6 +1,7 @@
 const {
   DEMO_USER_ID,
   fetchTasks,
+  fetchAllTasks,
   updateTaskCompletion,
   deleteTask
 } = require('../../utils/supabase');
@@ -34,7 +35,11 @@ Page({
     try {
       const app = getApp();
       const userId = app?.globalData?.supabase?.userId;
-      const tasks = await fetchTasks(userId);
+      console.log('tasks/index.js - 加载任务，用户ID:', userId);
+      
+      // 使用fetchAllTasks获取包括小组任务在内的所有任务
+      const tasks = await fetchAllTasks(userId);
+      console.log('tasks/index.js - 获取到的任务列表:', tasks);
       
       if (Array.isArray(tasks)) {
         // 格式化日期并排序
@@ -51,12 +56,14 @@ Page({
           return new Date(a.deadline) - new Date(b.deadline);
         });
         
+        console.log('tasks/index.js - 格式化后的任务列表:', sortedTasks);
         this.setData({ tasks: this.decorateTasks(sortedTasks) });
       } else {
+        console.log('tasks/index.js - 没有获取到任务');
         this.setData({ tasks: [] });
       }
     } catch (err) {
-      console.warn('load tasks failed', err);
+      console.error('tasks/index.js - 加载任务失败:', err);
       this.setData({ tasks: [] });
     } finally {
       this.setData({ loading: false });

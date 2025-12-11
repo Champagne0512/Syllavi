@@ -1,0 +1,37 @@
+这是一个占位图片的说明文件。
+
+当您看到图片加载错误时，可以考虑以下解决方案：
+
+1. 使用小程序内置的默认图片
+2. 创建一个简单的SVG或Base64编码的图片
+3. 使用条件渲染，当图片加载失败时显示替代内容
+
+在WXML中，可以使用以下代码处理图片加载失败：
+```xml
+<image src="{{imageUrl}}" binderror="handleImageError"></image>
+```
+
+在JS中添加错误处理：
+```javascript
+handleImageError(e) {
+  // 设置默认图片或隐藏图片
+  this.setData({
+    imageUrl: '/images/default-avatar.png'
+  });
+}
+```
+
+常见的默认图片路径：
+- '/images/default-avatar.png' - 默认头像
+- '/images/default-group.png' - 默认小组图片
+- '/images/placeholder.png' - 通用占位图
+
+如果您需要创建一个实际的默认图片文件，可以使用以下方法：
+1. 创建一个简单的PNG图片，命名为 default-avatar.png 或 default-group.png
+2. 将其放在项目的 images 文件夹中
+3. 在代码中引用这个图片路径
+
+图片尺寸建议：
+- 头像：64x64 或 128x128 像素
+- 小组图片：128x128 或 256x256 像素
+- 通用占位图：根据具体使用场景调整

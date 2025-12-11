@@ -1540,6 +1540,11 @@
   color: #E08E79;
 }
 
+.task-chip.chip-group {
+  background: rgba(255, 107, 107, 0.18);
+  color: #FF6B6B;
+}
+
 .task-text { 
   font-size: 30rpx; 
   color: #1C1C1E; 

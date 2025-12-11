@@ -309,10 +309,49 @@ Page({
       }))
 
       if (memberRows.length) {
-        await request('group_task_members', {
-          method: 'POST',
-          data: memberRows
-        })
+        console.log('准备分配任务给', memberRows.length, '个成员:', memberRows)
+        try {
+          const assignResult = await request('group_task_members', {
+            method: 'POST',
+            data: memberRows
+          })
+          console.log('任务分配结果:', assignResult)
+          
+          // 检查分配结果
+          if (!assignResult || (Array.isArray(assignResult) && assignResult.length === 0)) {
+            console.error('任务分配失败，没有返回有效结果')
+            // 删除已创建的任务
+            await request('group_tasks', {
+              method: 'DELETE',
+              query: `id=eq.${taskId}`
+            })
+            
+            wx.hideLoading()
+            wx.showToast({
+              title: '任务分配失败，请重试',
+              icon: 'none'
+            })
+            return
+          }
+        } catch (assignError) {
+          console.error('分配任务时出错:', assignError)
+          // 删除已创建的任务
+          try {
+            await request('group_tasks', {
+              method: 'DELETE',
+              query: `id=eq.${taskId}`
+            })
+          } catch (deleteError) {
+            console.error('删除失败任务时出错:', deleteError)
+          }
+          
+          wx.hideLoading()
+          wx.showToast({
+            title: '任务分配失败，请重试',
+            icon: 'none'
+          })
+          return
+        }
       }
 
       wx.hideLoading()

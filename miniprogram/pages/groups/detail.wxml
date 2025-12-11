@@ -34,7 +34,7 @@
       <view class="header-glow"></view>
       <view class="header-content">
         <view class="group-avatar-section">
-          <image class="group-avatar" src="{{groupInfo.avatar_url || '/static/icons/group-empty.png'}}"></image>
+          <image class="group-avatar" src="{{groupInfo.avatar_url || '/static/icons/group-empty.svg'}}" binderror="handleAvatarError"></image>
           <view class="status-indicator {{groupInfo.is_public ? 'public' : 'private'}}"></view>
         </view>
         <view class="group-info">

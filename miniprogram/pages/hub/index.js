@@ -179,6 +179,12 @@ Page({
   onShow() {
     const app = getApp();
     app.syncTabBar(); // 使用全局同步方法
+    
+    // 每次显示页面时都强制刷新任务缓存，确保显示最新数据
+    console.log('课程与待办页面显示 - 强制刷新任务缓存');
+    wx.removeStorageSync('tasks_cache');
+    wx.setStorageSync('force_refresh_tasks', true);
+    
     this.loadTasks(); // 加载任务数据
     this.loadSchedule(); // 再次同步课表数据
   },
@@ -245,6 +251,8 @@ Page({
   calculateDayView(date) {
     const dateKey = formatDateKey(date);
     const dayOfWeek = date.getDay() || 7; // 1-7
+    const todayKey = formatDateKey(new Date()); // 添加 todayKey 变量定义
+    const isToday = formatDateKey(new Date()) === dateKey;
 
     // 筛选今日课程
     const courses = this.getScheduleEntries()
@@ -258,14 +266,115 @@ Page({
     const targetMidnight = new Date(dateKey);
     targetMidnight.setHours(0, 0, 0, 0);
     const targetTs = targetMidnight.getTime();
+    const now = new Date();
+    
+    console.log('calculateDayView - 计算日期视图:', {
+      dateKey,
+      dayOfWeek,
+      isToday,
+      targetTs,
+      targetDate: targetMidnight.toLocaleDateString(),
+      allTasksCount: this.data.tasks?.length || 0
+    });
 
-    const tasks = this.data.tasks
-      .filter((task) => this.shouldDisplayTaskOnDate(task, targetTs, dateKey))
-      .map((task) => this.decorateTaskForDate(task, targetTs, dateKey));
+    const allTasks = this.data.tasks || [];
+    
+    // 对于今天的待办，显示所有未完成且未超过截止日期的任务
+    let tasksForDate;
+    if (isToday) {
+      tasksForDate = allTasks.filter(task => {
+        // 排除已完成的任务（兼容两种字段名）
+        if (task.completed || task.is_completed) {
+          return false;
+        }
+
+        // 获取任务的截止日期和时间 - 优先使用原始截止日期（ISO格式），避免格式化字符串解析问题
+        const deadline = new Date(task.rawDeadline || task.deadline);
+        const deadlineKey = formatDateKey(deadline);
+
+        // 检查任务是否已经过了截止日期（按日期比较，不考虑具体时间）
+        // 如果截止日期在今天之前（即早于今天00:00），说明任务已过期，不再显示
+        const todayStart = new Date(todayKey);
+        todayStart.setHours(0, 0, 0, 0);
+
+        if (deadline < todayStart) {
+          return false; // 截止日期在今天之前，任务已过期
+        }
+
+        // 对于持续任务，检查当前时间是否在可见时间范围内
+        if (task.mode === 'persistent') {
+          // 检查是否已经过了可见开始时间
+          const visibleFrom = new Date(task.visibleFromTs || task.created_at || Date.now());
+          if (visibleFrom > now) {
+            return false; // 还没到可见时间
+          }
+        }
+
+        // 对于瞬时任务，只在截止日期当天显示
+        if (task.mode === 'instant') {
+          return deadlineKey === todayKey;
+        }
+
+        // 所有未完成、未过期、在可见时间范围内的任务都显示
+        // 包括：未来到期的持续任务、今天到期的瞬时任务等
+        return true;
+      });
+      
+      // 按截止日期远近排序（最近的截止日期排在前面）
+      tasksForDate.sort((a, b) => {
+        const deadlineA = new Date(a.deadline || a.rawDeadline);
+        const deadlineB = new Date(b.deadline || b.rawDeadline);
+        return deadlineA - deadlineB;
+      });
+      
+      // 计算真正过期的任务数量（截止日期在今天之前的，不管是否完成）
+      const todayStart = new Date(todayKey);
+      todayStart.setHours(0, 0, 0, 0);
+
+      console.log('calculateDayView - 今日待办优化筛选:', {
+        筛选前数量: allTasks.length,
+        已完成数量: allTasks.filter(t => t.completed || t.is_completed).length,
+        过期数量: allTasks.filter(t => {
+          const deadline = new Date(t.deadline || t.rawDeadline);
+          return deadline < todayStart;
+        }).length,
+        最终显示数量: tasksForDate.length,
+        当前时间: now.toISOString(),
+        显示任务: tasksForDate.map(t => ({
+          id: t.id,
+          title: t.title,
+          type: t.type,
+          截止日期: new Date(t.deadline || t.rawDeadline).toISOString(),
+          截止日期键: formatDateKey(new Date(t.deadline || t.rawDeadline)),
+          剩余天数: Math.ceil((new Date(t.deadline || t.rawDeadline) - now) / (24 * 60 * 60 * 1000))
+        }))
+      });
+    } else {
+      // 对于非今天，使用原有逻辑
+      tasksForDate = allTasks.filter((task) => this.shouldDisplayTaskOnDate(task, targetTs, dateKey));
+    }
+    
+    const groupTasks = allTasks.filter(task => task.type === 'group_task');
+    
+    console.log('calculateDayView - 任务筛选结果:', {
+      isToday,
+      allTasksCount: allTasks.length,
+      groupTasksCount: groupTasks.length,
+      tasksForDateCount: tasksForDate.length,
+      groupTasksTitles: groupTasks.map(t => ({ id: t.id, title: t.title, completed: t.completed })),
+      tasksForDateTitles: tasksForDate.map(t => ({ id: t.id, title: t.title, type: t.type }))
+    });
+
+    const tasks = tasksForDate.map((task) => this.decorateTaskForDate(task, targetTs, dateKey));
 
     this.setData({
       todayCourses: courses,
       todayTasks: tasks
+    }, () => {
+      if (isToday) {
+        console.log('calculateDayView - 设置今日待办任务数量:', tasks.length);
+        console.log('calculateDayView - 今日待办任务详情:', tasks);
+      }
     });
   },
 
@@ -670,41 +779,154 @@ Page({
   },
 
   shouldDisplayTaskOnDate(task, targetTs, targetKey) {
-    if (!task) return false;
+    if (!task) {
+      console.log('shouldDisplayTaskOnDate: 任务为空，返回false');
+      return false;
+    }
+    
     const isImportantEvent = this.isImportantEvent(task);
+    const today = new Date();
+    const todayKey = formatDateKey(today);
+    
+    // 添加调试信息
+    if (task.type === 'group_task' || task.title.includes('测试')) {
+      console.log('shouldDisplayTaskOnDate - 任务详情:', {
+        id: task.id,
+        title: task.title,
+        type: task.type,
+        mode: task.mode,
+        isImportant: task.isImportant,
+        isImportantEvent,
+        completed: task.completed,
+        deadlineKey: task.deadlineKey,
+        targetKey,
+        todayKey,
+        targetDate: new Date(targetTs).toLocaleDateString(),
+        deadline: task.deadline,
+        rawDeadline: task.rawDeadline,
+        visibleFromTs: task.visibleFromTs,
+        deadlineTs: task.deadlineTs
+      });
+    }
 
+    // 对于小组任务，使用更宽松的显示逻辑
+    if (task.type === 'group_task') {
+      // 小组任务也按照普通任务的逻辑显示，但不排除已完成任务
+      if (task.mode === 'instant' && !isImportantEvent) {
+        const shouldShow = task.deadlineKey === targetKey;
+        console.log('shouldDisplayTaskOnDate: 小组瞬时任务，应显示:', shouldShow, '任务ID:', task.id);
+        return shouldShow;
+      }
+
+      const todayStart = this.getTodayStartTs();
+      // 对于小组任务，使用创建时间作为可见开始时间
+      const createdAt = task.assigned_at ? new Date(task.assigned_at) : new Date(task.created_at || Date.now());
+      const visibleStart = createdAt.getTime();
+      const deadlineLimit = task.deadlineTs || targetTs;
+      const shouldShow = targetTs >= visibleStart && targetTs <= deadlineLimit;
+      
+      console.log('shouldDisplayTaskOnDate: 小组持续任务，判断条件:', {
+        taskId: task.id,
+        targetDate: new Date(targetTs).toLocaleDateString(),
+        createdAt: createdAt.toLocaleDateString(),
+        visibleStart: new Date(visibleStart).toLocaleDateString(),
+        deadlineDate: new Date(deadlineLimit).toLocaleDateString(),
+        shouldShow,
+        condition1: targetTs >= visibleStart,
+        condition2: targetTs <= deadlineLimit
+      });
+      
+      return shouldShow;
+    }
+    
+    // 普通任务的原有逻辑
     if (task.mode === 'instant' && !isImportantEvent) {
-      return task.deadlineKey === targetKey;
+      const shouldShow = task.deadlineKey === targetKey;
+      if (task.title.includes('测试')) {
+        console.log('shouldDisplayTaskOnDate: 普通瞬时任务，应显示:', shouldShow);
+      }
+      return shouldShow;
     }
 
     const todayStart = this.getTodayStartTs();
     const visibleStart = Math.max(task.visibleFromTs || todayStart, todayStart);
     const deadlineLimit = task.deadlineTs || targetTs;
-    return targetTs >= visibleStart && targetTs <= deadlineLimit;
+    const shouldShow = targetTs >= visibleStart && targetTs <= deadlineLimit;
+    
+    if (task.title.includes('测试')) {
+      console.log('shouldDisplayTaskOnDate: 普通持续任务，判断条件:', {
+        targetTs,
+        visibleStart,
+        deadlineLimit,
+        shouldShow,
+        condition1: targetTs >= visibleStart,
+        condition2: targetTs <= deadlineLimit
+      });
+    }
+    
+    return shouldShow;
   },
 
   getTimelineLabel(task, targetTs) {
     const isImportantEvent = this.isImportantEvent(task);
+    
+    // 获取任务的截止时间
+    const deadline = new Date(task.deadline || task.rawDeadline);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    // 对于瞬时事件，显示具体时间
     if (task.mode === 'instant' && !isImportantEvent) {
       return formatTime(task.rawDeadline);
     }
-    const diff = Math.max(0, Math.ceil(((task.deadlineTs || targetTs) - targetTs) / DAY_MS));
-    return diff === 0 ? '今日截止' : `剩余${diff}天`;
+    
+    // 计算剩余天数
+    const diff = Math.ceil((deadline - now) / DAY_MS);
+    
+    // 如果是今天，显示具体时间
+    if (diff === 0) {
+      return `${formatTime(task.rawDeadline)} 截止`;
+    }
+    
+    // 如果是明天
+    if (diff === 1) {
+      return `明天截止`;
+    }
+    
+    // 显示剩余天数
+    return `剩余${diff}天`;
   },
 
   decorateTaskForDate(task, targetTs, targetKey) {
     const isImportantEvent = this.isImportantEvent(task);
     let badge = '持续待办';
-    if (isImportantEvent) {
+    
+    // 为小组任务添加特殊标识
+    if (task.type === 'group_task') {
+      badge = task.completed ? '小组任务(已完成)' : '小组任务';
+    } else if (isImportantEvent) {
       badge = '重要事件';
     } else if (task.mode === 'instant') {
       badge = '瞬时事件';
     }
+    
+    // 小组任务标题已经在fetchAllTasks中处理过了，使用title字段即可
+    // 如果有displayTitle字段则使用它，否则使用title
+    const displayTitle = task.displayTitle || task.title;
+    
     return {
       ...task,
       dayBadge: badge,
       dayIndicator: this.getTimelineLabel(task, targetTs),
-      instanceId: `${task.id}-${targetKey}`
+      instanceId: `${task.id}-${targetKey}`,
+      // 添加小组名称到任务标题中，用于区分
+      displayTitle: displayTitle,
+      // 确保小组任务有正确的分组信息
+      groupInfo: task.groupInfo || (task.type === 'group_task' ? {
+        groupId: task.groupId || null,
+        groupName: task.groupName || '学习小组',
+        groupDescription: task.groupDescription || ''
+      } : null)
     };
   },
 
@@ -755,9 +977,12 @@ Page({
         const deadlineKey = formatDateKey(d);
         const dueMidnight = new Date(d);
         dueMidnight.setHours(0, 0, 0, 0);
-        const createdAt = row.created_at ? new Date(row.created_at) : null;
+        
+        // 对于小组任务，使用分配时间作为创建时间
+        const createdAt = row.assigned_at ? new Date(row.assigned_at) : (row.created_at ? new Date(row.created_at) : new Date());
         const visibleFrom = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : new Date();
         visibleFrom.setHours(0, 0, 0, 0);
+        
         let meta = row.meta || {};
         if (typeof meta === 'string') {
           try {
@@ -767,18 +992,33 @@ Page({
             meta = {};
           }
         }
+        
+        // 确定任务类型和模式
+        const isGroupTask = row.type === 'group_task';
         const baseType = typeof row.type === 'string' ? row.type.toLowerCase() : 'homework';
         const metaEventType = typeof meta.eventType === 'string' ? meta.eventType.toLowerCase() : '';
         const normalizedType = metaEventType || baseType;
         const isImportantFromMeta = !!meta.isImportant || (metaEventType && IMPORTANT_EVENT_TYPES.has(metaEventType));
         const isImportant = isImportantFromMeta || IMPORTANT_EVENT_TYPES.has(baseType) || !!row.is_important;
-        const mode = meta.mode || (baseType === 'homework' || isImportant ? 'persistent' : 'instant');
+        
+        // 小组任务默认为持续类型，除非特别指定为瞬时
+        let mode = meta.mode || (isGroupTask ? 'persistent' : (baseType === 'homework' || isImportant ? 'persistent' : 'instant'));
         const hasSpecificTime = meta.hasSpecificTime || mode === 'instant';
-        const displayBadge = isImportant ? '重要事件' : (mode === 'instant' ? '瞬时事件' : '持续待办');
+        const displayBadge = isGroupTask ? '小组任务' : (isImportant ? '重要事件' : (mode === 'instant' ? '瞬时事件' : '持续待办'));
         const displayTime = hasSpecificTime ? `${month}.${day} ${hour}:${minute}` : `${month}.${day} 截止`;
         const deadlineTs = dueMidnight.getTime();
         const visibleFromTs = visibleFrom.getTime();
         const daysLeft = Math.max(0, Math.ceil((deadlineTs - todayStartTs) / DAY_MS));
+        
+        // 处理小组任务的特殊情况
+        let courseIdentifier = row.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN';
+        let accentColor = MORANDI_COLORS[idx % MORANDI_COLORS.length];
+        
+        if (isGroupTask) {
+          courseIdentifier = '小组';
+          accentColor = '#FF6B6B'; // 小组任务使用红色标识
+        }
+        
         return {
           id: row.id,
           type: normalizedType,
@@ -789,15 +1029,13 @@ Page({
           deadlineKey,
           description: row.description,
           progress: row.is_completed ? 1 : 0,
-          // 小组任务使用特殊的课程标识
-          course: row.type === 'group_task' ? '小组' : (row.related_course_id?.slice(0, 4)?.toUpperCase() || 'GEN'),
+          course: courseIdentifier,
           courseName: row.course?.name || '',
           related_course_id: row.related_course_id || null,
-          // 小组任务使用特殊的颜色
-          accent: row.type === 'group_task' ? '#FF6B6B' : MORANDI_COLORS[idx % MORANDI_COLORS.length],
+          accent: accentColor,
           completed: row.is_completed,
           // 标记小组任务和考试任务
-          urgent: typeof meta.urgent === 'boolean' ? meta.urgent : (mode === 'instant' || row.type === 'group_task'),
+          urgent: typeof meta.urgent === 'boolean' ? meta.urgent : (mode === 'instant' || isGroupTask),
           isImportant,
           displayBadge,
           displayTime,
@@ -809,7 +1047,12 @@ Page({
             groupId: row.groupInfo.groupId,
             groupName: row.groupInfo.groupName || '学习小组',
             groupDescription: row.groupInfo.groupDescription || ''
-          } : null
+          } : null,
+          // 添加小组任务的特有字段
+          groupInfo: row.groupInfo || null,
+          assigned_at: row.assigned_at || null,
+          task_member_id: row.task_member_id || null,
+          originalTitle: row.originalTitle || null
         };
       });
       
@@ -1314,7 +1557,24 @@ Page({
       }
 
       this.closeTaskEditor();
-      this.loadTasks();
+      
+      // 设置强制刷新标志，确保清除任务缓存
+      wx.setStorageSync('force_refresh_tasks', true);
+      
+      // 重新加载任务
+      console.log('任务保存成功，重新加载任务列表');
+      await this.loadTasks();
+      
+      // 强制更新视图
+      this.updateViewData();
+      
+      // 刷新个人页面的统计数据
+      const pages = getCurrentPages();
+      const profilePage = pages.find(page => page.route === 'pages/profile/index');
+      if (profilePage && profilePage.loadStats) {
+        console.log('刷新个人页面统计数据');
+        profilePage.loadStats();
+      }
     } catch (err) {
       console.error('保存任务失败:', err);
       wx.showToast({ title: '保存失败', icon: 'none' });
@@ -2168,5 +2428,11 @@ Page({
       if (weeks.length) return weeks;
     }
     return [1];
+  },
+  
+  // 处理头像加载错误
+  handleAvatarError(e) {
+    console.log('小组头像加载失败，使用默认头像:', e)
+    // 不需要额外处理，因为已经在WXML中使用了 || 运算符
   }
 });

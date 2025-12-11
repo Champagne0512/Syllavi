@@ -292,9 +292,9 @@ Page({
     })
   },
 
-  // 切换标签页
-  switchTab(e) {
-    const tab = e.currentTarget.dataset.tab
-    this.setData({ currentTab: tab })
+  // 处理头像加载错误
+  handleAvatarError(e) {
+    console.log('小组头像加载失败，使用默认头像:', e)
+    // 不需要额外处理，因为已经在WXML中使用了 || 运算符
   }
 })

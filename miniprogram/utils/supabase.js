@@ -280,7 +280,21 @@ function emailPasswordLogin(email, password, retryCount = 0) {
             }
             resolve(res.data);
           } else {
-            reject(res.data || res);
+            // 增强错误信息处理
+            console.error('登录请求失败，响应:', res);
+            
+            // 特殊处理无效凭据错误
+            if (res.statusCode === 400 && res.data && res.data.msg === 'Invalid login credentials') {
+              // 添加更详细的错误信息
+              const enhancedError = {
+                ...res.data,
+                code: 'invalid_credentials',
+                message: '邮箱或密码不正确，请检查输入是否正确，或尝试重新注册账户'
+              };
+              reject(enhancedError);
+            } else {
+              reject(res.data || res);
+            }
           }
         },
         fail(err) {
@@ -656,10 +670,15 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
             const taskDetail = taskDetails.find(t => t.id === member.task_id);
             if (!taskDetail) return null;
             
+            // 在标题前添加小组名称前缀，便于识别
+            const groupName = taskDetail.study_groups?.name || '学习小组';
+            const displayTitle = `[${groupName}] ${taskDetail.title}`;
+            
             return {
               id: taskDetail.id,
               type: 'group_task', // 标记为小组任务
-              title: taskDetail.title,
+              title: displayTitle, // 使用带有小组名称的标题
+              originalTitle: taskDetail.title, // 保存原始标题
               description: taskDetail.description,
               deadline: taskDetail.deadline,
               is_completed: member.is_completed,
@@ -669,7 +688,7 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
               // 添加小组相关信息
               groupInfo: {
                 groupId: taskDetail.group_id,
-                groupName: taskDetail.study_groups?.name || '学习小组',
+                groupName: groupName,
                 groupDescription: taskDetail.study_groups?.description || ''
               },
               // 添加小组任务特有字段
@@ -684,16 +703,27 @@ async function fetchAllTasks(userId = DEMO_USER_ID) {
             return new Date(a.deadline) - new Date(b.deadline);
           });
           
+          console.log('fetchAllTasks - 成功获取小组任务:', {
+            groupTaskMembersCount: groupTaskMembers.length,
+            taskDetailsCount: taskDetails.length,
+            groupTasksCount: groupTasks.length,
+            allTasksCount: allTasks.length,
+            groupTasks: groupTasks.map(t => ({ id: t.id, title: t.title, type: t.type, completed: t.is_completed }))
+          });
+          
           return allTasks;
         } catch (groupTaskError) {
           console.warn('处理小组任务时出错，降级到只使用标记的个人任务:', groupTaskError);
         }
+      } else {
+        console.log('fetchAllTasks - 用户没有分配到任何小组任务');
       }
     } catch (groupTaskError) {
       console.warn('无法获取小组任务表，只返回标记为小组任务的个人任务:', groupTaskError);
     }
     
     // 如果没有小组任务表或者获取失败，只返回标记为小组任务的个人任务
+    console.log('fetchAllTasks - 返回标记为小组任务的个人任务:', markedGroupTasks.length);
     return markedGroupTasks;
   } catch (error) {
     console.error('获取所有任务失败:', error);

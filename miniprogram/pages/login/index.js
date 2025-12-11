@@ -316,8 +316,28 @@ Page({
       
       if (errorCode === 'email_address_invalid') {
         this.showError('邮箱格式或域名被限制，请更换邮箱或联系管理员添加白名单');
-      } else if (/Invalid login credentials/i.test(message)) {
+      } else if (errorCode === 'invalid_credentials' || /Invalid login credentials/i.test(message)) {
+        // 提供更详细的错误信息和解决建议
         this.showError('邮箱或密码不正确');
+        // 延迟显示解决建议，避免信息过载
+        setTimeout(() => {
+          wx.showModal({
+            title: '登录失败',
+            content: '可能的原因:\n1. 邮箱或密码输入有误\n2. 账户尚未激活（请检查验证邮件）\n3. 邮箱未在系统中注册',
+            confirmText: '重试',
+            showCancel: true,
+            cancelText: '注册新账户',
+            success: (modalRes) => {
+              if (!modalRes.confirm) {
+                // 用户选择注册新账户
+                this.setData({
+                  authMode: 'register',
+                  form: { email: this.data.form.email, password: '', confirm: '' }
+                });
+              }
+            }
+          });
+        }, 1000);
       } else if (/User already registered/i.test(message)) {
         this.showError('该邮箱已注册，请直接登录');
       } else {

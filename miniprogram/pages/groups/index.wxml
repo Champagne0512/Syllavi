@@ -78,7 +78,7 @@
         <view class="card-content">
           <view class="group-header">
             <view class="avatar-container">
-              <image class="group-avatar" src="{{item.avatar_url || '/static/icons/group-empty.png'}}"></image>
+              <image class="group-avatar" src="{{item.avatar_url || '/static/icons/group-empty.svg'}}" binderror="handleAvatarError"></image>
               <view class="status-indicator {{item.member_role}}"></view>
             </view>
             <view class="group-info">
@@ -134,7 +134,7 @@
         <view class="card-content">
           <view class="group-header">
             <view class="avatar-container">
-              <image class="group-avatar" src="{{item.avatar_url || '/static/icons/group-empty.png'}}"></image>
+              <image class="group-avatar" src="{{item.avatar_url || '/static/icons/group-empty.svg'}}" binderror="handleAvatarError"></image>
               <view class="public-badge"></view>
             </view>
             <view class="group-info">

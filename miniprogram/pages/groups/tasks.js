@@ -118,6 +118,7 @@ Page({
       const members = await request('group_members', {
         query: `group_id=eq.${this.data.groupId}`
       })
+      console.log('loadMembers: 加载的成员列表', members)
       this.setData({ members: members || [] })
     } catch (error) {
       console.error('加载小组成员失败:', error)
@@ -330,8 +331,29 @@ Page({
       }
 
       const newTask = result[0]
-      await this.assignTaskToMembers(newTask.id)
+      console.log('任务创建成功，任务ID:', newTask.id, '开始分配给成员')
+      
+      // 确保任务分配成功
+      const assignResult = await this.assignTaskToMembers(newTask.id)
+      
+      if (!assignResult) {
+        // 如果任务分配失败，删除已创建的任务
+        console.warn('任务分配失败，删除已创建的任务:', newTask.id)
+        try {
+          await request('group_tasks', {
+            method: 'DELETE',
+            query: `id=eq.${newTask.id}`
+          })
+        } catch (deleteError) {
+          console.error('删除失败任务时出错:', deleteError)
+        }
+        
+        wx.hideLoading()
+        wx.showToast({ title: '任务分配失败，请重试', icon: 'none' })
+        return
+      }
 
+      console.log('任务分配成功，分配结果:', assignResult)
       wx.showToast({ title: '任务创建成功' })
       this.hideCreateTask()
       this.loadTasks()
@@ -388,25 +410,72 @@ Page({
   },
 
   async assignTaskToMembers(taskId) {
-    if (!taskId) return
+    if (!taskId) {
+      console.error('assignTaskToMembers: 任务ID为空')
+      return false
+    }
+    
     try {
+      console.log('assignTaskToMembers: 开始为任务', taskId, '分配成员')
+      
+      // 获取成员列表
       const members = this.data.members.length ? this.data.members : await request('group_members', {
         query: `group_id=eq.${this.data.groupId}`
       })
-      if (!members || !members.length) return
-      const uniqueUserIds = [...new Set(members.map(member => member.user_id || member.id).filter(Boolean))]
-      if (!uniqueUserIds.length) return
+      
+      console.log('assignTaskToMembers: 获取到成员列表', members)
+      
+      if (!members || !members.length) {
+        console.error('assignTaskToMembers: 没有找到小组成员')
+        return false
+      }
+      
+      // 确保我们提取到了正确的用户ID
+      const uniqueUserIds = [...new Set(members.map(member => {
+        // 尝试多个可能的用户ID字段
+        const userId = member.user_id || member.id || member.userId || null
+        if (userId) {
+          console.log('成员信息:', member, '提取的用户ID:', userId)
+        }
+        return userId
+      }).filter(Boolean))]
+      
+      console.log('assignTaskToMembers: 提取到的用户ID列表', uniqueUserIds)
+      
+      if (!uniqueUserIds.length) {
+        console.error('assignTaskToMembers: 没有有效的用户ID')
+        // 打印成员信息以便调试
+        console.log('成员详细信息:', members)
+        return false
+      }
+      
       const rows = uniqueUserIds.map(userId => ({
         task_id: taskId,
         user_id: userId,
         is_completed: false
       }))
-      await request('group_task_members', {
+      
+      console.log('assignTaskToMembers: 准备插入的数据', rows)
+      
+      // 插入任务成员分配记录
+      const result = await request('group_task_members', {
         method: 'POST',
         data: rows
       })
+      
+      console.log('assignTaskToMembers: 插入结果', result)
+      
+      // 检查插入结果
+      if (result && (Array.isArray(result) ? result.length > 0 : result)) {
+        console.log('assignTaskToMembers: 任务分配成功，分配给', uniqueUserIds.length, '个成员')
+        return true
+      } else {
+        console.error('assignTaskToMembers: 任务分配失败，没有返回有效结果')
+        return false
+      }
     } catch (error) {
       console.error('为成员分配小组任务失败:', error)
+      return false
     }
   },
 
@@ -583,8 +652,26 @@ Page({
             })
 
             if (result && result.length) {
-              await Promise.all(result.map(task => this.assignTaskToMembers(task.id)))
-              wx.showToast({ title: `成功创建${result.length}个任务`, icon: 'success' })
+              console.log('快速创建任务成功，任务数量:', result.length)
+              
+              // 尝试为每个任务分配成员
+              const assignResults = await Promise.all(
+                result.map(task => this.assignTaskToMembers(task.id))
+              )
+              
+              // 检查是否所有任务都分配成功
+              const failedAssignments = assignResults.filter(success => !success).length
+              
+              if (failedAssignments > 0) {
+                console.warn(`${failedAssignments}个任务分配失败`)
+                wx.showToast({ 
+                  title: `创建了${result.length}个任务，但${failedAssignments}个分配失败`, 
+                  icon: 'none' 
+                })
+              } else {
+                wx.showToast({ title: `成功创建${result.length}个任务`, icon: 'success' })
+              }
+              
               this.loadTasks()
             } else {
               throw new Error('创建任务失败')

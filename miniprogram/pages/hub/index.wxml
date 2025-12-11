@@ -117,17 +117,17 @@
             </view>
             <view class="task-body">
               <view class="task-headline">
-                <view class="task-chip {{item.mode === 'instant' ? 'chip-event' : 'chip-homework'}}">{{item.dayBadge || '持续待办'}}</view>
-                <text class="task-text">{{item.title}}</text>
+                <view class="task-chip {{item.mode === 'instant' ? 'chip-event' : (item.type === 'group_task' ? 'chip-group' : 'chip-homework')}}">{{item.dayBadge || '持续待办'}}</view>
+                <text class="task-text">{{item.displayTitle || item.title}}</text>
               </view>
               <view class="task-meta-row">
                 <text class="task-time">{{item.dayIndicator || item.deadline}}</text>
                 <text class="task-course">{{item.courseName || item.course}}</text>
               </view>
-              <view class="task-source-tag" wx:if="{{item.groupDetails}}">
-                <image class="group-avatar-small" src="{{item.groupDetails.groupAvatar || '/images/default-group.png'}}"></image>
-                <text class="group-name-small">{{item.groupDetails.groupName}}</text>
-                <text class="from-text">来自: {{item.groupDetails.groupName}}</text>
+              <view class="task-source-tag" wx:if="{{item.groupInfo || item.type === 'group_task'}}">
+                <image class="group-avatar-small" src="/static/icons/group-empty.svg" binderror="handleAvatarError"></image>
+                <text class="group-name-small">{{item.groupInfo.groupName || '学习小组'}}</text>
+                <text class="from-text">来自小组任务</text>
               </view>
             </view>
           </view>
