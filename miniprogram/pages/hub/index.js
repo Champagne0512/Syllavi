@@ -870,8 +870,14 @@ Page({
   getTimelineLabel(task, targetTs) {
     const isImportantEvent = this.isImportantEvent(task);
     
-    // 获取任务的截止时间
-    const deadline = new Date(task.deadline || task.rawDeadline);
+    // 获取任务的截止时间 - 优先使用原始截止日期（ISO格式）
+    const deadline = new Date(task.rawDeadline || task.deadline);
+    
+    // 添加日期有效性检查
+    if (!deadline || isNaN(deadline.getTime())) {
+      return '时间无效';
+    }
+    
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     
@@ -882,6 +888,11 @@ Page({
     
     // 计算剩余天数
     const diff = Math.ceil((deadline - now) / DAY_MS);
+    
+    // 限制异常值，避免显示不合理的天数
+    if (diff > 365) {
+      return '时间设置错误';
+    }
     
     // 如果是今天，显示具体时间
     if (diff === 0) {

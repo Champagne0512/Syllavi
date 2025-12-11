@@ -194,9 +194,21 @@ Page({
   formatDate(dateString, meta = {}) {
     if (!dateString) return ''
     const date = new Date(dateString)
+    
+    // 添加日期有效性检查
+    if (!date || isNaN(date.getTime())) {
+      return '时间无效'
+    }
+    
     const now = new Date()
     const diffTime = date - now
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    // 限制异常值，避免显示不合理的天数
+    if (diffDays > 365) {
+      return '时间设置错误'
+    }
+    
     const dateLabel = `${date.getMonth() + 1}月${date.getDate()}日`
     const timeLabel = meta.hasSpecificTime && meta.deadlineTime ? ` ${meta.deadlineTime}` : ''
 
