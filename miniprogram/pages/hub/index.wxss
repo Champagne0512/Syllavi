@@ -336,7 +336,7 @@
 
 .day-name { font-size: 20rpx; color: #8E8E93; margin-bottom: 4rpx; }
 .day-num { font-size: 28rpx; font-weight: 600; color: #1C1C1E; width: 50rpx; height: 50rpx; text-align: center; line-height: 50rpx; border-radius: 50%; }
-.today-head .day-num { background: #1C1C1E; color: #fff; }
+.today-head .day-num { background: transparent; color: #E08E79; }
 
 .week-body {
   position: relative;
@@ -495,15 +495,17 @@
 
 .today-indicator {
   background: #E08E79;
-  box-shadow: 0 0 12rpx rgba(224, 142, 121, 0.6);
-  animation: pulse-indicator 2s infinite;
+  opacity: 0.8;
+  width: 4rpx;
+  height: 4rpx;
 }
 
 .selected-indicator {
   background: #87A8A4;
-  box-shadow: 0 0 12rpx rgba(135, 168, 164, 0.6);
-  width: 8rpx;
-  height: 8rpx;
+  opacity: 0.8;
+  width: 30rpx;
+  height: 2rpx;
+  border-radius: 1rpx;
 }
 
 @keyframes pulse-indicator {
@@ -701,15 +703,17 @@
 
 .today-indicator {
   background: #E08E79;
-  box-shadow: 0 0 12rpx rgba(224, 142, 121, 0.6);
-  animation: pulse-indicator 2s infinite;
+  opacity: 0.8;
+  width: 4rpx;
+  height: 4rpx;
 }
 
 .selected-indicator {
   background: #87A8A4;
-  box-shadow: 0 0 12rpx rgba(135, 168, 164, 0.6);
-  width: 8rpx;
-  height: 8rpx;
+  opacity: 0.8;
+  width: 30rpx;
+  height: 2rpx;
+  border-radius: 1rpx;
 }
 
 @keyframes pulse-indicator {
